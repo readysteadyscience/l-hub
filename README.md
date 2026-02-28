@@ -7,10 +7,13 @@
 
 *Let your Coordinator Model delegate tasks to the specialized Expert Models it deserves.*
 
-[![Version](https://img.shields.io/badge/version-0.0.8-blue?style=for-the-badge&logo=visualstudiocode)](https://github.com/ReadySteadyScience/l-hub)
-[![License](https://img.shields.io/badge/license-MIT-green?style=for-the-badge)](https://github.com/ReadySteadyScience/l-hub)
-[![Brand](https://img.shields.io/badge/走启智造-ReadySteadyScience-orange?style=for-the-badge)](https://github.com/ReadySteadyScience)
-[![Universe](https://img.shields.io/badge/产品线-Linglan%20Realm-blueviolet?style=for-the-badge)](https://github.com/ReadySteadyScience)
+[![Version](https://img.shields.io/badge/version-0.0.9-blue?style=for-the-badge&logo=visualstudiocode)](https://github.com/readysteadyscience/l-hub)
+[![License](https://img.shields.io/badge/license-MIT-green?style=for-the-badge)](https://github.com/readysteadyscience/l-hub/blob/main/LICENSE)
+[![Brand](https://img.shields.io/badge/%E8%B5%B0%E5%90%AF%E6%99%BA%E9%80%A0-ReadySteadyScience-orange?style=for-the-badge)](https://github.com/ReadySteadyScience)
+[![Universe](https://img.shields.io/badge/%E4%BA%A7%E5%93%81%E7%BA%BF-Linglan%20Realm-blueviolet?style=for-the-badge)](https://github.com/ReadySteadyScience)
+
+[![GitHub Stars](https://img.shields.io/github/stars/readysteadyscience/l-hub?style=for-the-badge&logo=github&label=%E2%AD%90%20Stars&color=yellow)](https://github.com/readysteadyscience/l-hub/stargazers)
+[![Feedback](https://img.shields.io/badge/%F0%9F%92%AC%20Feedback-GitHub%20Issues-blue?style=for-the-badge&logo=github)](https://github.com/readysteadyscience/l-hub/issues/new)
 
 > **L-Hub** is part of the [Linglan Realm](https://github.com/ReadySteadyScience) product universe, under the brand **走启智造 (ReadySteadyScience)**.
 
@@ -69,14 +72,14 @@ Every request is logged: prompt content, response time, token usage, and which e
 
 ## 🛠️ Connection Setup (Antigravity)
 
-Add the following to your Antigravity MCP settings:
+Add the following to your Antigravity MCP settings (`~/.gemini/antigravity/mcp_config.json`):
 
 ```json
 {
   "mcpServers": {
     "l-hub": {
       "command": "node",
-      "args": ["${env:HOME}/.vscode/extensions/readysteadyscience.l-hub-0.0.8/dist/cli.js"]
+      "args": ["${env:HOME}/.vscode/extensions/readysteadyscience.l-hub-0.0.9/dist/cli.js"]
     }
   }
 }
@@ -84,16 +87,12 @@ Add the following to your Antigravity MCP settings:
 
 ---
 
-## 🤝 Support & Community
+## 🤝 Community
 
-L-Hub is a free, open-source tool from **走启智造 (ReadySteadyScience)**.
+L-Hub is a free, open-source tool by **走启智造 (ReadySteadyScience)**.
 
-- ⭐ **Star us on GitHub** — [ReadySteadyScience/l-hub](https://github.com/ReadySteadyScience/l-hub)
-- 💬 **Feedback & Issues** — open a GitHub issue anytime
-
-### ☕ Support the Author
-Your support keeps the routing engine evolving! ❤️  
-*(Sponsorship link coming soon)*
+[![⭐ Star on GitHub](https://img.shields.io/badge/⭐_Star_on_GitHub-readysteadyscience%2Fl--hub-brightgreen?style=for-the-badge&logo=github)](https://github.com/readysteadyscience/l-hub)
+[![💬 Submit Feedback](https://img.shields.io/badge/💬_Feedback_%26_Issues-GitHub_Issues-blue?style=for-the-badge&logo=github)](https://github.com/readysteadyscience/l-hub/issues/new)
 
 ---
 
@@ -144,14 +143,14 @@ Your support keeps the routing engine evolving! ❤️
 
 ## 🛠️ 安装与连接配置 (Antigravity)
 
-在 Antigravity 的 MCP 配置中添加以下内容：
+在 Antigravity 的 MCP 配置文件（`~/.gemini/antigravity/mcp_config.json`）中添加以下内容：
 
 ```json
 {
   "mcpServers": {
     "l-hub": {
       "command": "node",
-      "args": ["${env:HOME}/.vscode/extensions/readysteadyscience.l-hub-0.0.8/dist/cli.js"]
+      "args": ["${env:HOME}/.vscode/extensions/readysteadyscience.l-hub-0.0.9/dist/cli.js"]
     }
   }
 }
@@ -159,13 +158,9 @@ Your support keeps the routing engine evolving! ❤️
 
 ---
 
-## 🤝 致谢与支持
+## 🤝 开源社区
 
-L-Hub 是 **走启智造 (ReadySteadyScience)** 旗下 **Linglan Realm** 产品宇宙中的一个免费开源工具。
+L-Hub 是 **走启智造 (ReadySteadyScience)** 旗下 **Linglan Realm** 中的免费开源工具。
 
-- ⭐ **给我们点个 Star** — [ReadySteadyScience/l-hub](https://github.com/ReadySteadyScience/l-hub)
-- 💬 **反馈与建议** — 欢迎在 GitHub Issues 提出
-
-### ☕ 请作者喝杯咖啡
-持续跟进新模型、优化路由算法需要大量时间。您的支持是最大的动力！❤️  
-*(赞助链接即将上线)*
+[![⭐ 在 GitHub 上点赞](https://img.shields.io/badge/⭐_在_GitHub_上点_Star-readysteadyscience%2Fl--hub-brightgreen?style=for-the-badge&logo=github)](https://github.com/ReadySteadyScience/l-hub)
+[![💬 提交反馈](https://img.shields.io/badge/💬_反馈与建议-GitHub_Issues-blue?style=for-the-badge&logo=github)](https://github.com/ReadySteadyScience/l-hub/issues/new)
