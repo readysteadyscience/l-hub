@@ -1,8 +1,8 @@
 {
   "name": "l-hub",
   "displayName": "L-Hub",
-  "description": "[Linglan Realm · 走启智造/ReadySteadyScience] An MCP AI Bridge — let your coordinator model intelligently distribute tasks to specialized expert models.",
-  "version": "0.0.8",
+  "description": "MCP AI Bridge — smart multi-model routing for Antigravity & VS Code",
+  "version": "0.0.9",
   "icon": "images/logo.png",
   "publisher": "readysteadyscience",
   "repository": {
@@ -17,7 +17,9 @@
     "Machine Learning"
   ],
   "main": "./dist/extension.js",
-  "activationEvents": [],
+  "activationEvents": [
+    "onStartupFinished"
+  ],
   "contributes": {
     "commands": [
       {
