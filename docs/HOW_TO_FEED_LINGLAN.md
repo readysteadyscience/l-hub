@@ -6,10 +6,10 @@
 
 ## 第一步：写知识文档（长期记忆）
 
-在以下目录新建一个 MD 文件：
+在以下目录新建一个 MD 文件（路径为你本机 Rabix 项目所在位置）：
 
 ```
-/Users/sunbinhe/Desktop/ReadySteadyScience/Rabix/rabix/linglan/knowledge/
+<your-rabix-path>/rabix/linglan/knowledge/
 ```
 
 命名规则：`05_你的项目名_Experience.md`（已有 01~04，请接着往下排）
@@ -25,7 +25,7 @@
 
 （这个模块/项目是做什么的，和 Rabix 的关系）
 
-## 二、川儿的原话（重要需求）
+## 二、用户的原话（重要需求）
 
 > 「原文粘贴，一句一段」
 
@@ -37,7 +37,7 @@
 
 ## 四、聆澜以后要注意的规律
 
-1. 孙斌鹤说「xxx」时，意思是...
+1. 用户说「xxx」时，意思是...
 2. 遇到 xxx 情况，要优先...
 
 ---
@@ -54,7 +54,8 @@
 ```python
 import json, datetime, pathlib
 
-EXP_FILE = pathlib.Path('/Users/sunbinhe/Desktop/ReadySteadyScience/Rabix/rabix/linglan/memory/experiences.jsonl')
+# 替换为你本机的 Rabix 路径
+EXP_FILE = pathlib.Path('<your-rabix-path>/rabix/linglan/memory/experiences.jsonl')
 now = datetime.datetime.now(datetime.timezone.utc).isoformat()
 
 experiences = [
@@ -79,7 +80,7 @@ experiences = [
     {
         "type": "talk",
         "type_label": "交谈经验",
-        "content": "【孙斌鹤的沟通习惯、需求表达规律、他说某话时的真实意图】",
+        "content": "【用户的沟通习惯、需求表达规律、他说某话时的真实意图】",
         "confidence": 0.93,
         "tags": ["user-intent", "communication"],
         "session_id": "你的项目标识",
@@ -98,8 +99,8 @@ print(f'✅ 已写入 {len(experiences)} 条，experiences.jsonl 现有 {total} 
 ### 五种经验类型
 
 | type | type_label | 用于记录 |
-|------|-----------|---------|
-| `talk` | 交谈经验 | 孙斌鹤的沟通方式、需求表达语义 |
+|------|-----------|---------| 
+| `talk` | 交谈经验 | 用户的沟通方式、需求表达语义 |
 | `work` | 做事经验 | 完成任务的方法、工具、设计模式 |
 | `mistake` | 犯错经验 | 踩过的坑、错误原因和修复方法 |
 | `success` | 成功经验 | 做得好的事及原因 |
@@ -109,7 +110,7 @@ print(f'✅ 已写入 {len(experiences)} 条，experiences.jsonl 现有 {total} 
 
 ## 第三步：更新进展报告（可选但推荐）
 
-在 `docs/progress/RABIX_PROGRESS.md` 开头追加本次 Session 更新，格式参考文件内已有的 v0.24 章节。
+在 `docs/progress/RABIX_PROGRESS.md` 开头追加本次 Session 更新。
 
 ---
 

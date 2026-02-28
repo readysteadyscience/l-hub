@@ -1,6 +1,6 @@
 <div align="center">
 
-![L-Hub Logo](images/logo.png)
+![L-Hub Logo](https://raw.githubusercontent.com/readysteadyscience/l-hub/main/images/logo.png)
 
 # L-Hub: The MCP AI Bridge
 **Multi-Model Collaboration & Smart Routing**
@@ -35,7 +35,7 @@ When your Coordinator Model executes a task, it routes the request through L-Hub
 
 > ⚠️ **Currently only tested with Antigravity.** Compatibility with Cursor, VS Code + Cline, or other MCP clients has not yet been verified.
 
-![L-Hub Architecture Diagram](images/architecture.png)
+![L-Hub Architecture Diagram](https://raw.githubusercontent.com/readysteadyscience/l-hub/main/images/architecture.png)
 
 ### 🌟 How it works in practice
 
@@ -48,7 +48,7 @@ When your Coordinator Model executes a task, it routes the request through L-Hub
 
 **Real-world screenshot** — What it looks like in Antigravity when L-Hub dispatches tasks to multiple models in parallel:
 
-![Antigravity MCP dispatching in action](images/screenshot_antigravity.png)
+![Antigravity MCP dispatching in action](https://raw.githubusercontent.com/readysteadyscience/l-hub/main/images/screenshot_antigravity.png)
 
 > In the screenshot above, Antigravity simultaneously triggers `ai_codex_task` (full codebase scan) and `ai_ask` (Minimax planning) through the MCP bridge — each expert handles what it does best.
 
@@ -110,7 +110,7 @@ Your support keeps the routing engine evolving! ❤️
 
 > ⚠️ **目前仅在 Antigravity 中经过验证。** 与 Cursor、VS Code + Cline 等其他 MCP 客户端的兼容性尚未测试。
 
-![L-Hub 中文架构图](images/architecture_zh.png)
+![L-Hub 中文架构图](https://raw.githubusercontent.com/readysteadyscience/l-hub/main/images/architecture_zh.png)
 
 ### 🌟 实际工作流程
 
@@ -123,7 +123,7 @@ Your support keeps the routing engine evolving! ❤️
 
 **实际运行截图** — 在 Antigravity 中，L-Hub 并行向多个模型分发任务时的真实视觉效果：
 
-![Antigravity MCP 并行调度截图](images/screenshot_antigravity.png)
+![Antigravity MCP 并行调度截图](https://raw.githubusercontent.com/readysteadyscience/l-hub/main/images/screenshot_antigravity.png)
 
 > 截图中，Antigravity 通过 MCP Bridge 同时触发了 `ai_codex_task`（Codex 全库扫描）和 `ai_ask`（Minimax 路线规划），两路专家并行响应，各司其职。
 

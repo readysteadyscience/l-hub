@@ -7,7 +7,7 @@
   "publisher": "readysteadyscience",
   "repository": {
     "type": "git",
-    "url": "https://github.com/sunbinhe-ai/l-hub"
+    "url": "https://github.com/readysteadyscience/l-hub"
   },
   "engines": {
     "vscode": "^1.85.0"
