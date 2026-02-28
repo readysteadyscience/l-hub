@@ -4,7 +4,7 @@
 
 **MCP AI Bridge**
 
-*Smart multi-model routing for Antigravity & VS Code*
+*Save Claude credits — delegate routine tasks to specialist models*
 
 [![Version](https://img.shields.io/badge/version-0.0.9-blue?style=for-the-badge&logo=visualstudiocode)](https://github.com/readysteadyscience/l-hub)
 [![License](https://img.shields.io/badge/license-MIT-green?style=for-the-badge)](https://github.com/readysteadyscience/l-hub/blob/main/LICENSE)
@@ -26,11 +26,22 @@
 
 <h2 id="english">🇬🇧 English</h2>
 
-## What is L-Hub?
+## Why L-Hub?
 
-L-Hub is a **VS Code extension** that acts as an **MCP AI Bridge** between your Coordinator Model (e.g., Antigravity) and a pool of specialized AI APIs.
+**Antigravity** runs on Claude Sonnet 4.6 or Opus 4.6 — among the most powerful AI models in the world. But they are also expensive. Using a top-tier model for every task — routine code generation, translation, UI work — is wasteful.
 
-Your coordinator model dispatches each sub-task to the expert best suited for it — architecture to GLM, code to DeepSeek, UI to MiniMax, translation to Qwen — automatically, with no manual switching.
+**L-Hub solves this.** It is an MCP AI Bridge that sits inside Antigravity. When Antigravity (your coordinator) needs to delegate a sub-task, it calls L-Hub instead of doing the work itself. L-Hub then routes the request to the most appropriate — and cost-effective — specialist model:
+
+| Task type | Routed to | Why |
+|---|---|---|
+| Code generation, debugging | **DeepSeek** | Fast, accurate, fraction of the cost |
+| Architecture, complex engineering | **GLM** | High reasoning, strong at long contexts |
+| Translation, multilingual docs | **Qwen** | Optimized for language tasks |
+| UI / frontend / design | **MiniMax** | Visual & component generation specialist |
+
+The result: **Claude focuses on what it does best** — high-level planning and reasoning — while routine execution is handled by cheaper, specialized experts.
+
+> ✅ **Currently designed and tested for Antigravity.** Compatibility with Cursor, VS Code Cline, or other MCP clients is not yet verified.
 
 <div align="center">
 
@@ -38,7 +49,7 @@ Your coordinator model dispatches each sub-task to the expert best suited for it
 
 </div>
 
-**Live demo** — Antigravity dispatching tasks to multiple models via L-Hub:
+**Live demo** — Antigravity dispatching tasks via L-Hub:
 
 <div align="center">
 
@@ -52,45 +63,38 @@ Your coordinator model dispatches each sub-task to the expert best suited for it
 
 | Feature | Details |
 |---|---|
-| **Smart Routing** | Auto-selects the right model based on task type |
+| **Smart Routing** | Auto-selects the right specialist model by task type |
 | **Dashboard** | GUI to configure API keys — no JSON editing |
-| **History Console** | Logs every call: tokens, latency, model used |
-| **Zero-Config Setup** | Installs itself into Antigravity's MCP config automatically |
+| **History Console** | Logs every call: tokens used, latency, model selected |
+| **Zero-Config Setup** | Auto-registers in Antigravity's MCP config on first activation |
 
 ---
 
-## 🚀 Quick Start
+## 🚀 Quick Start (Antigravity)
 
-### Step 1 — Install the Extension
+### Step 1 — Install
 
-Install **L-Hub** from the VS Code Marketplace, or via:
+Install **L-Hub** from the VS Code Marketplace, or via command line:
 
 ```bash
 code --install-extension readysteadyscience.l-hub
 ```
 
-### Step 2 — Restart Antigravity / VS Code
+### Step 2 — Restart Antigravity
 
-L-Hub registers itself automatically in `~/.gemini/antigravity/mcp_config.json` on first activation. **No manual config needed.**
+L-Hub automatically registers itself in `~/.gemini/antigravity/mcp_config.json` on first activation. **No manual config needed.**
 
 ### Step 3 — Add Your API Keys
 
-**[⚙️ Open L-Hub Dashboard](command:l-hub.openPanel)** ← click here (works in VS Code)
+**[⚙️ Open L-Hub Dashboard](command:l-hub.openPanel)** ← click here (works inside VS Code / Antigravity)
 
-Or: Command Palette (`Cmd/Ctrl + Shift + P`) → **L-Hub: Open Dashboard** → Settings tab → Enter your API keys:
-
-| Provider | Use case |
-|---|---|
-| DeepSeek | Code generation, everyday tasks |
-| GLM (Zhipu) | Complex architecture, engineering |
-| Qwen | Translation, multilingual, docs |
-| MiniMax | UI/frontend, visual design |
+Or: Command Palette (`Cmd/Ctrl + Shift + P`) → **L-Hub: Open Dashboard** → Settings tab
 
 ### Step 4 — Done
 
-Ask your coordinator model anything. L-Hub routes it automatically.
+Ask Antigravity anything as usual. When it needs to delegate, it calls L-Hub automatically.
 
-> **✅ Verification**: When L-Hub is connected correctly, you will see `MCP Tool: l-hub / ai_list_providers` (or `ai_ask`) appear in Antigravity's tool invocation panel. This confirms L-Hub is live and routing is active.
+> **✅ Verified**: You will see `MCP Tool: l-hub / ai_ask` or `l-hub / ai_list_providers` appear in Antigravity's tool panel. That confirms L-Hub is live.
 
 ---
 
@@ -105,11 +109,22 @@ L-Hub is free and open-source by **走起智造 · Ready Steady Science**.
 
 <h2 id="chinese">🇨🇳 简体中文</h2>
 
-## L-Hub 是什么？
+## 为什么需要 L-Hub？
 
-L-Hub 是一个 **VS Code 插件**，作为 **MCP AI 桥接器**，将主控模型（如 Antigravity）与多个专业 AI API 连接起来。
+**Antigravity** 运行在 Claude Sonnet 4.6 或 Opus 4.6 之上——全球顶尖的 AI 模型，但同时也是最昂贵的。用顶级模型处理每一个任务——普通代码生成、翻译、UI 布局——是一种浪费。
 
-主控模型把任务拆分后，由 L-Hub 自动路由给最适合的专家模型——架构问题交给 GLM，代码生成交给 DeepSeek，前端设计交给 MiniMax，翻译文档交给 Qwen——全自动分配，无需手动切换。
+**L-Hub 解决了这个问题。** 它是一个内嵌在 Antigravity 中的 MCP AI 桥接器。当 Antigravity（你的主控模型）需要委派子任务时，它调用 L-Hub 来完成，而不是自己消耗昂贵的 Claude 额度。L-Hub 将请求路由给最合适、最具性价比的专家模型：
+
+| 任务类型 | 路由至 | 原因 |
+|---|---|---|
+| 代码生成、调试 | **DeepSeek** | 快速准确，成本极低 |
+| 架构设计、复杂工程 | **GLM（智谱）** | 推理能力强，擅长长上下文 |
+| 翻译、多语言文档 | **Qwen（通义）** | 语言任务专项优化 |
+| UI / 前端 / 设计 | **MiniMax** | 视觉与组件生成专家 |
+
+最终效果：**Claude 专注于它最擅长的**——高层规划与推理——日常执行任务交由更便宜的垂直专家模型处理。
+
+> ✅ **目前专为 Antigravity 设计和验证。** 与 Cursor、VS Code Cline 等其他 MCP 客户端的兼容性尚未测试。
 
 <div align="center">
 
@@ -117,7 +132,7 @@ L-Hub 是一个 **VS Code 插件**，作为 **MCP AI 桥接器**，将主控模�
 
 </div>
 
-**实际截图** — Antigravity 通过 L-Hub 并行向多个模型分发任务：
+**实际截图** — Antigravity 通过 L-Hub 分发任务：
 
 <div align="center">
 
@@ -131,14 +146,14 @@ L-Hub 是一个 **VS Code 插件**，作为 **MCP AI 桥接器**，将主控模�
 
 | 功能 | 说明 |
 |---|---|
-| **智能路由** | 根据任务类型自动选择最佳模型 |
+| **智能路由** | 根据任务类型自动选择最佳专家模型 |
 | **可视化面板** | 图形界面配置 API Key，无需编辑 JSON |
-| **调用历史** | 记录每次调用的 Token 用量、耗时、使用的模型 |
+| **调用历史** | 记录每次调用的 Token 用量、耗时、使用模型 |
 | **零配置安装** | 激活后自动写入 Antigravity 的 MCP 配置，开箱即用 |
 
 ---
 
-## 🚀 快速开始
+## 🚀 快速开始（Antigravity）
 
 ### 第一步 — 安装插件
 
@@ -148,28 +163,21 @@ L-Hub 是一个 **VS Code 插件**，作为 **MCP AI 桥接器**，将主控模�
 code --install-extension readysteadyscience.l-hub
 ```
 
-### 第二步 — 重启 Antigravity / VS Code
+### 第二步 — 重启 Antigravity
 
-L-Hub 激活时会**自动注册**到 `~/.gemini/antigravity/mcp_config.json`，**无需手动修改任何配置文件**。
+L-Hub 激活时自动注册到 `~/.gemini/antigravity/mcp_config.json`，**无需手动修改任何配置文件**。
 
 ### 第三步 — 配置 API Key
 
-**[⚙️ 一键打开 L-Hub 设置面板](command:l-hub.openPanel)** ← 点这里（在 VS Code 内直接跳转）
+**[⚙️ 一键打开 L-Hub 设置面板](command:l-hub.openPanel)** ← 点这里（在 Antigravity 内直接跳转）
 
-或：命令面板 (`Cmd/Ctrl + Shift + P`) → **L-Hub: Open Dashboard** → Settings 页 → 填入各模型的 API Key：
+或：命令面板 (`Cmd/Ctrl + Shift + P`) → **L-Hub: Open Dashboard** → Settings 页
 
-| Provider | 推荐使用场景 |
-|---|---|
-| DeepSeek | 日常代码生成、性价比优先 |
-| GLM（智谱） | 复杂架构设计、工程重构 |
-| Qwen（通义） | 翻译、多语言文档处理 |
-| MiniMax | 前端 UI、视觉设计 |
+### 第四步 — 直接使用
 
-### 第四步 — 开始使用
+照常与 Antigravity 对话。当它需要委派任务时，会自动调用 L-Hub。
 
-向主控模型提问，L-Hub 全自动路由，无需其他操作。
-
-> **✅ 验证方式**：连接成功后，在 Antigravity 的工具调用面板中可以看到 `MCP Tool: l-hub / ai_list_providers` 或 `ai_ask` 字样出现，即代表 L-Hub 已成功接入，正在正常运行。
+> **✅ 验证方式**：在 Antigravity 工具面板看到 `MCP Tool: l-hub / ai_ask` 或 `l-hub / ai_list_providers` 出现，即表示 L-Hub 已成功接入并正常运行。
 
 ---
 
