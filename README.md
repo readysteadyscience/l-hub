@@ -75,7 +75,9 @@ L-Hub registers itself automatically in `~/.gemini/antigravity/mcp_config.json` 
 
 ### Step 3 — Add Your API Keys
 
-Open the command palette (`Cmd/Ctrl + Shift + P`) → **L-Hub: Open Dashboard** → Settings tab → Enter your API keys:
+**[⚙️ Open L-Hub Dashboard](command:l-hub.openPanel)** ← click here (works in VS Code)
+
+Or: Command Palette (`Cmd/Ctrl + Shift + P`) → **L-Hub: Open Dashboard** → Settings tab → Enter your API keys:
 
 | Provider | Use case |
 |---|---|
@@ -152,7 +154,9 @@ L-Hub 激活时会**自动注册**到 `~/.gemini/antigravity/mcp_config.json`，
 
 ### 第三步 — 配置 API Key
 
-打开命令面板 (`Cmd/Ctrl + Shift + P`) → **L-Hub: Open Dashboard** → Settings 页 → 填入各模型的 API Key：
+**[⚙️ 一键打开 L-Hub 设置面板](command:l-hub.openPanel)** ← 点这里（在 VS Code 内直接跳转）
+
+或：命令面板 (`Cmd/Ctrl + Shift + P`) → **L-Hub: Open Dashboard** → Settings 页 → 填入各模型的 API Key：
 
 | Provider | 推荐使用场景 |
 |---|---|
