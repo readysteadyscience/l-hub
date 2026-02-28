@@ -1,7 +1,5 @@
 <div align="center">
 
-![L-Hub Logo](https://raw.githubusercontent.com/readysteadyscience/l-hub/main/images/logo.png)
-
 # L-Hub: The MCP AI Bridge
 **Multi-Model Collaboration & Smart Routing**
 
