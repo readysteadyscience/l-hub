@@ -87,9 +87,7 @@ L-Hub 激活时自动注册到 `~/.gemini/antigravity/mcp_config.json`，**无�
 
 ### 第三步 — 配置 API Key
 
-**[⚙️ 一键打开 L-Hub 设置面板](command:l-hub.openPanel)** ← 点这里（在 Antigravity 内直接跳转）
-
-或：命令面板 (`Cmd/Ctrl + Shift + P`) → **L-Hub: Open Dashboard** → Settings 页
+命令面板 (`Cmd/Ctrl + Shift + P`) → 输入 **L-Hub: Open Dashboard** → Settings 页填入 Key
 
 ### 第四步（可选）— 启用 Codex CLI
 
@@ -178,7 +176,7 @@ L-Hub auto-registers itself in `~/.gemini/antigravity/mcp_config.json`. **No man
 
 ### Step 3 — Add API Keys
 
-**[⚙️ Open L-Hub Dashboard](command:l-hub.openPanel)** ← click here (works inside Antigravity)
+Command Palette (`Cmd/Ctrl + Shift + P`) → type **L-Hub: Open Dashboard** → Settings tab
 
 ### Step 4 (Optional) — Enable Codex CLI
 
