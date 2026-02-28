@@ -12,6 +12,7 @@
 [![Universe](https://img.shields.io/badge/产品线-Linglan%20Realm-blueviolet?style=flat-square)](https://github.com/ReadySteadyScience)
 
 [![GitHub Stars](https://img.shields.io/github/stars/readysteadyscience/l-hub?style=flat-square&logo=github&label=%E2%AD%90%20Stars&color=yellow)](https://github.com/readysteadyscience/l-hub/stargazers)
+[![Discord](https://img.shields.io/badge/Discord-Community-5865F2?style=flat-square&logo=discord&logoColor=white)](https://discord.gg/gurEPMnn52)
 [![Feedback](https://img.shields.io/badge/%F0%9F%92%AC%20反馈-GitHub%20Issues-blue?style=flat-square&logo=github)](https://github.com/readysteadyscience/l-hub/issues/new)
 
 > **L-Hub** 是 **走起智造 · Ready Steady Science** 旗下 **Linglan Realm** 产品线中的免费开源工具。
@@ -114,7 +115,8 @@ codex login                     # 用 ChatGPT 账号登录
 L-Hub 是 **走起智造 · Ready Steady Science** 旗下 **Linglan Realm** 的免费开源工具。
 
 [![⭐ 在 GitHub 点 Star](https://img.shields.io/badge/⭐_在_GitHub_上点_Star-readysteadyscience%2Fl--hub-brightgreen?style=flat-square&logo=github)](https://github.com/readysteadyscience/l-hub/stargazers)
-[![💬 提交反馈](https://img.shields.io/badge/💬_反馈与建议-GitHub_Issues-blue?style=flat-square&logo=github)](https://github.com/readysteadyscience/l-hub/issues/new)
+[![💬 Discord 社区](https://img.shields.io/badge/Discord-加入社区-5865F2?style=flat-square&logo=discord&logoColor=white)](https://discord.gg/gurEPMnn52)
+[![📝 提交反馈](https://img.shields.io/badge/📝_反馈与建议-GitHub_Issues-blue?style=flat-square&logo=github)](https://github.com/readysteadyscience/l-hub/issues/new)
 
 ---
 
@@ -200,4 +202,5 @@ Once installed, L-Hub exposes `ai_codex_task` so Antigravity can delegate full f
 L-Hub is free and open-source by **走起智造 · Ready Steady Science**.
 
 [![⭐ Star on GitHub](https://img.shields.io/badge/⭐_Star_on_GitHub-readysteadyscience%2Fl--hub-brightgreen?style=flat-square&logo=github)](https://github.com/readysteadyscience/l-hub/stargazers)
-[![💬 Submit Feedback](https://img.shields.io/badge/💬_Feedback_%26_Issues-GitHub_Issues-blue?style=flat-square&logo=github)](https://github.com/readysteadyscience/l-hub/issues/new)
+[![💬 Discord Community](https://img.shields.io/badge/Discord-Join_Community-5865F2?style=flat-square&logo=discord&logoColor=white)](https://discord.gg/gurEPMnn52)
+[![📝 Submit Feedback](https://img.shields.io/badge/📝_Feedback_%26_Issues-GitHub_Issues-blue?style=flat-square&logo=github)](https://github.com/readysteadyscience/l-hub/issues/new)
