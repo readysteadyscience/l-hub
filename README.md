@@ -32,11 +32,19 @@ L-Hub is a **VS Code extension** that acts as an **MCP AI Bridge** between your 
 
 Your coordinator model dispatches each sub-task to the expert best suited for it — architecture to GLM, code to DeepSeek, UI to MiniMax, translation to Qwen — automatically, with no manual switching.
 
+<div align="center">
+
 ![L-Hub Architecture](https://raw.githubusercontent.com/readysteadyscience/l-hub/main/images/architecture.png)
+
+</div>
 
 **Live demo** — Antigravity dispatching tasks to multiple models via L-Hub:
 
+<div align="center">
+
 ![Antigravity in action](https://raw.githubusercontent.com/readysteadyscience/l-hub/main/images/screenshot_antigravity.png)
+
+</div>
 
 ---
 
@@ -80,6 +88,8 @@ Open the command palette (`Cmd/Ctrl + Shift + P`) → **L-Hub: Open Dashboard** 
 
 Ask your coordinator model anything. L-Hub routes it automatically.
 
+> **✅ Verification**: When L-Hub is connected correctly, you will see `MCP Tool: l-hub / ai_list_providers` (or `ai_ask`) appear in Antigravity's tool invocation panel. This confirms L-Hub is live and routing is active.
+
 ---
 
 ## 🤝 Community
@@ -99,11 +109,19 @@ L-Hub 是一个 **VS Code 插件**，作为 **MCP AI 桥接器**，将主控模�
 
 主控模型把任务拆分后，由 L-Hub 自动路由给最适合的专家模型——架构问题交给 GLM，代码生成交给 DeepSeek，前端设计交给 MiniMax，翻译文档交给 Qwen——全自动分配，无需手动切换。
 
+<div align="center">
+
 ![L-Hub 架构图](https://raw.githubusercontent.com/readysteadyscience/l-hub/main/images/architecture_zh.png)
+
+</div>
 
 **实际截图** — Antigravity 通过 L-Hub 并行向多个模型分发任务：
 
+<div align="center">
+
 ![Antigravity 实际运行](https://raw.githubusercontent.com/readysteadyscience/l-hub/main/images/screenshot_antigravity.png)
+
+</div>
 
 ---
 
@@ -143,9 +161,11 @@ L-Hub 激活时会**自动注册**到 `~/.gemini/antigravity/mcp_config.json`，
 | Qwen（通义） | 翻译、多语言文档处理 |
 | MiniMax | 前端 UI、视觉设计 |
 
-### 第四步 — 直接使用
+### 第四步 — 开始使用
 
 向主控模型提问，L-Hub 全自动路由，无需其他操作。
+
+> **✅ 验证方式**：连接成功后，在 Antigravity 的工具调用面板中可以看到 `MCP Tool: l-hub / ai_list_providers` 或 `ai_ask` 字样出现，即代表 L-Hub 已成功接入，正在正常运行。
 
 ---
 
