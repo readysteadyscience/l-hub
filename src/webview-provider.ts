@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
 import * as path from 'path';
 import { HistoryStorage } from './storage';
-import { SettingsManager, Provider } from './settings';
+import { SettingsManager } from './settings';
 
 export class DashboardPanel {
     public static currentPanel: DashboardPanel | undefined;
@@ -43,6 +43,7 @@ export class DashboardPanel {
         this._panel.webview.onDidReceiveMessage(
             async (message) => {
                 switch (message.command) {
+                    // ── Legacy key management ─────────────────────────────────
                     case 'getApiKeys': {
                         const keys = await this.settings.getAllApiKeys();
                         this._panel.webview.postMessage({ command: 'loadApiKeys', data: keys });
@@ -50,15 +51,80 @@ export class DashboardPanel {
                     }
                     case 'saveApiKey': {
                         if (message.provider && message.key !== undefined) {
-                            await this.settings.saveApiKey(message.provider as Provider, message.key);
+                            await this.settings.saveApiKey(message.provider, message.key);
                         }
                         break;
                     }
+
+                    // ── v2 Model management ───────────────────────────────────
+                    case 'getModelsV2': {
+                        const models = await this.settings.getModels();
+                        // collect per-model API keys
+                        const apiKeys: Record<string, string> = {};
+                        for (const m of models) {
+                            const k = await this.settings.getApiKey(`model.${m.id}`);
+                            if (k) { apiKeys[m.id] = k; }
+                        }
+                        this._panel.webview.postMessage({ command: 'loadModelsV2', models, apiKeys });
+                        break;
+                    }
+                    case 'addModel': {
+                        const { modelConfig, apiKey } = message;
+                        await this.settings.addModel(modelConfig);
+                        if (apiKey) {
+                            await this.settings.saveApiKey(`model.${modelConfig.id}`, apiKey);
+                        }
+                        await this._syncModelsToFile();
+                        // Re-send updated list
+                        const models = await this.settings.getModels();
+                        const apiKeys: Record<string, string> = {};
+                        for (const m of models) {
+                            const k = await this.settings.getApiKey(`model.${m.id}`);
+                            if (k) { apiKeys[m.id] = k; }
+                        }
+                        this._panel.webview.postMessage({ command: 'loadModelsV2', models, apiKeys });
+                        break;
+                    }
+                    case 'removeModel': {
+                        await this.settings.removeModel(message.id);
+                        await this._syncModelsToFile();
+                        const models = await this.settings.getModels();
+                        const apiKeys: Record<string, string> = {};
+                        for (const m of models) {
+                            const k = await this.settings.getApiKey(`model.${m.id}`);
+                            if (k) { apiKeys[m.id] = k; }
+                        }
+                        this._panel.webview.postMessage({ command: 'loadModelsV2', models, apiKeys });
+                        break;
+                    }
+                    case 'updateModel': {
+                        await this.settings.updateModel(message.id, message.patch);
+                        if (message.apiKey !== undefined) {
+                            await this.settings.saveApiKey(`model.${message.id}`, message.apiKey);
+                        }
+                        await this._syncModelsToFile();
+                        const models = await this.settings.getModels();
+                        const apiKeys: Record<string, string> = {};
+                        for (const m of models) {
+                            const k = await this.settings.getApiKey(`model.${m.id}`);
+                            if (k) { apiKeys[m.id] = k; }
+                        }
+                        this._panel.webview.postMessage({ command: 'loadModelsV2', models, apiKeys });
+                        break;
+                    }
+
+                    // ── History ───────────────────────────────────────────────
                     case 'getHistory': {
                         const page = message.page || 1;
                         const pageSize = message.pageSize || 50;
                         const data = this.storage.queryHistory(page, pageSize);
                         this._panel.webview.postMessage({ command: 'loadHistory', data });
+                        break;
+                    }
+
+                    // ── Open external URL ─────────────────────────────────────
+                    case 'openUrl': {
+                        vscode.env.openExternal(vscode.Uri.parse(message.url));
                         break;
                     }
                 }
@@ -68,14 +134,33 @@ export class DashboardPanel {
         );
     }
 
+    /** Sync full model config (with API keys) to ~/.l-hub-keys.json */
+    private async _syncModelsToFile() {
+        const fs = require('fs');
+        const os = require('os');
+        const path = require('path');
+        const keysFile = path.join(os.homedir(), '.l-hub-keys.json');
+        try {
+            const models = await this.settings.getModels();
+            const enriched = [];
+            for (const m of models) {
+                const k = await this.settings.getApiKey(`model.${m.id}`);
+                enriched.push({ ...m, apiKey: k || '' });
+            }
+            // Also keep legacy keys for backward compat
+            const legacy = await this.settings.getAllApiKeys();
+            fs.writeFileSync(keysFile, JSON.stringify({ version: 2, models: enriched, legacy }, null, 2), 'utf8');
+        } catch (e) {
+            console.error('[L-Hub] Failed to sync models to file:', e);
+        }
+    }
+
     public dispose() {
         DashboardPanel.currentPanel = undefined;
         this._panel.dispose();
         while (this._disposables.length) {
             const x = this._disposables.pop();
-            if (x) {
-                x.dispose();
-            }
+            if (x) { x.dispose(); }
         }
     }
 

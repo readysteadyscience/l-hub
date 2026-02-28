@@ -7,7 +7,8 @@ const extensionConfig = {
     target: 'node',
     entry: {
         extension: './src/extension.ts',
-        cli: './src/cli.ts'
+        cli: './src/cli.ts',
+        'mcp-server': './src/mcp-server.ts'
     },
     output: {
         path: path.resolve(__dirname, 'dist'),
@@ -28,7 +29,7 @@ const extensionConfig = {
         ]
     },
     plugins: [
-        new webpack.BannerPlugin({ banner: "#!/usr/bin/env node", raw: true, entryOnly: true, test: /cli\.js/ })
+        new webpack.BannerPlugin({ banner: "#!/usr/bin/env node", raw: true, entryOnly: true, test: /cli\.js|mcp-server\.js/ })
     ],
     externals: {
         vscode: 'commonjs vscode',

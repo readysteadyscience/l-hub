@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { vscode } from '../vscode-api';
 import { VSCodeTag, VSCodeDivider } from '@vscode/webview-ui-toolkit/react';
+import { Lang } from './Dashboard';
 
 interface RequestRecord {
     id: string;
@@ -17,9 +18,14 @@ interface RequestRecord {
     model?: string;
 }
 
-const HistoryConsole: React.FC = () => {
+const HistoryConsole: React.FC<{ lang: Lang }> = ({ lang }) => {
     const [records, setRecords] = useState<RequestRecord[]>([]);
     const [selectedId, setSelectedId] = useState<string | null>(null);
+
+    const T = {
+        en: { title: '📡 Request History', clear: 'Clear', empty: 'No requests proxied yet.', model: 'Model', tokens: 'Tokens', duration: 'Duration', status: 'Status', request: 'Request', response: 'Response' },
+        zh: { title: '📡 调用历史', clear: '清空', empty: '暂无代理请求记录。', model: '模型', tokens: 'Token', duration: '耗时', status: '状态', request: '请求内容', response: '响应内容' },
+    }[lang];
 
     useEffect(() => {
         const handleMessage = (event: MessageEvent) => {
