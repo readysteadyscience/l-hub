@@ -4,3 +4,8 @@ dist/
 .DS_Store
 *.sqlite3
 *.log
+
+# Internal docs - not for public repo
+HANDOVER.md
+docs/HOW_TO_FEED_LINGLAN.md
+.vscode/
