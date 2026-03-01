@@ -127,6 +127,27 @@ export class DashboardPanel {
                         vscode.env.openExternal(vscode.Uri.parse(message.url));
                         break;
                     }
+                    // ── Codex CLI status ──────────────────────────────────────
+                    case 'getCodexStatus': {
+                        const { spawnSync } = require('child_process');
+                        const ver = spawnSync('codex', ['--version'], { encoding: 'utf8', timeout: 5000 });
+                        if (ver.error) {
+                            this._panel.webview.postMessage({ command: 'codexStatus', installed: false, loggedIn: false });
+                            break;
+                        }
+                        // Try a lightweight env check to see if login token exists
+                        const envCheck = spawnSync('codex', ['--help'], { encoding: 'utf8', timeout: 5000 });
+                        const version = (ver.stdout || '').trim();
+                        this._panel.webview.postMessage({ command: 'codexStatus', installed: true, version, loggedIn: envCheck.status === 0 });
+                        break;
+                    }
+                    // ── Open terminal with command ────────────────────────────
+                    case 'openTerminalWithCmd': {
+                        const terminal = vscode.window.createTerminal('L-Hub Setup');
+                        terminal.show();
+                        terminal.sendText(message.cmd);
+                        break;
+                    }
                 }
             },
             null,

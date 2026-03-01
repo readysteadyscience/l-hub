@@ -902,6 +902,7 @@ const ConfigPanel: React.FC<ConfigPanelProps> = ({ lang }) => {
     const [showPricing, setShowPricing] = useState(false);
     const [showRouting, setShowRouting] = useState(false);
     const [testResults, setTestResults] = useState<Record<string, { ok: boolean; msg: string }>>({});
+    const [codexStatus, setCodexStatus] = useState<{ installed: boolean; version?: string; loggedIn?: boolean } | null>(null);
 
     useEffect(() => {
         const handler = (ev: MessageEvent) => {
@@ -945,9 +946,13 @@ const ConfigPanel: React.FC<ConfigPanelProps> = ({ lang }) => {
                     });
                 }, 2000);
             }
+            if (ev.data.command === 'codexStatus') {
+                setCodexStatus({ installed: ev.data.installed, version: ev.data.version, loggedIn: ev.data.loggedIn });
+            }
         };
         window.addEventListener('message', handler);
         vscode.postMessage({ command: 'getModelsV2' });
+        vscode.postMessage({ command: 'getCodexStatus' });
         return () => window.removeEventListener('message', handler);
     }, []);
 
@@ -1013,6 +1018,45 @@ const ConfigPanel: React.FC<ConfigPanelProps> = ({ lang }) => {
                     />
                 ))
             )}
+
+            {/* Codex CLI (ChatGPT OAuth) Card */}
+            <div style={{ ...s.card, marginTop: '18px', borderLeft: `3px solid ${codexStatus?.installed ? '#10A37F' : '#E8740C'}` }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div>
+                        <span style={{ fontWeight: 600, fontSize: '13px' }}>
+                            {codexStatus === null ? '🔍 检测 Codex CLI…' : codexStatus.installed ? '✅ Codex CLI 已安装' : '⚠️ Codex CLI 未安装'}
+                        </span>
+                        {codexStatus?.version && <span style={{ marginLeft: '8px', opacity: 0.6, fontSize: '11px' }}>v{codexStatus.version}</span>}
+                        <div style={{ fontSize: '11px', opacity: 0.7, marginTop: '2px' }}>
+                            {codexStatus?.installed
+                                ? 'ChatGPT 账号已接入 · ai_codex_task 工具可用 · 无需 API Key'
+                                : '安装后可用 ChatGPT Plus 账号直接调用，无需 API Key'}
+                        </div>
+                    </div>
+                    <div style={{ display: 'flex', gap: '6px', flexShrink: 0 }}>
+                        {!codexStatus?.installed && (
+                            <button
+                                style={{ ...s.btnPrimary, fontSize: '11px', padding: '4px 10px' }}
+                                onClick={() => vscode.postMessage({ command: 'openTerminalWithCmd', cmd: 'npm install -g @openai/codex && codex login' })}
+                            >
+                                安装并登录
+                            </button>
+                        )}
+                        {codexStatus?.installed && (
+                            <button
+                                style={{ ...s.btnSecondary, fontSize: '11px', padding: '4px 10px' }}
+                                onClick={() => vscode.postMessage({ command: 'openTerminalWithCmd', cmd: 'codex login' })}
+                            >
+                                重新登录
+                            </button>
+                        )}
+                        <button style={{ ...s.btnSecondary, fontSize: '11px', padding: '4px 10px' }}
+                            onClick={() => vscode.postMessage({ command: 'openUrl', url: 'https://github.com/openai/codex' })}>
+                            文档
+                        </button>
+                    </div>
+                </div>
+            </div>
 
             {/* Pricing Reference Table */}
             <div style={{ marginTop: '18px' }}>
