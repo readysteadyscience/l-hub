@@ -267,6 +267,19 @@ const RELAY_PRESETS = [
     { name: '硅基流动 SiliconFlow', url: 'https://api.siliconflow.cn/v1', site: 'https://cloud.siliconflow.cn', note: '国内正规大平台，获投资' },
 ];
 
+/** Provider brand colors for visual distinction */
+const PROVIDER_COLORS: Record<string, string> = {
+    'DeepSeek': '#4A90D9',
+    'GLM (智谱)': '#6B5CE7',
+    'Qwen (通义)': '#E8740C',
+    'MiniMax': '#D94B86',
+    'Kimi K2': '#2AB5A0',
+    'OpenAI': '#10A37F',
+    'Anthropic (Claude)': '#CC785C',
+    'Google (Gemini)': '#4285F4',
+    'Mistral': '#FF6F00',
+};
+
 /** All models with known pricing, for the reference table */
 const PRICE_TABLE = Object.entries(MODEL_DEFS)
     .filter(([, d]) => d.pricing)
@@ -375,7 +388,7 @@ const ModelCard: React.FC<{
                     {/* Name + provider + price */}
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
                         <span style={{ fontWeight: 600, fontSize: '13px' }}>{model.label}</span>
-                        <span style={{ fontSize: '11px', opacity: 0.65 }}>{def?.group || model.modelId}</span>
+                        <span style={{ fontSize: '11px', color: PROVIDER_COLORS[def?.group || ''] || 'var(--vscode-descriptionForeground)', fontWeight: 500 }}>{def?.group || model.modelId}</span>
                         {def?.pricing && (
                             <span style={{ fontSize: '10px', color: 'var(--vscode-descriptionForeground)', background: 'var(--vscode-input-background)', border: '1px solid var(--vscode-input-border)', borderRadius: '3px', padding: '0 5px' }}>
                                 ${def.pricing.input.toFixed(2)} / ${def.pricing.output.toFixed(2)} per M
@@ -868,7 +881,7 @@ const ConfigPanel: React.FC<ConfigPanelProps> = ({ lang }) => {
                                         borderTop: '1px solid var(--vscode-input-border)',
                                     }}>
                                         <td style={{ padding: '5px 10px' }}>{row.label}</td>
-                                        <td style={{ padding: '5px 10px', opacity: 0.7 }}>{row.group}</td>
+                                        <td style={{ padding: '5px 10px', color: PROVIDER_COLORS[row.group] || 'inherit', fontWeight: 500 }}>{row.group}</td>
                                         <td style={{ padding: '5px 10px', textAlign: 'right', fontFamily: 'monospace' }}>
                                             ${row.pricing.input.toFixed(2)}
                                         </td>
@@ -925,41 +938,36 @@ const ConfigPanel: React.FC<ConfigPanelProps> = ({ lang }) => {
                                 </tr>
                             </thead>
                             <tbody>
-                                {(lang === 'zh' ? [
-                                    ['代码生成', 'DeepSeek-V3 / Qwen-Coder-Plus', '性价比最高，SWE-bench 顶尖；Qwen 代码专项同级'],
-                                    ['调试 / 重构', 'Claude Opus 4.6 / GPT-5.3 Codex', '全球编程最强，深度代码审查；Terminal-Bench #1'],
-                                    ['架构设计', 'Claude Opus 4.6 / GLM-5', 'Agentic 企业级设计；GLM 工程能力接近 Opus'],
-                                    ['文档 / 注释', 'Claude Sonnet 4.6 / Qwen-Max', '内容创作均衡首选；Qwen 中文文档最强'],
-                                    ['翻译', 'Qwen-Max / Mistral Large 3', '中文翻译全球第一；Mistral 欧洲多语言优秀'],
-                                    ['UI / 前端', 'Gemini 3.1 Flash / MiniMax-M2.5', 'Google 多模态视觉；MiniMax 100 tok/s 高速生成'],
-                                    ['图像理解', 'Gemini 3.1 Pro / GPT-5.1', '百万 token 多模态；OpenAI 视觉成熟稳定'],
-                                    ['长文本分析', 'Gemini 3.1 Pro / Kimi K2.5', '百万 token 上下文；256K MoE 超长文档处理'],
-                                    ['数学 / 推理', 'DeepSeek-R1 / Gemini 3.1 Pro', 'R1 思维链推理顶尖；ARC-AGI-2 全球第一'],
-                                    ['工具调用', 'Qwen-Max / GPT-5.1', 'Tau2-bench 全球第一；OpenAI Function Calling 标准'],
-                                    ['创意写作', 'Claude Sonnet 4.6 / Qwen-Max', '创意与表达力最强；中文写作首选'],
-                                    ['Agentic 任务', 'MiniMax-M2.5 / Claude Opus 4.6', 'SWE-bench 80.2%；企业级 Agentic 标杆'],
-                                    ['终端 / DevOps', 'GPT-5.3 Codex / Codex CLI', 'Terminal-Bench #1；CLI 直接读写本地文件'],
-                                ] : [
-                                    ['Code Generation', 'DeepSeek-V3 / Qwen-Coder-Plus', 'Best cost-efficiency, SWE-bench top; Qwen code specialist'],
-                                    ['Debug & Refactor', 'Claude Opus 4.6 / GPT-5.3 Codex', 'Best coding globally; Terminal-Bench #1'],
-                                    ['Architecture', 'Claude Opus 4.6 / GLM-5', 'Enterprise Agentic design; GLM near Opus level'],
-                                    ['Documentation', 'Claude Sonnet 4.6 / Qwen-Max', 'Balanced content creation; Qwen best for Chinese docs'],
-                                    ['Translation', 'Qwen-Max / Mistral Large 3', 'Best Chinese translation globally; Mistral EU multilingual'],
-                                    ['UI & Frontend', 'Gemini 3.1 Flash / MiniMax-M2.5', 'Google multimodal vision; MiniMax 100 tok/s fast gen'],
-                                    ['Vision', 'Gemini 3.1 Pro / GPT-5.1', 'Million token multimodal; OpenAI mature vision'],
-                                    ['Long Context', 'Gemini 3.1 Pro / Kimi K2.5', 'Million token context; 256K MoE ultra-long docs'],
-                                    ['Math & Reasoning', 'DeepSeek-R1 / Gemini 3.1 Pro', 'R1 chain-of-thought top; ARC-AGI-2 global #1'],
-                                    ['Tool Calling', 'Qwen-Max / GPT-5.1', 'Tau2-bench global #1; OpenAI Function Calling standard'],
-                                    ['Creative Writing', 'Claude Sonnet 4.6 / Qwen-Max', 'Best creativity & expression; Chinese writing first choice'],
-                                    ['Agentic Tasks', 'MiniMax-M2.5 / Claude Opus 4.6', 'SWE-bench 80.2%; Enterprise Agentic benchmark'],
-                                    ['Terminal / DevOps', 'GPT-5.3 Codex / Codex CLI', 'Terminal-Bench #1; CLI reads/writes local files'],
-                                ]).map(([task, model, reason], i) => (
+                                {([
+                                    [lang === 'zh' ? '代码生成' : 'Code Gen', [['DeepSeek', 'V3'], ['Qwen (通义)', 'Coder-Plus']], lang === 'zh' ? '性价比最高；代码专项同级' : 'Best cost-efficiency; code specialist'],
+                                    [lang === 'zh' ? '调试 / 重构' : 'Debug', [['Anthropic (Claude)', 'Opus 4.6'], ['OpenAI', 'GPT-5.3 Codex']], lang === 'zh' ? '全球编程最强；Terminal-Bench #1' : 'Best coding; Terminal-Bench #1'],
+                                    [lang === 'zh' ? '架构设计' : 'Architecture', [['Anthropic (Claude)', 'Opus 4.6'], ['GLM (智谱)', 'GLM-5']], lang === 'zh' ? '企业级 Agentic；工程接近 Opus' : 'Enterprise Agentic; near Opus'],
+                                    [lang === 'zh' ? '文档' : 'Docs', [['Anthropic (Claude)', 'Sonnet 4.6'], ['Qwen (通义)', 'Max']], lang === 'zh' ? '均衡首选；中文文档最强' : 'Balanced; best Chinese docs'],
+                                    [lang === 'zh' ? '翻译' : 'Translation', [['Qwen (通义)', 'Max'], ['Mistral', 'Large 3']], lang === 'zh' ? '中文第一；欧洲多语言' : 'Chinese #1; EU multilingual'],
+                                    [lang === 'zh' ? 'UI / 前端' : 'UI & Frontend', [['Google (Gemini)', '3.1 Flash'], ['MiniMax', 'M2.5']], lang === 'zh' ? '多模态视觉；100 tok/s' : 'Multimodal; 100 tok/s'],
+                                    [lang === 'zh' ? '图像理解' : 'Vision', [['Google (Gemini)', '3.1 Pro'], ['OpenAI', 'GPT-5.1']], lang === 'zh' ? '百万 token 多模态' : 'Million token multimodal'],
+                                    [lang === 'zh' ? '长文本' : 'Long Context', [['Google (Gemini)', '3.1 Pro'], ['Kimi K2', 'K2.5']], lang === 'zh' ? '百万上下文；256K MoE' : 'Million ctx; 256K MoE'],
+                                    [lang === 'zh' ? '推理' : 'Reasoning', [['DeepSeek', 'R1'], ['Google (Gemini)', '3.1 Pro']], lang === 'zh' ? '思维链顶尖；ARC-AGI-2 #1' : 'CoT top; ARC-AGI-2 #1'],
+                                    [lang === 'zh' ? '工具调用' : 'Tool Calling', [['Qwen (通义)', 'Max'], ['OpenAI', 'GPT-5.1']], lang === 'zh' ? 'Tau2-bench #1' : 'Tau2-bench #1'],
+                                    [lang === 'zh' ? 'Agentic' : 'Agentic', [['MiniMax', 'M2.5'], ['Anthropic (Claude)', 'Opus 4.6']], lang === 'zh' ? 'SWE-bench 80.2%' : 'SWE-bench 80.2%'],
+                                    [lang === 'zh' ? '终端 / DevOps' : 'Terminal', [['OpenAI', 'GPT-5.3 Codex'], ['OpenAI', 'Codex CLI']], lang === 'zh' ? 'Terminal-Bench #1' : 'Terminal-Bench #1'],
+                                ] as [string, [string, string][], string][]).map(([task, models, reason], i) => (
                                     <tr key={task} style={{
                                         background: i % 2 === 0 ? 'transparent' : 'var(--vscode-editor-inactiveSelectionBackground)',
                                         borderTop: '1px solid var(--vscode-input-border)',
                                     }}>
                                         <td style={{ padding: '5px 10px', whiteSpace: 'nowrap', fontWeight: 500 }}>{task}</td>
-                                        <td style={{ padding: '5px 10px', fontSize: '11px' }}>{model}</td>
+                                        <td style={{ padding: '5px 10px', fontSize: '11px' }}>
+                                            {models.map(([prov, name], j) => (
+                                                <span key={j}>
+                                                    {j > 0 && <span style={{ opacity: 0.4, margin: '0 4px' }}>/</span>}
+                                                    <span style={{
+                                                        color: PROVIDER_COLORS[prov] || 'inherit',
+                                                        fontWeight: 600,
+                                                    }}>{name}</span>
+                                                </span>
+                                            ))}
+                                        </td>
                                         <td style={{ padding: '5px 10px', fontSize: '11px', opacity: 0.8 }}>{reason}</td>
                                     </tr>
                                 ))}
