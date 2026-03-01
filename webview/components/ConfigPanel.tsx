@@ -383,6 +383,7 @@ const ModelCard: React.FC<{
     const def = MODEL_DEFS[model.modelId];
     const [testState, setTestState] = React.useState<'idle' | 'testing' | 'ok' | 'fail'>('idle');
     const [testMsg, setTestMsg] = React.useState('');
+    const [confirmDelete, setConfirmDelete] = React.useState(false);
 
     const handleTest = async () => {
         if (!apiKey) { setTestState('fail'); setTestMsg(lang === 'zh' ? '未配置 API Key' : 'API Key not set'); return; }
@@ -456,12 +457,30 @@ const ModelCard: React.FC<{
                     >
                         {lang === 'zh' ? '编辑' : 'Edit'}
                     </button>
-                    <button
-                        style={{ ...s.btnSecondary, padding: '3px 10px', fontSize: '11px', color: 'var(--vscode-errorForeground)' }}
-                        onClick={() => { if (window.confirm(`删除 ${model.label}？`)) { onRemove(model.id); } }}
-                    >
-                        {lang === 'zh' ? '删除' : 'Delete'}
-                    </button>
+                    {!confirmDelete ? (
+                        <button
+                            style={{ ...s.btnSecondary, padding: '3px 10px', fontSize: '11px', color: 'var(--vscode-errorForeground)' }}
+                            onClick={() => setConfirmDelete(true)}
+                        >
+                            {lang === 'zh' ? '删除' : 'Delete'}
+                        </button>
+                    ) : (
+                        <span style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
+                            <span style={{ fontSize: '10px', color: 'var(--vscode-errorForeground)' }}>{lang === 'zh' ? '确认?' : 'Sure?'}</span>
+                            <button
+                                style={{ ...s.btnSecondary, padding: '2px 8px', fontSize: '11px', background: 'var(--vscode-errorForeground)', color: '#fff', border: 'none' }}
+                                onClick={() => { setConfirmDelete(false); onRemove(model.id); }}
+                            >
+                                {lang === 'zh' ? '确认删除' : 'Yes'}
+                            </button>
+                            <button
+                                style={{ ...s.btnSecondary, padding: '2px 8px', fontSize: '11px' }}
+                                onClick={() => setConfirmDelete(false)}
+                            >
+                                {lang === 'zh' ? '取消' : 'No'}
+                            </button>
+                        </span>
+                    )}
                 </div>
             </div>
             {/* Footer: URL + key status + test */}
