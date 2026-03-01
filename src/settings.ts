@@ -54,15 +54,22 @@ export class SettingsManager {
         if (!raw) { return this.getDefaultModels(); }
         try {
             const models = JSON.parse(raw) as ModelConfig[];
-            // ── Auto-migrate stale base URLs ──────────────────────────────────
+            // ── Auto-migrate stale base URLs & model IDs ──────────────────────
             const URL_MIGRATIONS: [string, string][] = [
                 ['https://api.minimaxi.com/v1', 'https://api.minimax.io/v1'],
                 ['https://api.minimax.chat/v1', 'https://api.minimax.io/v1'],
+            ];
+            const MODEL_ID_MIGRATIONS: [string, string][] = [
+                ['minimax-text-2.5', 'MiniMax-M2.5'],
+                ['minimax-text-01', 'MiniMax-M2.5'],
             ];
             let dirty = false;
             for (const m of models) {
                 for (const [from, to] of URL_MIGRATIONS) {
                     if (m.baseUrl === from) { m.baseUrl = to; dirty = true; }
+                }
+                for (const [from, to] of MODEL_ID_MIGRATIONS) {
+                    if (m.modelId === from) { m.modelId = to; dirty = true; }
                 }
             }
             if (dirty) { await this.saveModels(models); }
