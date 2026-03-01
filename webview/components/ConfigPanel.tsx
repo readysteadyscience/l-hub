@@ -37,321 +37,231 @@ interface ModelDef {
     group: string;
     baseUrl: string;
     defaultTasks: string[];
-    note: string;          // short description shown in modal
-    relay?: boolean;       // true = user must supply a relay/proxy URL
+    note: string;
+    relay?: boolean;
+    /** OpenRouter price as of 2026-03, USD per 1M tokens */
+    pricing?: { input: number; output: number };
 }
 
 const MODEL_DEFS: Record<string, ModelDef> = {
-    // ── DeepSeek ─────────────────────────────────────────────────────────────
-    // https://platform.deepseek.com/api-docs/
+    // ─── DeepSeek ─────────────────────────────────────────────────────────────
     'deepseek-chat': {
         label: 'DeepSeek-V3 (推荐)',
         group: 'DeepSeek',
         baseUrl: 'https://api.deepseek.com/v1',
         defaultTasks: ['code_gen', 'code_review', 'math_reasoning'],
-        note: '最新 V3.2（2025-12）。综合能力强，性价比顶尖，推荐首选',
+        note: '最新 V3.2（2025-12）综合能力强，性价比最高',
+        pricing: { input: 0.32, output: 0.89 },
     },
     'deepseek-reasoner': {
         label: 'DeepSeek-R1 (推理)',
         group: 'DeepSeek',
         baseUrl: 'https://api.deepseek.com/v1',
         defaultTasks: ['math_reasoning', 'architecture', 'code_review'],
-        note: '专为数学推理与复杂问题设计，思维链深度强',
+        note: 'R1 深度推理，思维链分析、数学、规划',
+        pricing: { input: 0.70, output: 2.50 },
     },
-    'deepseek-v3-0324': {
-        label: 'DeepSeek-V3-0324',
-        group: 'DeepSeek',
-        baseUrl: 'https://api.deepseek.com/v1',
-        defaultTasks: ['code_gen', 'tool_calling'],
-        note: 'RL 强化版（2025-03），工具调用与推理能力增强',
-    },
-    // ── GLM (智谱) ────────────────────────────────────────────────────────────
-    // https://open.bigmodel.cn/api/paas/v4
-    'glm-4-plus': {
-        label: 'GLM-4-Plus (推荐)',
+    // ─── GLM (智谱) ────────────────────────────────────────────────────────────
+    'glm-5': {
+        label: 'GLM-5 (推荐)',
         group: 'GLM (智谱)',
         baseUrl: 'https://open.bigmodel.cn/api/paas/v4',
-        defaultTasks: ['architecture', 'agentic', 'tool_calling', 'long_context'],
-        note: '智谱旗舰，工具调用与 Agentic 实战能力领先',
+        defaultTasks: ['architecture', 'agentic', 'tool_calling', 'code_gen'],
+        note: '最新旗舰（2026-02），编程与 Agentic 能力接近 Claude Opus',
+        pricing: { input: 1.50, output: 6.00 },
     },
-    'glm-4-flash': {
-        label: 'GLM-4-Flash (免费)',
-        group: 'GLM (智谱)',
-        baseUrl: 'https://open.bigmodel.cn/api/paas/v4',
-        defaultTasks: ['code_gen', 'translation'],
-        note: '免费额度大，速度极快，轻量日常任务首选',
-    },
-    'glm-4-airx': {
-        label: 'GLM-4-AirX',
-        group: 'GLM (智谱)',
-        baseUrl: 'https://open.bigmodel.cn/api/paas/v4',
-        defaultTasks: ['code_gen', 'documentation'],
-        note: '高速轻量版，适合高频调用场景',
-    },
-    // ── Qwen (通义) ───────────────────────────────────────────────────────────
-    // https://help.aliyun.com/zh/model-studio/getting-started/models
+    // ─── Qwen (通义) ──────────────────────────────────────────────────────────
     'qwen-max': {
         label: 'Qwen-Max (推荐)',
         group: 'Qwen (通义)',
         baseUrl: 'https://dashscope.aliyuncs.com/compatible-mode/v1',
         defaultTasks: ['translation', 'documentation', 'tool_calling', 'code_gen'],
-        note: '通义旗舰，中文理解最强，翻译与工具调用首选',
-    },
-    'qwen-plus': {
-        label: 'Qwen-Plus',
-        group: 'Qwen (通义)',
-        baseUrl: 'https://dashscope.aliyuncs.com/compatible-mode/v1',
-        defaultTasks: ['translation', 'code_gen'],
-        note: '均衡性价比，中文代码两用',
+        note: '通义最新旗舰（Qwen3.5），中文理解与翻译最强',
+        pricing: { input: 0.50, output: 4.00 },
     },
     'qwen-coder-plus': {
         label: 'Qwen-Coder-Plus',
         group: 'Qwen (通义)',
         baseUrl: 'https://dashscope.aliyuncs.com/compatible-mode/v1',
         defaultTasks: ['code_gen', 'code_review', 'agentic'],
-        note: '代码专项旗舰，工具调用与 Agentic 编程',
+        note: '代码专项旗舰，Agentic 编程与工具调用',
+        pricing: { input: 0.25, output: 2.00 },
     },
-    'qwen-turbo': {
-        label: 'Qwen-Turbo',
-        group: 'Qwen (通义)',
-        baseUrl: 'https://dashscope.aliyuncs.com/compatible-mode/v1',
-        defaultTasks: ['code_gen', 'documentation'],
-        note: '最快最便宜，高频轻量任务',
-    },
-    // ── MiniMax ───────────────────────────────────────────────────────────────
-    // https://platform.minimaxi.com/document/Models
+    // ─── MiniMax ──────────────────────────────────────────────────────────────
     'MiniMax-M2.5': {
-        label: 'MiniMax-M2.5 (最新)',
+        label: 'MiniMax-M2.5 (推荐)',
         group: 'MiniMax',
         baseUrl: 'https://api.minimax.chat/v1',
-        defaultTasks: ['agentic', 'code_gen', 'tool_calling'],
+        defaultTasks: ['agentic', 'code_gen', 'tool_calling', 'long_context'],
         note: '最新旗舰（2025-12），SWE-bench 80.2%，Agentic 顶尖',
+        pricing: { input: 0.40, output: 1.20 },
     },
     'MiniMax-M2.5-highspeed': {
-        label: 'MiniMax-M2.5-highspeed',
+        label: 'MiniMax-M2.5 HighSpeed',
         group: 'MiniMax',
         baseUrl: 'https://api.minimax.chat/v1',
-        defaultTasks: ['code_gen', 'long_context'],
-        note: 'M2.5 高速版，响应更快',
-    },
-    'MiniMax-Text-01': {
-        label: 'MiniMax-Text-01',
-        group: 'MiniMax',
-        baseUrl: 'https://api.minimax.chat/v1',
-        defaultTasks: ['long_context', 'creative', 'documentation'],
-        note: '4M token 超长上下文，整个代码库一次输入（2025-01）',
-    },
-    // ── Moonshot (Kimi) ───────────────────────────────────────────────────────
-    // https://platform.moonshot.cn/docs/api/
-    'moonshot-v1-auto': {
-        label: 'Kimi Auto (推荐)',
-        group: 'Moonshot (Kimi)',
-        baseUrl: 'https://api.moonshot.cn/v1',
-        defaultTasks: ['long_context', 'documentation', 'code_review'],
-        note: '自动选最优上下文（8K/32K/128K），按需计费，推荐',
-    },
-    'moonshot-v1-128k': {
-        label: 'Kimi 128K',
-        group: 'Moonshot (Kimi)',
-        baseUrl: 'https://api.moonshot.cn/v1',
-        defaultTasks: ['long_context', 'translation'],
-        note: '固定 128K 上下文，超长文档分析',
-    },
-    'moonshot-v1-32k': {
-        label: 'Kimi 32K',
-        group: 'Moonshot (Kimi)',
-        baseUrl: 'https://api.moonshot.cn/v1',
         defaultTasks: ['code_gen', 'documentation'],
-        note: '32K 上下文，速度与长度均衡',
+        note: 'M2.5 高速版，响应更快，适合高频调用',
+        pricing: { input: 0.40, output: 1.20 },
     },
-    // Kimi K2 / K2.5 — 独立 API 端点
+    // ─── Kimi K2 ──────────────────────────────────────────────────────────────
     'kimi-k2-instruct': {
-        label: 'Kimi K2 (推荐)',
+        label: 'Kimi K2.5 (推荐)',
         group: 'Kimi K2',
         baseUrl: 'https://api.moonshot.cn/v1',
         defaultTasks: ['agentic', 'code_gen', 'tool_calling', 'long_context'],
-        note: '1T 参数 MoE，256K 上下文，Agentic 任务顶尖（2025-07）',
+        note: '最新 K2.5（2026-01），1T MoE，256K 上下文，Agentic 顶尖',
+        pricing: { input: 1.20, output: 4.80 },
     },
-    'kimi-k2-thinking': {
-        label: 'Kimi K2 Thinking',
-        group: 'Kimi K2',
-        baseUrl: 'https://api.moonshot.cn/v1',
-        defaultTasks: ['math_reasoning', 'architecture', 'code_review'],
-        note: '深度推理版，多步推理与工具调用（2025-11）',
-    },
-    // ── OpenAI ────────────────────────────────────────────────────────────────
-    // https://platform.openai.com/docs/models
-    'gpt-4.1': {
-        label: 'GPT-4.1 (推荐)',
+    // ─── OpenAI ───────────────────────────────────────────────────────────────
+    'gpt-5.1': {
+        label: 'GPT-5.1 (推荐)',
         group: 'OpenAI',
         baseUrl: 'https://api.openai.com/v1',
-        defaultTasks: ['code_gen', 'vision', 'tool_calling', 'architecture'],
-        note: '最新旗舰（2025-04），复杂文本分析与图像理解，官方直连',
+        defaultTasks: ['code_gen', 'vision', 'architecture', 'long_context'],
+        note: '最新旗舰，超长上下文，复杂推理与多模态，官方直连',
+        pricing: { input: 1.25, output: 10.00 },
     },
-    'gpt-4o': {
-        label: 'GPT-4o',
+    'gpt-5.3-codex': {
+        label: 'GPT-5.3 Codex (编程)',
         group: 'OpenAI',
         baseUrl: 'https://api.openai.com/v1',
-        defaultTasks: ['vision', 'tool_calling', 'code_gen'],
-        note: '多模态旗舰，Function Calling 最成熟，官方直连',
+        defaultTasks: ['code_gen', 'code_review', 'agentic', 'tool_calling'],
+        note: 'Terminal-Bench #1，Agentic 编程与 DevOps 顶尖，官方直连',
+        pricing: { input: 1.75, output: 14.00 },
     },
-    'gpt-4o-mini': {
-        label: 'GPT-4o Mini',
-        group: 'OpenAI',
-        baseUrl: 'https://api.openai.com/v1',
-        defaultTasks: ['code_gen', 'tool_calling', 'documentation'],
-        note: '低成本高性能，高频日常任务，官方直连',
-    },
-    'o3': {
-        label: 'o3 (推理)',
-        group: 'OpenAI',
-        baseUrl: 'https://api.openai.com/v1',
-        defaultTasks: ['math_reasoning', 'architecture', 'code_review'],
-        note: '顶级推理能力，数学 / 科学 / 复杂逻辑',
-    },
-    'o4-mini': {
-        label: 'o4-mini (推理)',
-        group: 'OpenAI',
-        baseUrl: 'https://api.openai.com/v1',
-        defaultTasks: ['math_reasoning', 'code_gen'],
-        note: '推理快且便宜，是 o3 的高性价比替代',
-    },
-    // ── Anthropic / Claude ────────────────────────────────────────────────────
-    // https://docs.anthropic.com/en/docs/about-claude/models
-    'claude-opus-4-5': {
-        label: 'Claude Opus 4 (推荐)',
+    // ─── Anthropic (Claude) ───────────────────────────────────────────────────
+    'claude-opus-4-6': {
+        label: 'Claude Opus 4.6 (推荐)',
         group: 'Anthropic (Claude)',
         baseUrl: 'https://api.anthropic.com/v1',
-        defaultTasks: ['architecture', 'long_context', 'agentic', 'code_review'],
-        note: '编程最强，SWE-bench 72.5%，企业级 Agent，官方直连',
+        defaultTasks: ['architecture', 'agentic', 'code_review', 'long_context'],
+        note: '最新旗舰（2026-02），全球编程最强，企业级 Agentic，官方直连',
+        pricing: { input: 15.00, output: 75.00 },
     },
-    'claude-sonnet-4-5': {
-        label: 'Claude Sonnet 4',
+    'claude-sonnet-4-6': {
+        label: 'Claude Sonnet 4.6',
         group: 'Anthropic (Claude)',
         baseUrl: 'https://api.anthropic.com/v1',
         defaultTasks: ['code_gen', 'creative', 'architecture', 'documentation'],
-        note: '性能与成本最佳平衡，通用主力首选，官方直连',
+        note: '最新（2026-02），性能与成本最佳平衡，通用主力，官方直连',
+        pricing: { input: 3.00, output: 15.00 },
     },
-    'claude-haiku-4-5': {
-        label: 'Claude Haiku 4.5',
+    'claude-opus-4-5': {
+        label: 'Claude Opus 4.5',
         group: 'Anthropic (Claude)',
         baseUrl: 'https://api.anthropic.com/v1',
-        defaultTasks: ['code_gen', 'documentation', 'translation'],
-        note: 'Claude 系列最快最省，高频日常任务',
+        defaultTasks: ['code_review', 'architecture', 'agentic'],
+        note: 'SWE-bench 72.5% 编程顶尖（2025-05），官方直连',
+        pricing: { input: 15.00, output: 75.00 },
     },
-    'claude-3-7-sonnet-20250219': {
-        label: 'Claude 3.7 Sonnet',
+    'claude-sonnet-4-5': {
+        label: 'Claude Sonnet 4.5',
         group: 'Anthropic (Claude)',
         baseUrl: 'https://api.anthropic.com/v1',
-        defaultTasks: ['code_gen', 'math_reasoning'],
-        note: '混合推理，支持扩展思考链（2025-02）',
+        defaultTasks: ['code_gen', 'creative', 'documentation'],
+        note: '均衡旗舰（2025-05），代码与内容创作首选，官方直连',
+        pricing: { input: 3.00, output: 15.00 },
     },
-    // ── Google Gemini ─────────────────────────────────────────────────────────
-    // https://ai.google.dev/gemini-api/docs/models
-    // OpenAI-compatible endpoint: generativelanguage.googleapis.com/v1beta/openai
-    'gemini-2.5-flash': {
-        label: 'Gemini 2.5 Flash (推荐)',
+    // ─── Google Gemini ────────────────────────────────────────────────────────
+    'gemini-3.1-flash': {
+        label: 'Gemini 3.1 Flash (推荐)',
         group: 'Google (Gemini)',
         baseUrl: 'https://generativelanguage.googleapis.com/v1beta/openai',
         defaultTasks: ['vision', 'code_gen', 'tool_calling', 'long_context'],
-        note: '速度快成本低，多模态全能，推荐默认，官方直连',
+        note: '最新 Flash（2026），速度快成本低，多模态全能，官方直连',
+        pricing: { input: 0.25, output: 1.00 },
     },
-    'gemini-2.5-pro': {
-        label: 'Gemini 2.5 Pro',
+    'gemini-3.1-pro-preview': {
+        label: 'Gemini 3.1 Pro Preview',
         group: 'Google (Gemini)',
         baseUrl: 'https://generativelanguage.googleapis.com/v1beta/openai',
         defaultTasks: ['math_reasoning', 'architecture', 'long_context', 'vision'],
-        note: '推理顶级，100 万 token 上下文，官方直连',
+        note: '顶级推理，百万 token 上下文，官方直连',
+        pricing: { input: 1.25, output: 5.00 },
     },
-    'gemini-2.0-flash': {
-        label: 'Gemini 2.0 Flash',
+    'gemini-3-image': {
+        label: 'Gemini Image Gen (生图)',
         group: 'Google (Gemini)',
         baseUrl: 'https://generativelanguage.googleapis.com/v1beta/openai',
-        defaultTasks: ['vision', 'code_gen', 'creative'],
-        note: '稳定版（2025-01），广泛兼容',
+        defaultTasks: ['vision', 'creative', 'ui_design'],
+        note: '专用图像生成与编辑（Imagen 3 驱动），官方直连',
+        pricing: { input: 0.25, output: 1.50 },
     },
-    // ── Mistral ───────────────────────────────────────────────────────────────
-    // https://docs.mistral.ai/getting-started/models/
+    // ─── Mistral ──────────────────────────────────────────────────────────────
     'mistral-large-latest': {
-        label: 'Mistral Large (推荐)',
+        label: 'Mistral Large 3 (推荐)',
         group: 'Mistral',
         baseUrl: 'https://api.mistral.ai/v1',
-        defaultTasks: ['translation', 'tool_calling', 'code_gen', 'architecture'],
-        note: '欧洲隐私合规，多语言与代码俱佳，官方直连',
+        defaultTasks: ['translation', 'tool_calling', 'code_gen'],
+        note: '欧洲隐私合规，多语言优秀，官方直连',
+        pricing: { input: 2.00, output: 6.00 },
     },
-    'mistral-small-latest': {
-        label: 'Mistral Small',
-        group: 'Mistral',
-        baseUrl: 'https://api.mistral.ai/v1',
-        defaultTasks: ['translation', 'documentation'],
-        note: '轻量快速，低成本翻译与文档任务',
-    },
-    // ── Meta / Llama（需中转）────────────────────────────────────────────────
+    // ─── Meta Llama (中转) ────────────────────────────────────────────────────
     'meta-llama/llama-3.3-70b-instruct': {
         label: 'Llama 3.3 70B',
         group: 'Meta (Llama) — 需中转',
         baseUrl: '',
-        defaultTasks: ['code_gen', 'translation', 'documentation'],
-        note: '开源最强代码模型，需中转（OpenRouter / 硅基流动）',
+        defaultTasks: ['code_gen', 'translation'],
+        note: '业界最强开源模型，需通过 OpenRouter / 硅基流动等中转',
         relay: true,
     },
-    // ── API 聚合平台 ──────────────────────────────────────────────────────────
-    // 一套 API Key 调用多个模型，OpenAI 兼容接口
+    // ─── API 聚合平台 ─────────────────────────────────────────────────────────
     '__openrouter__': {
         label: 'OpenRouter',
         group: 'API 聚合平台',
         baseUrl: 'https://openrouter.ai/api/v1',
         defaultTasks: ['code_gen', 'architecture', 'translation'],
-        note: '全球最大聚合（500+ 模型），支持 GPT/Claude/Gemini/DeepSeek/Qwen 等。Model ID 填写格式：openai/gpt-4o、anthropic/claude-sonnet-4-5',
+        note: '全球最大聚合（500+ 模型）。Model ID 格式：openai/gpt-5.1 · anthropic/claude-sonnet-4-6',
         relay: true,
     },
     '__yibuapi__': {
         label: '一步API',
         group: 'API 聚合平台',
         baseUrl: 'https://api.yibuapi.com/v1',
-        defaultTasks: ['code_gen', 'translation', 'documentation'],
-        note: '国内聚合，原价调用 GPT/Claude/Gemini/DeepSeek/Qwen/Kimi 等，无需科学上网',
+        defaultTasks: ['code_gen', 'translation'],
+        note: '国内聚合，原价调用 GPT/Claude/Gemini/DeepSeek/Qwen/Kimi，无需科学上网',
         relay: true,
     },
     '__dmxapi__': {
         label: 'DMXAPI',
         group: 'API 聚合平台',
         baseUrl: 'https://www.dmxapi.cn/v1',
-        defaultTasks: ['code_gen', 'translation', 'architecture'],
-        note: '国内稳定聚合，支持主流国产和国际模型，Model ID 与官方保持一致',
+        defaultTasks: ['code_gen', 'translation'],
+        note: '国内稳定聚合，Model ID 与官方一致',
         relay: true,
     },
-    // ── 自定义 ────────────────────────────────────────────────────────────────
+    // ─── 自定义 ───────────────────────────────────────────────────────────────
     '__custom__': {
         label: '自定义模型',
         group: '自定义接口',
         baseUrl: '',
         defaultTasks: [],
-        note: '兼容 OpenAI 接口的任意模型（中转、私有部署等）',
+        note: '任意兼容 OpenAI 接口的模型（中转、私有部署等）',
         relay: true,
     },
 };
 
 const GROUPS = [
-    // 国内直连
     'DeepSeek',
     'GLM (智谱)',
     'Qwen (通义)',
     'MiniMax',
-    'Moonshot (Kimi)',
     'Kimi K2',
-    // 国际直连
     'OpenAI',
     'Anthropic (Claude)',
     'Google (Gemini)',
     'Mistral',
-    // 中转
     'Meta (Llama) — 需中转',
-    // 聚合平台
     'API 聚合平台',
-    // 自定义
     '自定义接口',
 ];
+
+/** All models with known pricing, for the reference table */
+const PRICE_TABLE = Object.entries(MODEL_DEFS)
+    .filter(([, d]) => d.pricing)
+    .sort((a, b) => (a[1].pricing!.input - b[1].pricing!.input))
+    .map(([id, d]) => ({ id, label: d.label, group: d.group, pricing: d.pricing! }));
 
 // ─── Shared Styles ────────────────────────────────────────────────────────────
 
@@ -452,10 +362,15 @@ const ModelCard: React.FC<{
         <div style={{ ...s.card, opacity: model.enabled ? 1 : 0.5 }}>
             <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '8px' }}>
                 <div style={{ flex: 1, minWidth: 0 }}>
-                    {/* Name + provider */}
+                    {/* Name + provider + price */}
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
                         <span style={{ fontWeight: 600, fontSize: '13px' }}>{model.label}</span>
                         <span style={{ fontSize: '11px', opacity: 0.65 }}>{def?.group || model.modelId}</span>
+                        {def?.pricing && (
+                            <span style={{ fontSize: '10px', color: 'var(--vscode-descriptionForeground)', background: 'var(--vscode-input-background)', border: '1px solid var(--vscode-input-border)', borderRadius: '3px', padding: '0 5px' }}>
+                                ${def.pricing.input.toFixed(2)} / ${def.pricing.output.toFixed(2)} per M
+                            </span>
+                        )}
                     </div>
                     {/* Description */}
                     {def && (
