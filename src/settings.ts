@@ -84,7 +84,7 @@ export class SettingsManager {
         return [
             { id: 'default-deepseek', modelId: 'deepseek-chat', label: 'DeepSeek-V3 (推荐)', baseUrl: 'https://api.deepseek.com/v1', tasks: ['code_gen', 'code_review'], enabled: true, priority: 0 },
             { id: 'default-deepseek-r1', modelId: 'deepseek-reasoner', label: 'DeepSeek-R1 (推理)', baseUrl: 'https://api.deepseek.com/v1', tasks: ['math_reasoning'], enabled: true, priority: 0 },
-            { id: 'default-glm', modelId: 'glm-4-plus', label: 'GLM-4-Plus', baseUrl: 'https://open.bigmodel.cn/api/paas/v4', tasks: ['architecture', 'agentic', 'tool_calling', 'long_context'], enabled: true, priority: 0 },
+            { id: 'default-glm', modelId: 'glm-5', label: 'GLM-5 (推荐)', baseUrl: 'https://open.bigmodel.cn/api/paas/v4', tasks: ['architecture', 'agentic', 'tool_calling', 'long_context'], enabled: true, priority: 0 },
             { id: 'default-qwen', modelId: 'qwen-max', label: 'Qwen-Max (推荐)', baseUrl: 'https://dashscope.aliyuncs.com/compatible-mode/v1', tasks: ['translation', 'documentation', 'tool_calling'], enabled: true, priority: 0 },
             { id: 'default-minimax', modelId: 'MiniMax-M2.5', label: 'MiniMax-M2.5', baseUrl: 'https://api.minimaxi.com/v1', tasks: ['ui_design', 'creative', 'long_context'], enabled: true, priority: 0 },
         ];
