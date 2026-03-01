@@ -29,9 +29,9 @@
 
 ## 为什么需要 L-Hub？
 
-**Antigravity** 运行在 Claude Sonnet 或 Opus 之上——全球顶尖 AI 模型，但同时也是最昂贵的。用顶级模型处理每一个子任务——普通代码生成、翻译、UI 布局——是一种浪费。
+**Antigravity** 是功能强大的 AI 编程助手，主模型天生擅长总任务调度和复杂推理，但处理每一个日常子任务（普通代码生成、翻译、UI 布局）需要消耗大量 token，成本高。
 
-**L-Hub 解决了这个问题。** 它是一个内嵌在 Antigravity 中的 MCP AI 桥接器。当 Antigravity（你的主控模型）需要委派子任务时，它调用 L-Hub 来完成，而不是自己消耗昂贵的 Claude 额度。L-Hub 将请求路由给最合适、最具性价比的专家模型：
+**L-Hub 解决了这个问题。** 它是一个内嵌在 Antigravity 中的 MCP AI 桥接器。当 Antigravity（你的主控模型）需要委派子任务时，它调用 L-Hub 来完成。L-Hub 将请求路由给最合适、最具性价比的专家模型：
 
 | 任务类型 | 路由至 | 原因 |
 |---|---|---|
@@ -130,9 +130,9 @@ L-Hub 是 **走起智造 · Ready Steady Science** 旗下 **Linglan Realm** 的�
 
 ## Why L-Hub?
 
-**Antigravity** runs on Claude Sonnet or Opus — among the most powerful AI models in the world. But they are also expensive. Using a top-tier model for every sub-task — routine code generation, translation, UI work — is wasteful.
+**Antigravity** is a powerful AI coding assistant whose primary model excels at high-level reasoning and task orchestration. But having it handle every routine sub-task — code generation, translation, UI work — burns through tokens fast and costs more than necessary.
 
-**L-Hub solves this.** It is an MCP AI Bridge inside Antigravity. When Antigravity needs to delegate, it calls L-Hub instead of burning Claude credits. L-Hub routes requests to the most appropriate specialist:
+**L-Hub solves this.** It is an MCP AI Bridge inside Antigravity. When Antigravity needs to delegate, it calls L-Hub, which routes each request to the most appropriate and cost-effective specialist model:
 
 | Task type | Routed to | Why |
 |---|---|---|
