@@ -52,12 +52,30 @@ export const MODEL_REGISTRY: Record<string, ModelDefinition> = {
     },
     // ── GLM (智谱) ────────────────────────────────────────────
     'glm-5': {
-        label: 'GLM-5 (推荐)',
+        label: 'GLM-5',
         providerGroup: 'GLM (智谱)',
         defaultBaseUrl: 'https://open.bigmodel.cn/api/paas/v4',
         defaultTasks: ['architecture', 'agentic', 'tool_calling', 'code_gen'],
-        note_zh: '最新旗舰（2026-02），编程与 Agentic 能力接近 Claude Opus',
-        note_en: 'Latest flagship (2026-02), coding & Agentic near Claude Opus',
+        note_zh: '最新旗舰（2026-02），通用 API 端点，按量计费',
+        note_en: 'Latest flagship (2026-02), general API endpoint, pay-per-use',
+        requiresApiKey: true,
+    },
+    'glm-5-coding': {
+        label: 'GLM-5 (Coding Plan)',
+        providerGroup: 'GLM (智谱)',
+        defaultBaseUrl: 'https://open.bigmodel.cn/api/coding/paas/v4',
+        defaultTasks: ['architecture', 'agentic', 'code_gen', 'code_review'],
+        note_zh: 'Coding Plan 包月 · 专属端点 · 消耗 2x-3x 套餐配额',
+        note_en: 'Coding Plan monthly · dedicated endpoint · costs 2x-3x quota',
+        requiresApiKey: true,
+    },
+    'glm-4.7': {
+        label: 'GLM-4.7 (Coding Plan 推荐)',
+        providerGroup: 'GLM (智谱)',
+        defaultBaseUrl: 'https://open.bigmodel.cn/api/coding/paas/v4',
+        defaultTasks: ['code_gen', 'code_review', 'agentic', 'tool_calling'],
+        note_zh: 'Coding Plan 日常用，1x 配额消耗，省额度首选',
+        note_en: 'Coding Plan daily use, 1x quota, most quota-efficient',
         requiresApiKey: true,
     },
     // ── Qwen (通义) ───────────────────────────────────────────

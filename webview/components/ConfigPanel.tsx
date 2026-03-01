@@ -63,12 +63,28 @@ const MODEL_DEFS: Record<string, ModelDef> = {
     },
     // ─── GLM (智谱) ────────────────────────────────────────────────────────────
     'glm-5': {
-        label: 'GLM-5 (推荐)',
+        label: 'GLM-5',
         group: 'GLM (智谱)',
         baseUrl: 'https://open.bigmodel.cn/api/paas/v4',
         defaultTasks: ['architecture', 'agentic', 'tool_calling', 'code_gen'],
-        note: '最新旗舰（2026-02），编程与 Agentic 能力接近 Claude Opus',
+        note: '最新旗舰（2026-02）· 通用 API 端点 · 按量计费',
         pricing: { input: 1.50, output: 6.00 },
+    },
+    'glm-5-coding': {
+        label: 'GLM-5 (Coding Plan)',
+        group: 'GLM (智谱)',
+        baseUrl: 'https://open.bigmodel.cn/api/coding/paas/v4',
+        defaultTasks: ['architecture', 'agentic', 'code_gen', 'code_review'],
+        note: 'Coding Plan 包月专属端点 · 消耗 2x-3x 配额（Complex 任务）',
+        pricing: undefined,
+    },
+    'glm-4.7': {
+        label: 'GLM-4.7 (Coding Plan 推荐)',
+        group: 'GLM (智谱)',
+        baseUrl: 'https://open.bigmodel.cn/api/coding/paas/v4',
+        defaultTasks: ['code_gen', 'code_review', 'agentic', 'tool_calling'],
+        note: 'Coding Plan 日常首选 · 1x 配额消耗 · 省额度',
+        pricing: undefined,
     },
     // ─── Qwen (通义) ──────────────────────────────────────────────────────────
     'qwen-max': {
