@@ -6,6 +6,21 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.0] — 2026-03-01
+
+### Added
+- **ConfigPanel 2.0** — dynamic model management: add/remove/edit models, 3-step modal, 12 task types (multi-select with auto-filled defaults per model)
+- **Model Registry** — 21 pre-configured models across DeepSeek, GLM, Qwen, MiniMax, Moonshot, Yi, GPT-4o, Claude, Gemini, Llama, Mistral, and more
+- **v2 config format** — model configs stored with tasks, baseUrl, encrypted API key per model
+
+### Changed
+- **mcp-server.ts** — completely rewritten: reads v2 model config, routes by task type matching user's configured models; falls back to v1 legacy format
+- **activationEvents** — added `*` + `onCommand:l-hub.openPanel` to guarantee activation
+- **Package** — now includes full `node_modules` (fixed `ws`/`better-sqlite3` not found on load)
+- **README** — removed incorrect "runs on Claude Sonnet/Opus" claim; simplified model section to examples
+
+---
+
 ## [0.0.9] — 2026-03-01
 
 ### Added

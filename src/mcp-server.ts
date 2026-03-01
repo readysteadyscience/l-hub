@@ -204,7 +204,7 @@ function callCodex(task: string, workingDir?: string): string {
 
 async function main() {
     const server = new Server(
-        { name: 'l-hub', version: '0.0.9' },
+        { name: 'l-hub', version: '0.1.0' },
         { capabilities: { tools: {} } }
     );
 

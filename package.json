@@ -3,7 +3,7 @@
   "displayName": "L-Hub",
   "description": "MCP AI Bridge — smart multi-model routing for Antigravity",
   "author": "Ready Steady Science",
-  "version": "0.0.9",
+  "version": "0.1.0",
   "icon": "images/logo.png",
   "publisher": "readysteadyscience",
   "repository": {
