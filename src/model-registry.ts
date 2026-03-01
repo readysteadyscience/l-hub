@@ -101,7 +101,7 @@ export const MODEL_REGISTRY: Record<string, ModelDefinition> = {
     'MiniMax-M2.5': {
         label: 'MiniMax-M2.5 (推荐)',
         providerGroup: 'MiniMax',
-        defaultBaseUrl: 'https://api.minimax.chat/v1',
+        defaultBaseUrl: 'https://api.minimax.io/v1',
         defaultTasks: ['agentic', 'code_gen', 'tool_calling', 'long_context'],
         note_zh: '最新旗舰（2025-12），SWE-bench 80.2%，Agentic 顶尖',
         note_en: 'Latest (2025-12), SWE-bench 80.2%, top Agentic',
@@ -110,7 +110,7 @@ export const MODEL_REGISTRY: Record<string, ModelDefinition> = {
     'MiniMax-M2.5-highspeed': {
         label: 'MiniMax-M2.5 HighSpeed',
         providerGroup: 'MiniMax',
-        defaultBaseUrl: 'https://api.minimax.chat/v1',
+        defaultBaseUrl: 'https://api.minimax.io/v1',
         defaultTasks: ['code_gen', 'documentation'],
         note_zh: 'M2.5 高速版，响应更快，适合高频调用',
         note_en: 'M2.5 high-speed, faster response, high-frequency calls',

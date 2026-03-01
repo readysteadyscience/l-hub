@@ -107,7 +107,7 @@ const MODEL_DEFS: Record<string, ModelDef> = {
     'MiniMax-M2.5': {
         label: 'MiniMax-M2.5 (推荐)',
         group: 'MiniMax',
-        baseUrl: 'https://api.minimax.chat/v1',
+        baseUrl: 'https://api.minimax.io/v1',
         defaultTasks: ['agentic', 'code_gen', 'tool_calling', 'long_context'],
         note: '最新旗舰（2025-12），SWE-bench 80.2%，Agentic 顶尖',
         pricing: { input: 0.40, output: 1.20 },
@@ -115,7 +115,7 @@ const MODEL_DEFS: Record<string, ModelDef> = {
     'MiniMax-M2.5-highspeed': {
         label: 'MiniMax-M2.5 HighSpeed',
         group: 'MiniMax',
-        baseUrl: 'https://api.minimax.chat/v1',
+        baseUrl: 'https://api.minimax.io/v1',
         defaultTasks: ['code_gen', 'documentation'],
         note: 'M2.5 高速版，响应更快，适合高频调用',
         pricing: { input: 0.40, output: 1.20 },
@@ -304,6 +304,16 @@ const PRICE_TABLE = Object.entries(MODEL_DEFS)
     .sort((a, b) => (a[1].pricing!.input - b[1].pricing!.input))
     .map(([id, d]) => ({ id, label: d.label, group: d.group, pricing: d.pricing! }));
 
+/** Format a USD price as CNY (zh) or USD (en). Rate: 1 USD ≈ 7.3 CNY */
+const USD_TO_CNY = 7.3;
+const formatPrice = (usd: number, lang: string) => {
+    if (lang === 'zh') {
+        const cny = usd * USD_TO_CNY;
+        return `¥${cny < 10 ? cny.toFixed(2) : cny.toFixed(1)}`;
+    }
+    return `$${usd.toFixed(2)}`;
+};
+
 // ─── Shared Styles ────────────────────────────────────────────────────────────
 
 const s = {
@@ -464,7 +474,7 @@ const ModelCard: React.FC<{
                         <span style={{ fontSize: '11px', color: PROVIDER_COLORS[def?.group || ''] || 'var(--vscode-descriptionForeground)', fontWeight: 500 }}>{def?.group || model.modelId}</span>
                         {def?.pricing && (
                             <span style={{ fontSize: '10px', color: 'var(--vscode-descriptionForeground)', background: 'var(--vscode-input-background)', border: '1px solid var(--vscode-input-border)', borderRadius: '3px', padding: '0 5px' }}>
-                                ${def.pricing.input.toFixed(2)} / ${def.pricing.output.toFixed(2)} per M
+                                {formatPrice(def.pricing.input, lang)} / {formatPrice(def.pricing.output, lang)} per M
                             </span>
                         )}
                     </div>
@@ -1105,10 +1115,10 @@ const ConfigPanel: React.FC<ConfigPanelProps> = ({ lang }) => {
                                         <td style={{ padding: '5px 10px' }}>{row.label}</td>
                                         <td style={{ padding: '5px 10px', color: PROVIDER_COLORS[row.group] || 'inherit', fontWeight: 500 }}>{row.group}</td>
                                         <td style={{ padding: '5px 10px', textAlign: 'right', fontFamily: 'monospace' }}>
-                                            ${row.pricing.input.toFixed(2)}
+                                            {formatPrice(row.pricing.input, lang)}
                                         </td>
                                         <td style={{ padding: '5px 10px', textAlign: 'right', fontFamily: 'monospace' }}>
-                                            ${row.pricing.output.toFixed(2)}
+                                            {formatPrice(row.pricing.output, lang)}
                                         </td>
                                     </tr>
                                 ))}
@@ -1120,7 +1130,7 @@ const ConfigPanel: React.FC<ConfigPanelProps> = ({ lang }) => {
                             borderTop: '1px solid var(--vscode-input-border)',
                         }}>
                             {lang === 'zh'
-                                ? '价格来源：OpenRouter（2026-03），单位：美元/百万 tokens。直连官方 API 价格可能不同。'
+                                ? `价格来源：OpenRouter（2026-03），单位：人民币/百万 tokens（汇率 $1=¥${USD_TO_CNY}）。直连官方 API 价格可能不同。`
                                 : 'Source: OpenRouter (2026-03). USD per million tokens. Direct API pricing may vary.'}
                         </div>
                     </div>

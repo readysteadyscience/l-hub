@@ -87,7 +87,7 @@ export class SettingsManager {
             { id: 'default-glm', modelId: 'glm-5', label: 'GLM-5 (通用 API)', baseUrl: 'https://open.bigmodel.cn/api/paas/v4', tasks: ['architecture', 'agentic', 'tool_calling', 'long_context'], enabled: true, priority: 0 },
             { id: 'default-glm-coding', modelId: 'glm-4.7', label: 'GLM-4.7 (Coding Plan)', baseUrl: 'https://open.bigmodel.cn/api/coding/paas/v4', tasks: ['code_gen', 'code_review', 'agentic'], enabled: true, priority: 0 },
             { id: 'default-qwen', modelId: 'qwen-max', label: 'Qwen-Max (推荐)', baseUrl: 'https://dashscope.aliyuncs.com/compatible-mode/v1', tasks: ['translation', 'documentation', 'tool_calling'], enabled: true, priority: 0 },
-            { id: 'default-minimax', modelId: 'MiniMax-M2.5', label: 'MiniMax-M2.5', baseUrl: 'https://api.minimaxi.com/v1', tasks: ['ui_design', 'creative', 'long_context'], enabled: true, priority: 0 },
+            { id: 'default-minimax', modelId: 'MiniMax-M2.5', label: 'MiniMax-M2.5', baseUrl: 'https://api.minimax.io/v1', tasks: ['ui_design', 'creative', 'long_context'], enabled: true, priority: 0 },
         ];
     }
 
