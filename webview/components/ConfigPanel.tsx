@@ -243,18 +243,28 @@ const MODEL_DEFS: Record<string, ModelDef> = {
 };
 
 const GROUPS = [
+    // 官方直连（国内）
     'DeepSeek',
     'GLM (智谱)',
     'Qwen (通义)',
     'MiniMax',
     'Kimi K2',
+    // 官方直连（国际）
     'OpenAI',
     'Anthropic (Claude)',
     'Google (Gemini)',
     'Mistral',
-    'Meta (Llama) — 需中转',
-    'API 聚合平台',
+    // 第三方中转
+    '第三方中转',
+    // 自定义
     '自定义接口',
+];
+
+/** Verified relay platforms with HTTPS, proper websites, and good reputation */
+const RELAY_PRESETS = [
+    { name: 'OpenRouter', url: 'https://openrouter.ai/api/v1', site: 'https://openrouter.ai', note: '国际标杆，模型最全' },
+    { name: 'CloseAI', url: 'https://api.closeai-asia.com/v1', site: 'https://closeai-asia.com', note: '亚洲最大企业级中转' },
+    { name: '硅基流动 SiliconFlow', url: 'https://api.siliconflow.cn/v1', site: 'https://cloud.siliconflow.cn', note: '国内正规大平台，获投资' },
 ];
 
 /** All models with known pricing, for the reference table */
@@ -444,7 +454,10 @@ const AddEditModal: React.FC<{
     const [step, setStep] = useState(isEdit ? 2 : 1);
 
     const isCustomGroup = selectedGroup === '自定义接口';
-    const modelsInGroup = Object.entries(MODEL_DEFS).filter(([, d]) => d.group === selectedGroup && d.group !== '自定义接口');
+    const isRelayGroup = selectedGroup === '第三方中转';
+    const modelsInGroup = isRelayGroup
+        ? Object.entries(MODEL_DEFS).filter(([, d]) => d.group !== '自定义接口' && d.group !== '第三方中转')
+        : Object.entries(MODEL_DEFS).filter(([, d]) => d.group === selectedGroup && d.group !== '自定义接口');
     const effectiveModelId = isCustomGroup ? '__custom__' : selectedModelId;
     const def = MODEL_DEFS[effectiveModelId];
 
@@ -532,11 +545,56 @@ const AddEditModal: React.FC<{
                         {!isCustomGroup && (
                             <div style={{ marginBottom: '14px' }}>
                                 <label style={s.label}>{lang === 'zh' ? '型号' : 'Model'}</label>
-                                <select style={s.select} value={selectedModelId} onChange={e => handleModelChange(e.target.value)}>
-                                    {modelsInGroup.map(([id, d]) => <option key={id} value={id}>{d.label}</option>)}
-                                </select>
+                                {isRelayGroup ? (
+                                    <select style={s.select} value={selectedModelId} onChange={e => handleModelChange(e.target.value)}>
+                                        {(() => {
+                                            const grouped: Record<string, [string, ModelDef][]> = {};
+                                            modelsInGroup.forEach(([id, d]) => {
+                                                (grouped[d.group] = grouped[d.group] || []).push([id, d]);
+                                            });
+                                            return Object.entries(grouped).map(([group, models]) => (
+                                                <optgroup key={group} label={group}>
+                                                    {models.map(([id, d]) => <option key={id} value={id}>{d.label}</option>)}
+                                                </optgroup>
+                                            ));
+                                        })()}
+                                    </select>
+                                ) : (
+                                    <select style={s.select} value={selectedModelId} onChange={e => handleModelChange(e.target.value)}>
+                                        {modelsInGroup.map(([id, d]) => <option key={id} value={id}>{d.label}</option>)}
+                                    </select>
+                                )}
                                 {def && <p style={s.hint}>{def.note}</p>}
-                                {def?.relay && (
+                                {isRelayGroup && (
+                                    <div style={{ marginTop: '10px' }}>
+                                        <label style={s.label}>{lang === 'zh' ? '中转平台（点击快速填入 Base URL）' : 'Relay Platform (click to auto-fill Base URL)'}</label>
+                                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginTop: '4px' }}>
+                                            {RELAY_PRESETS.map(r => (
+                                                <button
+                                                    key={r.name}
+                                                    onClick={() => setBaseUrl(r.url)}
+                                                    style={{
+                                                        ...s.btnSecondary, fontSize: '11px', padding: '4px 10px',
+                                                        background: baseUrl === r.url ? 'var(--vscode-button-background)' : undefined,
+                                                        color: baseUrl === r.url ? 'var(--vscode-button-foreground)' : undefined,
+                                                    }}
+                                                >
+                                                    {r.name}
+                                                </button>
+                                            ))}
+                                        </div>
+                                        {RELAY_PRESETS.map(r => baseUrl === r.url && (
+                                            <p key={r.name} style={{ ...s.hint, marginTop: '6px' }}>
+                                                {r.note} — <a href={r.site} style={{ color: 'var(--vscode-textLink-foreground)' }}>注册/获取 Key</a>
+                                            </p>
+                                        ))}
+                                        <div style={{ marginTop: '8px' }}>
+                                            <label style={s.label}>Base URL</label>
+                                            <input style={s.input} value={baseUrl} onChange={e => setBaseUrl(e.target.value)} placeholder="https://your-relay.com/v1" />
+                                        </div>
+                                    </div>
+                                )}
+                                {!isRelayGroup && def?.relay && (
                                     <p style={{ ...s.hint, color: 'var(--vscode-errorForeground)', marginTop: '6px' }}>
                                         此模型需要中转服务，下一步填写中转地址。
                                     </p>
