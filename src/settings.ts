@@ -52,7 +52,22 @@ export class SettingsManager {
     public async getModels(): Promise<ModelConfig[]> {
         const raw = await this.secretStorage.get(SettingsManager.MODELS_KEY);
         if (!raw) { return this.getDefaultModels(); }
-        try { return JSON.parse(raw) as ModelConfig[]; }
+        try {
+            const models = JSON.parse(raw) as ModelConfig[];
+            // ── Auto-migrate stale base URLs ──────────────────────────────────
+            const URL_MIGRATIONS: [string, string][] = [
+                ['https://api.minimaxi.com/v1', 'https://api.minimax.io/v1'],
+                ['https://api.minimax.chat/v1', 'https://api.minimax.io/v1'],
+            ];
+            let dirty = false;
+            for (const m of models) {
+                for (const [from, to] of URL_MIGRATIONS) {
+                    if (m.baseUrl === from) { m.baseUrl = to; dirty = true; }
+                }
+            }
+            if (dirty) { await this.saveModels(models); }
+            return models;
+        }
         catch { return this.getDefaultModels(); }
     }
 
