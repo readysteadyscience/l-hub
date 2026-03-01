@@ -436,8 +436,11 @@ const ModelCard: React.FC<{
                 if (j?.code && j?.code !== 200) return `错误码 ${j.code}`;
                 return `HTTP ${status}`;
             };
-            if (json?.choices?.[0]?.message?.content) {
-                setTestState('ok'); setTestMsg(json.choices[0].message.content.trim().substring(0, 20));
+            if (res.ok) {
+                // HTTP 200 = connection success (GLM doc: 200 = 业务处理成功)
+                const content = json?.choices?.[0]?.message?.content;
+                setTestState('ok');
+                setTestMsg(content ? content.trim().substring(0, 20) : lang === 'zh' ? '已连通' : 'Connected');
             } else {
                 setTestState('fail'); setTestMsg(extractErr(json, res.status));
             }
@@ -925,18 +928,18 @@ const ConfigPanel: React.FC<ConfigPanelProps> = ({ lang }) => {
                                 signal: AbortSignal.timeout(12000),
                             });
                             const json = await res.json() as any;
-                            const extractErr2 = (j: any, status: number) => {
-                                if (j?.error?.message) return j.error.message.substring(0, 50);
-                                if (j?.error?.code) return `错误码 ${j.error.code}`;
-                                if (j?.message) return j.message.substring(0, 50);
-                                if (j?.msg) return j.msg.substring(0, 50);
-                                if (j?.code && j?.code !== 200) return `错误码 ${j.code}`;
-                                return `HTTP ${status}`;
-                            };
-                            const content = json?.choices?.[0]?.message?.content;
-                            if (content) {
-                                setTestResults(prev => ({ ...prev, [m.id]: { ok: true, msg: content.trim().substring(0, 15) } }));
+                            if (res.ok) {
+                                const content = json?.choices?.[0]?.message?.content;
+                                setTestResults(prev => ({ ...prev, [m.id]: { ok: true, msg: content ? content.trim().substring(0, 15) : '已连通' } }));
                             } else {
+                                const extractErr2 = (j: any, status: number) => {
+                                    if (j?.error?.message) return j.error.message.substring(0, 50);
+                                    if (j?.error?.code) return `错误码 ${j.error.code}`;
+                                    if (j?.message) return j.message.substring(0, 50);
+                                    if (j?.msg) return j.msg.substring(0, 50);
+                                    if (j?.code && j?.code !== 200) return `错误码 ${j.code}`;
+                                    return `HTTP ${status}`;
+                                };
                                 setTestResults(prev => ({ ...prev, [m.id]: { ok: false, msg: extractErr2(json, res.status) } }));
                             }
                         } catch (e: any) {
