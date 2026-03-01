@@ -120,6 +120,14 @@ const MODEL_DEFS: Record<string, ModelDef> = {
         note: 'M2.5 高速版，响应更快，适合高频调用',
         pricing: { input: 0.40, output: 1.20 },
     },
+    'MiniMax-M2.5-highspeed-coding': {
+        label: 'MiniMax-M2.5 HighSpeed (Coding Plan ⭐)',
+        group: 'MiniMax',
+        baseUrl: 'https://api.minimax.io/v1',
+        defaultTasks: ['code_gen', 'code_review', 'agentic', 'long_context'],
+        note: 'Coding Plan 包月专用（填 sk-cp-... Key）· Plus 高速套餐 · 同等性能更快',
+        pricing: undefined,
+    },
     // ─── Kimi K2 ──────────────────────────────────────────────────────────────
     'kimi-k2-instruct': {
         label: 'Kimi K2.5 (推荐)',

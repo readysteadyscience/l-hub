@@ -58,6 +58,7 @@ export class SettingsManager {
             const URL_MIGRATIONS: [string, string][] = [
                 ['https://api.minimaxi.com/v1', 'https://api.minimax.io/v1'],
                 ['https://api.minimax.chat/v1', 'https://api.minimax.io/v1'],
+                ['https://api.minimaxi.io/v1', 'https://api.minimax.io/v1'], // hybrid-typo
             ];
             const MODEL_ID_MIGRATIONS: [string, string][] = [
                 ['minimax-text-2.5', 'MiniMax-M2.5'],
