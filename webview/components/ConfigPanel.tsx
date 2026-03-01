@@ -58,6 +58,13 @@ const MODEL_DEFS: Record<string, ModelDef> = {
         defaultTasks: ['math_reasoning', 'architecture', 'code_review'],
         note: '专为数学推理与复杂问题设计，思维链深度强',
     },
+    'deepseek-v3-0324': {
+        label: 'DeepSeek-V3-0324',
+        group: 'DeepSeek',
+        baseUrl: 'https://api.deepseek.com/v1',
+        defaultTasks: ['code_gen', 'tool_calling'],
+        note: 'RL 强化版（2025-03），工具调用与推理能力增强',
+    },
     // ── GLM (智谱) ────────────────────────────────────────────────────────────
     // https://open.bigmodel.cn/api/paas/v4
     'glm-4-plus': {
@@ -157,13 +164,35 @@ const MODEL_DEFS: Record<string, ModelDef> = {
         defaultTasks: ['code_gen', 'documentation'],
         note: '32K 上下文，速度与长度均衡',
     },
+    // Kimi K2 / K2.5 — 独立 API 端点
+    'kimi-k2-instruct': {
+        label: 'Kimi K2 (推荐)',
+        group: 'Kimi K2',
+        baseUrl: 'https://api.moonshot.cn/v1',
+        defaultTasks: ['agentic', 'code_gen', 'tool_calling', 'long_context'],
+        note: '1T 参数 MoE，256K 上下文，Agentic 任务顶尖（2025-07）',
+    },
+    'kimi-k2-thinking': {
+        label: 'Kimi K2 Thinking',
+        group: 'Kimi K2',
+        baseUrl: 'https://api.moonshot.cn/v1',
+        defaultTasks: ['math_reasoning', 'architecture', 'code_review'],
+        note: '深度推理版，多步推理与工具调用（2025-11）',
+    },
     // ── OpenAI ────────────────────────────────────────────────────────────────
     // https://platform.openai.com/docs/models
-    'gpt-4o': {
-        label: 'GPT-4o (推荐)',
+    'gpt-4.1': {
+        label: 'GPT-4.1 (推荐)',
         group: 'OpenAI',
         baseUrl: 'https://api.openai.com/v1',
-        defaultTasks: ['vision', 'tool_calling', 'code_gen', 'architecture'],
+        defaultTasks: ['code_gen', 'vision', 'tool_calling', 'architecture'],
+        note: '最新旗舰（2025-04），复杂文本分析与图像理解，官方直连',
+    },
+    'gpt-4o': {
+        label: 'GPT-4o',
+        group: 'OpenAI',
+        baseUrl: 'https://api.openai.com/v1',
+        defaultTasks: ['vision', 'tool_calling', 'code_gen'],
         note: '多模态旗舰，Function Calling 最成熟，官方直连',
     },
     'gpt-4o-mini': {
@@ -266,6 +295,32 @@ const MODEL_DEFS: Record<string, ModelDef> = {
         note: '开源最强代码模型，需中转（OpenRouter / 硅基流动）',
         relay: true,
     },
+    // ── API 聚合平台 ──────────────────────────────────────────────────────────
+    // 一套 API Key 调用多个模型，OpenAI 兼容接口
+    '__openrouter__': {
+        label: 'OpenRouter',
+        group: 'API 聚合平台',
+        baseUrl: 'https://openrouter.ai/api/v1',
+        defaultTasks: ['code_gen', 'architecture', 'translation'],
+        note: '全球最大聚合（500+ 模型），支持 GPT/Claude/Gemini/DeepSeek/Qwen 等。Model ID 填写格式：openai/gpt-4o、anthropic/claude-sonnet-4-5',
+        relay: true,
+    },
+    '__yibuapi__': {
+        label: '一步API',
+        group: 'API 聚合平台',
+        baseUrl: 'https://api.yibuapi.com/v1',
+        defaultTasks: ['code_gen', 'translation', 'documentation'],
+        note: '国内聚合，原价调用 GPT/Claude/Gemini/DeepSeek/Qwen/Kimi 等，无需科学上网',
+        relay: true,
+    },
+    '__dmxapi__': {
+        label: 'DMXAPI',
+        group: 'API 聚合平台',
+        baseUrl: 'https://www.dmxapi.cn/v1',
+        defaultTasks: ['code_gen', 'translation', 'architecture'],
+        note: '国内稳定聚合，支持主流国产和国际模型，Model ID 与官方保持一致',
+        relay: true,
+    },
     // ── 自定义 ────────────────────────────────────────────────────────────────
     '__custom__': {
         label: '自定义模型',
@@ -278,16 +333,23 @@ const MODEL_DEFS: Record<string, ModelDef> = {
 };
 
 const GROUPS = [
+    // 国内直连
     'DeepSeek',
     'GLM (智谱)',
     'Qwen (通义)',
     'MiniMax',
     'Moonshot (Kimi)',
+    'Kimi K2',
+    // 国际直连
     'OpenAI',
     'Anthropic (Claude)',
     'Google (Gemini)',
     'Mistral',
+    // 中转
     'Meta (Llama) — 需中转',
+    // 聚合平台
+    'API 聚合平台',
+    // 自定义
     '自定义接口',
 ];
 
