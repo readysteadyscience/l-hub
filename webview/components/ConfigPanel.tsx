@@ -533,7 +533,7 @@ const AddEditModal: React.FC<{
     const [baseUrl, setBaseUrl] = useState(existing?.model.baseUrl || '');
     const [tasks, setTasks] = useState<string[]>(existing?.model.tasks || []);
     const [apiKey, setApiKey] = useState(existing?.apiKey || '');
-    const [step, setStep] = useState(isEdit ? 2 : 1);
+    const [step, setStep] = useState(1);
 
     const isCustomGroup = selectedGroup === '自定义接口';
     const isRelayGroup = selectedGroup === '第三方中转';
@@ -719,6 +719,18 @@ const AddEditModal: React.FC<{
                 {step === 2 && (
                     <>
                         {stepHeader(2, '任务分配')}
+
+                        {isEdit && (
+                            <div style={{ marginBottom: '14px' }}>
+                                <label style={s.label}>Model ID <span style={{ fontWeight: 400, opacity: 0.7 }}>(可直接修改型号，如 glm-5 / glm-4.7)</span></label>
+                                <input
+                                    style={s.input}
+                                    value={isCustomGroup ? customModelId : selectedModelId}
+                                    onChange={e => isCustomGroup ? setCustomModelId(e.target.value) : setSelectedModelId(e.target.value)}
+                                    placeholder="如 glm-5、glm-4.7、deepseek-reasoner"
+                                />
+                            </div>
+                        )}
 
                         <div style={{ marginBottom: '16px' }}>
                             <label style={s.label}>
