@@ -46,7 +46,7 @@ interface ModelDef {
 const MODEL_DEFS: Record<string, ModelDef> = {
     // ─── DeepSeek ─────────────────────────────────────────────────────────────
     'deepseek-chat': {
-        label: 'DeepSeek-V3 (推荐)',
+        label: 'V3.2',
         group: 'DeepSeek',
         baseUrl: 'https://api.deepseek.com/v1',
         defaultTasks: ['code_gen', 'code_review', 'math_reasoning'],
@@ -54,7 +54,7 @@ const MODEL_DEFS: Record<string, ModelDef> = {
         pricing: { input: 0.32, output: 0.89 },
     },
     'deepseek-reasoner': {
-        label: 'DeepSeek-R1 (推理)',
+        label: 'R1',
         group: 'DeepSeek',
         baseUrl: 'https://api.deepseek.com/v1',
         defaultTasks: ['math_reasoning', 'architecture', 'code_review'],
@@ -63,7 +63,7 @@ const MODEL_DEFS: Record<string, ModelDef> = {
     },
     // ─── GLM (智谱) ────────────────────────────────────────────────────────────
     'glm-5': {
-        label: 'GLM-5',
+        label: 'GLM-5 通用',
         group: 'GLM (智谱)',
         baseUrl: 'https://open.bigmodel.cn/api/paas/v4',
         defaultTasks: ['architecture', 'agentic', 'tool_calling', 'code_gen'],
@@ -71,7 +71,7 @@ const MODEL_DEFS: Record<string, ModelDef> = {
         pricing: { input: 1.50, output: 6.00 },
     },
     'glm-5-coding': {
-        label: 'GLM-5 (Coding Plan)',
+        label: 'GLM-5 编程版',
         group: 'GLM (智谱)',
         baseUrl: 'https://open.bigmodel.cn/api/coding/paas/v4',
         defaultTasks: ['architecture', 'agentic', 'code_gen', 'code_review'],
@@ -79,7 +79,7 @@ const MODEL_DEFS: Record<string, ModelDef> = {
         pricing: undefined,
     },
     'glm-4.7': {
-        label: 'GLM-4.7 (Coding Plan 推荐)',
+        label: 'GLM-4.7 编程版',
         group: 'GLM (智谱)',
         baseUrl: 'https://open.bigmodel.cn/api/coding/paas/v4',
         defaultTasks: ['code_gen', 'code_review', 'agentic', 'tool_calling'],
@@ -88,7 +88,7 @@ const MODEL_DEFS: Record<string, ModelDef> = {
     },
     // ─── Qwen (通义) ──────────────────────────────────────────────────────────
     'qwen-max': {
-        label: 'Qwen-Max (推荐)',
+        label: 'Qwen3-Max',
         group: 'Qwen (通义)',
         baseUrl: 'https://dashscope.aliyuncs.com/compatible-mode/v1',
         defaultTasks: ['translation', 'documentation', 'tool_calling', 'code_gen'],
@@ -96,7 +96,7 @@ const MODEL_DEFS: Record<string, ModelDef> = {
         pricing: { input: 0.50, output: 4.00 },
     },
     'qwen-coder-plus': {
-        label: 'Qwen-Coder-Plus',
+        label: 'Qwen Coder Plus',
         group: 'Qwen (通义)',
         baseUrl: 'https://dashscope.aliyuncs.com/compatible-mode/v1',
         defaultTasks: ['code_gen', 'code_review', 'agentic'],
@@ -105,7 +105,7 @@ const MODEL_DEFS: Record<string, ModelDef> = {
     },
     // ─── MiniMax ──────────────────────────────────────────────────────────────
     'MiniMax-M2.5': {
-        label: 'MiniMax-M2.5（通用按量）',
+        label: 'M2.5 通用',
         group: 'MiniMax',
         baseUrl: 'https://api.minimax.io/v1',
         defaultTasks: ['agentic', 'code_gen', 'tool_calling', 'long_context'],
@@ -113,7 +113,7 @@ const MODEL_DEFS: Record<string, ModelDef> = {
         pricing: { input: 0.40, output: 1.20 },
     },
     'MiniMax-M2.5-highspeed': {
-        label: 'MiniMax-M2.5 HighSpeed（Coding Plan 包月 ⭐）',
+        label: 'M2.5-highspeed Coding Plan',
         group: 'MiniMax',
         baseUrl: 'https://api.minimax.io/v1',
         defaultTasks: ['code_gen', 'code_review', 'agentic', 'long_context'],
@@ -471,10 +471,10 @@ const ModelCard: React.FC<{
         <div style={{ ...s.card, opacity: model.enabled ? 1 : 0.5 }}>
             <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '8px' }}>
                 <div style={{ flex: 1, minWidth: 0 }}>
-                    {/* Name + provider + price */}
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-                        <span style={{ fontWeight: 600, fontSize: '13px' }}>{model.label}</span>
-                        <span style={{ fontSize: '11px', color: PROVIDER_COLORS[def?.group || ''] || 'var(--vscode-descriptionForeground)', fontWeight: 500 }}>{def?.group || model.modelId}</span>
+                    {/* Group name (big) + model label (small subtitle) + price */}
+                    <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px', flexWrap: 'wrap' }}>
+                        <span style={{ fontWeight: 600, fontSize: '13px' }}>{def?.group || model.modelId}</span>
+                        <span style={{ fontSize: '11px', color: PROVIDER_COLORS[def?.group || ''] || 'var(--vscode-descriptionForeground)', fontWeight: 500 }}>{model.label}</span>
                         {def?.pricing && (
                             <span style={{ fontSize: '10px', color: 'var(--vscode-descriptionForeground)', background: 'var(--vscode-input-background)', border: '1px solid var(--vscode-input-border)', borderRadius: '3px', padding: '0 5px' }}>
                                 {formatPrice(def.pricing.input, lang)} / {formatPrice(def.pricing.output, lang)} per M
@@ -495,8 +495,18 @@ const ModelCard: React.FC<{
                         }
                     </div>
                 </div>
-                {/* Actions */}
+                {/* Actions: Test + Disable + Edit + Delete */}
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
+                    <button
+                        onClick={handleTest}
+                        disabled={testState === 'testing'}
+                        style={{
+                            ...s.btnSecondary, padding: '3px 10px', fontSize: '11px',
+                            cursor: testState === 'testing' ? 'default' : 'pointer',
+                        }}
+                    >
+                        {testState === 'testing' ? (lang === 'zh' ? '测试中…' : 'Testing…') : (lang === 'zh' ? '测试连通' : 'Test')}
+                    </button>
                     <button
                         style={{ ...s.btnSecondary, padding: '3px 10px', fontSize: '11px' }}
                         onClick={() => onToggle(model.id, !model.enabled)}
@@ -535,27 +545,17 @@ const ModelCard: React.FC<{
                     )}
                 </div>
             </div>
-            {/* Footer: URL + key status + test */}
-            <div style={{ marginTop: '7px', fontSize: '11px', color: 'var(--vscode-descriptionForeground)', display: 'flex', gap: '14px', flexWrap: 'wrap', alignItems: 'center' }}>
-                <span>{model.baseUrl || '(未设置 Base URL)'}</span>
-                <span style={{ color: apiKey ? 'var(--vscode-testing-iconPassed)' : 'var(--vscode-errorForeground)' }}>
-                    {apiKey ? (lang === 'zh' ? 'API Key 已配置' : 'API Key set') : (lang === 'zh' ? 'API Key 未配置' : 'API Key missing')}
+            {/* Footer: URL + key status · test result at bottom-right */}
+            <div style={{ marginTop: '7px', fontSize: '11px', color: 'var(--vscode-descriptionForeground)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '4px' }}>
+                <span style={{ display: 'flex', gap: '14px', alignItems: 'center' }}>
+                    <span>{model.baseUrl || '(未设置 Base URL)'}</span>
+                    <span style={{ color: apiKey ? 'var(--vscode-testing-iconPassed)' : 'var(--vscode-errorForeground)' }}>
+                        {apiKey ? (lang === 'zh' ? 'API Key 已配置' : 'API Key set') : (lang === 'zh' ? 'API Key 未配置' : 'API Key missing')}
+                    </span>
                 </span>
-                <button
-                    onClick={handleTest}
-                    disabled={testState === 'testing'}
-                    style={{
-                        background: 'none', border: '1px solid var(--vscode-input-border)',
-                        borderRadius: '3px', padding: '1px 8px', fontSize: '10px',
-                        cursor: testState === 'testing' ? 'default' : 'pointer',
-                        color: 'var(--vscode-descriptionForeground)',
-                    }}
-                >
-                    {testState === 'testing' ? (lang === 'zh' ? '测试中…' : 'Testing…') : (lang === 'zh' ? '测试连通' : 'Test')}
-                </button>
-                {testState !== 'idle' && testState !== 'testing' && (
+                {testState !== 'idle' && (
                     <span style={{ color: testColor, fontWeight: 500 }}>
-                        {testState === 'ok' ? `✅ ${testMsg}` : `❌ ${testMsg}`}
+                        {testState === 'testing' ? (lang === 'zh' ? '测试中…' : 'Testing…') : testState === 'ok' ? `✅ ${testMsg}` : `❌ ${testMsg}`}
                     </span>
                 )}
             </div>
