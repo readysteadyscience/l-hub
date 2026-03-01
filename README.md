@@ -45,33 +45,11 @@
 
 ## 📦 支持的模型
 
-L-Hub 采用 **OpenAI 兼容接口**格式，支持所有兼容该格式的大模型。
+L-Hub 采用 **OpenAI 兼容接口**，只要模型支持该格式即可接入。
 
-### 🔌 官方 API 直连（内置支持）
+在设置页面可自由添加任意模型，例如：**DeepSeek-V3**（代码）、**GLM-4**（架构/Agentic）、**Qwen-Max**（翻译）、**MiniMax**（UI 生成）、**Kimi 128K**（长文档）...
 
-| 模型 | 提供商 | 主要优势 | 获取 Key |
-|---|---|---|---|
-| `deepseek-chat`（DeepSeek-V3） | DeepSeek | SWE-bench 排名 Top 5，代码生成性价比最高，速度快 | [platform.deepseek.com](https://platform.deepseek.com) |
-| `deepseek-coder` | DeepSeek | 代码类任务专属模型，自动补全能力强 | [platform.deepseek.com](https://platform.deepseek.com) |
-| `glm-4` / `glm-4-flash` / `glm-z1` | 智谱 AI | 长文本理解强，适合架构分析和跨文件重构 | [open.bigmodel.cn](https://open.bigmodel.cn) |
-| `qwen-max` / `qwen-plus` / `qwen-turbo` | 阿里云通义 | 中文理解和生成最强，翻译全球领先 | [dashscope.aliyun.com](https://dashscope.aliyuncs.com) |
-| `abab6.5-chat` | MiniMax | 100 tokens/s 无出其右，适合大量内容生成、UI 方案 | [api.minimax.chat](https://api.minimax.chat) |
-| Codex CLI（本地 Agent） | OpenAI | 可直接操作本地文件，无需手动配 API Key | `codex login`（ChatGPT 账号） |
-
-### 🌐 第三方中转 API（自定义配置）
-
-通过 L-Hub 设置面板的「自定义 API」填入中转地址，可解锁几乎**所有主流大模型**：
-
-| 中转服务 | 支持模型（举例） | 优势 | 地址 |
-|---|---|---|---|
-| **OpenRouter** | GPT-4o、Claude Sonnet/Opus、Gemini 1.5 Pro、Llama 3.1 70B、Mistral Large 等 300+ | 最多模型，部分免费，适合试用过渡 | [openrouter.ai](https://openrouter.ai) |
-| **硅基流动 SiliconFlow** | Qwen2.5-72B、DeepSeek-V3、Llama 3.3、Yi-Lightning | 国内速度快，价格低廉 | [siliconflow.cn](https://siliconflow.cn) |
-| **月之暗面 Moonshot** | `moonshot-v1-8k/32k/128k`（Kimi） | 超长文本理解，中文优化 | [platform.moonshot.cn](https://platform.moonshot.cn) |
-| **零一万物 01.AI** | `yi-large` / `yi-medium` | 多语言然语理解，性价比高 | [platform.01.ai](https://platform.01.ai) |
-| **百川 Baichuan** | `Baichuan4` / `Baichuan3-Turbo` | 中文知识库丰富，合顺合规场景 | [platform.baichuan-ai.com](https://platform.baichuan-ai.com) |
-| **自建一键中转** | 任意模型（OneAPI、New API 等） | 完全自主控制，适合企业私有化部署 | 填入你的服务器地址 |
-
-> 💡 只需在设置面板填入 Base URL + 模型名 + API Key，即可接入以上任意服务。
+同时支持**第三方中转 API**（如 [OpenRouter](https://openrouter.ai)、[硅基流动](https://siliconflow.cn) 等），填入 Base URL 即可接入 GPT-4o、Claude、Gemini、Llama 等几乎所有主流模型。完整模型列表请在插件设置面板中查看。
 
 <div align="center">
 
@@ -168,33 +146,11 @@ L-Hub 是 **走起智造 · Ready Steady Science** 旗下 **Linglan Realm** 的�
 
 ## 📦 Supported Models
 
-L-Hub uses the **OpenAI-compatible API format** — any provider that supports this format can be connected.
+L-Hub uses the **OpenAI-compatible API format** — any model that supports this format works out of the box.
 
-### 🔌 Official API (Built-in)
+Add any model from the Settings panel — for example: **DeepSeek-V3** (code), **GLM-4** (architecture / Agentic), **Qwen-Max** (translation), **MiniMax** (UI generation), **Kimi 128K** (long documents)...
 
-| Model | Provider | Get API Key |
-|---|---|---|
-| `deepseek-chat` (DeepSeek-V3) | DeepSeek | [platform.deepseek.com](https://platform.deepseek.com) |
-| `deepseek-coder` | DeepSeek | [platform.deepseek.com](https://platform.deepseek.com) |
-| `glm-4` / `glm-4-flash` / `glm-z1` | Zhipu AI | [open.bigmodel.cn](https://open.bigmodel.cn) |
-| `qwen-max` / `qwen-plus` / `qwen-turbo` | Alibaba Tongyi | [dashscope.aliyuncs.com](https://dashscope.aliyuncs.com) |
-| `abab6.5-chat` | MiniMax | [api.minimax.chat](https://api.minimax.chat) |
-| Codex CLI (local agent) | OpenAI | `codex login` (ChatGPT account) |
-
-### 🌐 Third-party Relay API (Custom Config)
-
-Fill in a custom Base URL in L-Hub settings to unlock virtually **any model**:
-
-| Relay | Models (examples) | URL |
-|---|---|---|
-| **OpenRouter** | GPT-4o, Claude Sonnet/Opus, Gemini 1.5 Pro, Llama 3.1, Mistral Large, 300+ more | [openrouter.ai](https://openrouter.ai) |
-| **SiliconFlow** | Qwen2.5, DeepSeek-V3, Llama 3.3, Yi-Lightning | [siliconflow.cn](https://siliconflow.cn) |
-| **Moonshot (Kimi)** | `moonshot-v1-8k/32k/128k` | [platform.moonshot.cn](https://platform.moonshot.cn) |
-| **01.AI** | `yi-large` / `yi-medium` | [platform.01.ai](https://platform.01.ai) |
-| **Baichuan AI** | `Baichuan4` / `Baichuan3-Turbo` | [platform.baichuan-ai.com](https://platform.baichuan-ai.com) |
-| **Self-hosted relay** | Any model (OneAPI, New API, etc.) | Your own server URL |
-
-> 💡 Just set Base URL + model name + API key in the Settings panel — no code changes needed.
+**Third-party relay services** are also supported — paste a Base URL from [OpenRouter](https://openrouter.ai), [SiliconFlow](https://siliconflow.cn), or any self-hosted relay to unlock GPT-4o, Claude, Gemini, Llama, and many more. See the full model list inside the Settings panel.
 
 <div align="center">
 
