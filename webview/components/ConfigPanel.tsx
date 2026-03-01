@@ -691,6 +691,7 @@ const ConfigPanel: React.FC<ConfigPanelProps> = ({ lang }) => {
     const [apiKeys, setApiKeys] = useState<Record<string, string>>({});
     const [showModal, setShowModal] = useState(false);
     const [editTarget, setEditTarget] = useState<{ model: ModelConfig; apiKey: string } | undefined>();
+    const [showPricing, setShowPricing] = useState(false);
 
     useEffect(() => {
         const handler = (ev: MessageEvent) => {
@@ -765,6 +766,72 @@ const ConfigPanel: React.FC<ConfigPanelProps> = ({ lang }) => {
                     />
                 ))
             )}
+
+            {/* Pricing Reference Table */}
+            <div style={{ marginTop: '18px' }}>
+                <button
+                    onClick={() => setShowPricing(!showPricing)}
+                    style={{
+                        ...s.btnSecondary,
+                        width: '100%', textAlign: 'left',
+                        display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                    }}
+                >
+                    <span>{lang === 'zh' ? '模型价格参考（OpenRouter 数据）' : 'Pricing Reference (OpenRouter Data)'}</span>
+                    <span style={{ fontSize: '10px' }}>{showPricing ? '▲' : '▼'}</span>
+                </button>
+                {showPricing && (
+                    <div style={{
+                        marginTop: '6px', border: '1px solid var(--vscode-input-border)',
+                        borderRadius: '4px', overflow: 'hidden',
+                    }}>
+                        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px' }}>
+                            <thead>
+                                <tr style={{ background: 'var(--vscode-editor-inactiveSelectionBackground)', textAlign: 'left' }}>
+                                    <th style={{ padding: '6px 10px', fontWeight: 600 }}>
+                                        {lang === 'zh' ? '模型' : 'Model'}
+                                    </th>
+                                    <th style={{ padding: '6px 10px', fontWeight: 600 }}>
+                                        {lang === 'zh' ? '厂商' : 'Provider'}
+                                    </th>
+                                    <th style={{ padding: '6px 10px', fontWeight: 600, textAlign: 'right' }}>
+                                        {lang === 'zh' ? '输入 $/M' : 'Input $/M'}
+                                    </th>
+                                    <th style={{ padding: '6px 10px', fontWeight: 600, textAlign: 'right' }}>
+                                        {lang === 'zh' ? '输出 $/M' : 'Output $/M'}
+                                    </th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {PRICE_TABLE.map((row, i) => (
+                                    <tr key={row.id} style={{
+                                        background: i % 2 === 0 ? 'transparent' : 'var(--vscode-editor-inactiveSelectionBackground)',
+                                        borderTop: '1px solid var(--vscode-input-border)',
+                                    }}>
+                                        <td style={{ padding: '5px 10px' }}>{row.label}</td>
+                                        <td style={{ padding: '5px 10px', opacity: 0.7 }}>{row.group}</td>
+                                        <td style={{ padding: '5px 10px', textAlign: 'right', fontFamily: 'monospace' }}>
+                                            ${row.pricing.input.toFixed(2)}
+                                        </td>
+                                        <td style={{ padding: '5px 10px', textAlign: 'right', fontFamily: 'monospace' }}>
+                                            ${row.pricing.output.toFixed(2)}
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                        <div style={{
+                            padding: '6px 10px', fontSize: '10px',
+                            color: 'var(--vscode-descriptionForeground)',
+                            borderTop: '1px solid var(--vscode-input-border)',
+                        }}>
+                            {lang === 'zh'
+                                ? '价格来源：OpenRouter（2026-03），单位：美元/百万 tokens。直连官方 API 价格可能不同。'
+                                : 'Source: OpenRouter (2026-03). USD per million tokens. Direct API pricing may vary.'}
+                        </div>
+                    </div>
+                )}
+            </div>
 
             {/* Footer note */}
             <div style={{

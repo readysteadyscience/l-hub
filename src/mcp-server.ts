@@ -49,9 +49,15 @@ function readConfig(): LHubConfig {
 
 const LEGACY_PROVIDERS: Record<string, { url: string; model: string }> = {
     deepseek: { url: 'https://api.deepseek.com/v1', model: 'deepseek-chat' },
-    glm: { url: 'https://open.bigmodel.cn/api/paas/v4', model: 'glm-4-flash' },
+    glm: { url: 'https://open.bigmodel.cn/api/paas/v4', model: 'glm-5' },
     qwen: { url: 'https://dashscope.aliyuncs.com/compatible-mode/v1', model: 'qwen-max' },
-    minimax: { url: 'https://api.minimax.chat/v1', model: 'abab6.5-chat' },
+    minimax: { url: 'https://api.minimax.chat/v1', model: 'MiniMax-M2.5' },
+    kimi: { url: 'https://api.moonshot.cn/v1', model: 'kimi-k2-instruct' },
+    openai: { url: 'https://api.openai.com/v1', model: 'gpt-5.1' },
+    gpt: { url: 'https://api.openai.com/v1', model: 'gpt-5.3-codex' },
+    claude: { url: 'https://api.anthropic.com/v1', model: 'claude-sonnet-4-6' },
+    gemini: { url: 'https://generativelanguage.googleapis.com/v1beta/openai', model: 'gemini-3.1-flash' },
+    mistral: { url: 'https://api.mistral.ai/v1', model: 'mistral-large-latest' },
 };
 
 // ─── Smart routing ────────────────────────────────────────────────────────────
@@ -126,9 +132,10 @@ function resolveRoute(message: string, config: LHubConfig, forcedProvider?: stri
 
     if (!forcedProvider) {
         const msg = message.toLowerCase();
-        if (msg.includes('architecture') || msg.includes('架构')) { providerKey = 'glm'; }
-        else if (msg.includes('translate') || msg.includes('翻译')) { providerKey = 'qwen'; }
-        else if (msg.includes('ui') || msg.includes('frontend') || msg.includes('前端')) { providerKey = 'minimax'; }
+        if (msg.includes('architecture') || msg.includes('架构') || msg.includes('agentic')) { providerKey = 'glm'; }
+        else if (msg.includes('translate') || msg.includes('翻译') || msg.includes('中文')) { providerKey = 'qwen'; }
+        else if (msg.includes('terminal') || msg.includes('devops') || msg.includes('shell')) { providerKey = 'gpt'; }
+        else if (msg.includes('reasoning') || msg.includes('推理') || msg.includes('algorithm')) { providerKey = 'gemini'; }
     }
 
     const legacyKey = legacy[providerKey];
