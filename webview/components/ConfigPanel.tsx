@@ -476,10 +476,16 @@ const AddEditModal: React.FC<{
 
     const handleGroupChange = (g: string) => {
         setSelectedGroup(g);
-        const first = Object.entries(MODEL_DEFS).find(([, d]) => d.group === g && d.group !== '自定义接口');
+        const isRelay = g === '第三方中转';
+        // For relay group, pick first available model from all providers
+        const candidates = isRelay
+            ? Object.entries(MODEL_DEFS).filter(([, d]) => d.group !== '自定义接口' && d.group !== '第三方中转')
+            : Object.entries(MODEL_DEFS).filter(([, d]) => d.group === g && d.group !== '自定义接口');
+        const first = candidates[0];
         if (first) {
             setSelectedModelId(first[0]);
-            setBaseUrl(first[1].baseUrl);
+            // For relay, clear baseUrl so user must pick a platform
+            setBaseUrl(isRelay ? '' : first[1].baseUrl);
             setTasks(first[1].defaultTasks);
         } else {
             setSelectedModelId('');
@@ -503,6 +509,9 @@ const AddEditModal: React.FC<{
 
     const handleSave = () => {
         const finalModelId = isCustomGroup ? customModelId : selectedModelId;
+        if (!finalModelId) { alert('请选择或填写型号'); return; }
+        if (isRelayGroup && !baseUrl) { alert('第三方中转需要填写 Base URL'); return; }
+
         const finalLabel = isCustomGroup
             ? (customLabel || customModelId)
             : (MODEL_DEFS[finalModelId]?.label || finalModelId);
@@ -580,7 +589,7 @@ const AddEditModal: React.FC<{
                                 {def && <p style={s.hint}>{def.note}</p>}
                                 {isRelayGroup && (
                                     <div style={{ marginTop: '10px' }}>
-                                        <label style={s.label}>{lang === 'zh' ? '中转平台（点击快速填入 Base URL）' : 'Relay Platform (click to auto-fill Base URL)'}</label>
+                                        <label style={s.label}>{lang === 'zh' ? '中转平台（点击快速填入）' : 'Relay Platform (click to fill Base URL)'}</label>
                                         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginTop: '4px' }}>
                                             {RELAY_PRESETS.map(r => (
                                                 <button
@@ -598,7 +607,7 @@ const AddEditModal: React.FC<{
                                         </div>
                                         {RELAY_PRESETS.map(r => baseUrl === r.url && (
                                             <p key={r.name} style={{ ...s.hint, marginTop: '6px' }}>
-                                                {r.note} — <a href={r.site} style={{ color: 'var(--vscode-textLink-foreground)' }}>注册/获取 Key</a>
+                                                {r.note} — <a href={r.site} style={{ color: 'var(--vscode-textLink-foreground)' }}>注册 / 获取 Key ↗</a>
                                             </p>
                                         ))}
                                         <div style={{ marginTop: '8px' }}>
@@ -646,7 +655,7 @@ const AddEditModal: React.FC<{
                             <label style={s.label}>
                                 {lang === 'zh' ? '任务类型（多选）' : 'Task Types (multi-select)'}
                                 <span style={{ fontWeight: 400, fontSize: '11px', opacity: 0.65, marginLeft: '8px' }}>
-                                    已根据模型特点预设，可修改
+                                    已按模型特点预设，可自由修改
                                 </span>
                             </label>
                             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginTop: '4px' }}>
@@ -806,7 +815,7 @@ const ConfigPanel: React.FC<ConfigPanelProps> = ({ lang }) => {
                     </h2>
                     <p style={{ margin: 0, fontSize: '12px', color: 'var(--vscode-descriptionForeground)' }}>
                         {lang === 'zh'
-                            ? `${enabled} 个模型已启用 · L-Hub 根据任务类型自动路由到对应模型`
+                            ? `${enabled} 个模型已启用 · 按任务类型自动路由`
                             : `${enabled} model(s) enabled · L-Hub auto-routes each task to the matching model`}
                     </p>
                 </div>
@@ -915,7 +924,7 @@ const ConfigPanel: React.FC<ConfigPanelProps> = ({ lang }) => {
                         display: 'flex', justifyContent: 'space-between', alignItems: 'center',
                     }}
                 >
-                    <span>{lang === 'zh' ? '智能路由推荐参考（各任务最佳模型）' : 'Routing Reference (Best Model per Task)'}</span>
+                    <span>{lang === 'zh' ? '路由推荐参考 — 各任务最佳模型' : 'Routing Reference (Best Model per Task)'}</span>
                     <span style={{ fontSize: '10px' }}>{showRouting ? '▲' : '▼'}</span>
                 </button>
                 {showRouting && (
@@ -979,8 +988,8 @@ const ConfigPanel: React.FC<ConfigPanelProps> = ({ lang }) => {
                             borderTop: '1px solid var(--vscode-input-border)',
                         }}>
                             {lang === 'zh'
-                                ? '以上为参考建议，实际路由取决于您配置的模型和任务分配。L-Hub 支持所有 OpenAI 兼容接口的模型，不限于上表所列。'
-                                : 'These are recommendations only. Actual routing depends on your configured models. L-Hub supports any OpenAI-compatible model, not limited to the list above.'}
+                                ? '以上仅为参考，实际路由取决于已配置的模型。L-Hub 支持所有 OpenAI 兼容接口，不限于上表。'
+                                : 'These are recommendations only. Actual routing depends on your configured models. L-Hub supports any OpenAI-compatible model.'}
                         </div>
                     </div>
                 )}
@@ -995,7 +1004,7 @@ const ConfigPanel: React.FC<ConfigPanelProps> = ({ lang }) => {
                 fontSize: '11px', color: 'var(--vscode-descriptionForeground)', lineHeight: '1.6',
             }}>
                 {lang === 'zh'
-                    ? '路由规则：L-Hub 收到请求时，按任务类型找出所有已启用的匹配模型，选优先级最高（列表最上方）的那个。您可以自由添加任何模型并自定义任务分配。'
+                    ? '路由规则：按任务类型匹配已启用的模型，选优先级最高的（列表靠上）。可随时添加新模型、自定义任务分配。'
                     : 'Routing: L-Hub matches the task type to enabled models and picks the highest-priority one (top of list). You can add any model and customize task assignments.'}
             </div>
 

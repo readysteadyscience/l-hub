@@ -17,12 +17,22 @@ const KEYS_FILE = path.join(os.homedir(), '.l-hub-keys.json');
  */
 async function syncKeysToFile(settings: SettingsManager) {
     try {
-        const keys: Record<string, string> = {};
+        // Read existing file to preserve v2 `models` and other fields
+        let existing: Record<string, any> = {};
+        try {
+            if (fs.existsSync(KEYS_FILE)) {
+                existing = JSON.parse(fs.readFileSync(KEYS_FILE, 'utf8'));
+            }
+        } catch { }
+
+        // Update only the legacy keys section — leave models/version intact
+        const legacyKeys: Record<string, string> = {};
         for (const provider of SUPPORTED_PROVIDERS) {
             const k = await settings.getApiKey(provider);
-            if (k) keys[provider] = k;
+            if (k) legacyKeys[provider] = k;
         }
-        fs.writeFileSync(KEYS_FILE, JSON.stringify(keys, null, 2), 'utf8');
+        const merged = { ...existing, legacy: legacyKeys };
+        fs.writeFileSync(KEYS_FILE, JSON.stringify(merged, null, 2), 'utf8');
     } catch (e) {
         console.error('[L-Hub] Failed to sync keys:', e);
     }
