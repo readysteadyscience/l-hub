@@ -376,14 +376,25 @@ const ModelCard: React.FC<{
     model: ModelConfig;
     apiKey: string;
     lang: string;
+    initialTestResult?: { ok: boolean; msg: string };
     onEdit: (m: ModelConfig, key: string) => void;
     onRemove: (id: string) => void;
     onToggle: (id: string, enabled: boolean) => void;
-}> = ({ model, apiKey, lang, onEdit, onRemove, onToggle }) => {
+}> = ({ model, apiKey, lang, initialTestResult, onEdit, onRemove, onToggle }) => {
     const def = MODEL_DEFS[model.modelId];
-    const [testState, setTestState] = React.useState<'idle' | 'testing' | 'ok' | 'fail'>('idle');
-    const [testMsg, setTestMsg] = React.useState('');
+    const [testState, setTestState] = React.useState<'idle' | 'testing' | 'ok' | 'fail'>(
+        initialTestResult ? (initialTestResult.ok ? 'ok' : 'fail') : 'idle'
+    );
+    const [testMsg, setTestMsg] = React.useState(initialTestResult?.msg || '');
     const [confirmDelete, setConfirmDelete] = React.useState(false);
+
+    // Update when auto-test result arrives from parent
+    React.useEffect(() => {
+        if (initialTestResult) {
+            setTestState(initialTestResult.ok ? 'ok' : 'fail');
+            setTestMsg(initialTestResult.msg);
+        }
+    }, [initialTestResult?.ok, initialTestResult?.msg]);
 
     const handleTest = async () => {
         if (!apiKey) { setTestState('fail'); setTestMsg(lang === 'zh' ? '未配置 API Key' : 'API Key not set'); return; }
@@ -523,7 +534,18 @@ const AddEditModal: React.FC<{
 
     const [selectedGroup, setSelectedGroup] = useState(() => {
         if (existing) {
-            return MODEL_DEFS[existing.model.modelId]?.group || GROUPS[0];
+            // Try MODEL_DEFS lookup first (covers known models)
+            const fromDef = MODEL_DEFS[existing.model.modelId]?.group;
+            if (fromDef) return fromDef;
+            // Fallback: detect from baseUrl pattern
+            const url = existing.model.baseUrl || '';
+            if (url.includes('bigmodel.cn') || url.includes('zhipuai')) return 'GLM (智谱)';
+            if (url.includes('dashscope') || url.includes('aliyuncs')) return 'Qwen (通义)';
+            if (url.includes('minimax') || url.includes('minimaxi')) return 'MiniMax';
+            if (url.includes('moonshot') || url.includes('kimi')) return 'Kimi K2';
+            if (url.includes('deepseek')) return 'DeepSeek';
+            if (url.includes('anthropic') || url.includes('claude')) return '官方直连（国际）';
+            if (url.includes('openai') || url.includes('googleapis')) return '官方直连（国际）';
         }
         return GROUPS[0];
     });
@@ -854,12 +876,42 @@ const ConfigPanel: React.FC<ConfigPanelProps> = ({ lang }) => {
     const [editTarget, setEditTarget] = useState<{ model: ModelConfig; apiKey: string } | undefined>();
     const [showPricing, setShowPricing] = useState(false);
     const [showRouting, setShowRouting] = useState(false);
+    const [testResults, setTestResults] = useState<Record<string, { ok: boolean; msg: string }>>({});
 
     useEffect(() => {
         const handler = (ev: MessageEvent) => {
             if (ev.data.command === 'loadModelsV2') {
-                setModels(ev.data.models || []);
-                setApiKeys(ev.data.apiKeys || {});
+                const loadedModels: ModelConfig[] = ev.data.models || [];
+                const loadedKeys: Record<string, string> = ev.data.apiKeys || {};
+                setModels(loadedModels);
+                setApiKeys(loadedKeys);
+                // Auto-test all models with configured keys after 2s delay
+                setTimeout(() => {
+                    loadedModels.forEach(async (m) => {
+                        const key = loadedKeys[m.id];
+                        if (!key || !m.baseUrl || !m.enabled) return;
+                        try {
+                            const url = m.baseUrl.replace(/\/$/, '') + '/chat/completions';
+                            const res = await fetch(url, {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + key },
+                                body: JSON.stringify({ model: m.modelId, messages: [{ role: 'user', content: 'OK' }], max_tokens: 5 }),
+                                signal: AbortSignal.timeout(12000),
+                            });
+                            const json = await res.json() as any;
+                            const content = json?.choices?.[0]?.message?.content;
+                            if (content) {
+                                setTestResults(prev => ({ ...prev, [m.id]: { ok: true, msg: content.trim().substring(0, 15) } }));
+                            } else {
+                                const errMsg = json?.error?.message?.substring(0, 50) || `HTTP ${res.status}`;
+                                setTestResults(prev => ({ ...prev, [m.id]: { ok: false, msg: errMsg } }));
+                            }
+                        } catch (e: any) {
+                            const errMsg = e.message?.includes('timeout') ? '超时15s' : (e.message || 'Error').substring(0, 40);
+                            setTestResults(prev => ({ ...prev, [m.id]: { ok: false, msg: errMsg } }));
+                        }
+                    });
+                }, 2000);
             }
         };
         window.addEventListener('message', handler);
@@ -925,6 +977,7 @@ const ConfigPanel: React.FC<ConfigPanelProps> = ({ lang }) => {
                     <ModelCard
                         key={m.id} model={m} apiKey={apiKeys[m.id] || ''}
                         lang={lang} onEdit={handleEdit} onRemove={handleRemove} onToggle={handleToggle}
+                        initialTestResult={testResults[m.id]}
                     />
                 ))
             )}
