@@ -107,7 +107,7 @@ const MODEL_DEFS: Record<string, ModelDef> = {
     'MiniMax-M2.5': {
         label: 'MiniMax-M2.5 (推荐)',
         group: 'MiniMax',
-        baseUrl: 'https://api.minimaxi.com/v1',
+        baseUrl: 'https://api.minimax.io/v1',
         defaultTasks: ['agentic', 'code_gen', 'tool_calling', 'long_context'],
         note: '最新旗舰（2025-12），SWE-bench 80.2%，Agentic 顶尖',
         pricing: { input: 0.40, output: 1.20 },
@@ -115,7 +115,7 @@ const MODEL_DEFS: Record<string, ModelDef> = {
     'MiniMax-M2.5-highspeed': {
         label: 'MiniMax-M2.5 HighSpeed',
         group: 'MiniMax',
-        baseUrl: 'https://api.minimaxi.com/v1',
+        baseUrl: 'https://api.minimax.io/v1',
         defaultTasks: ['code_gen', 'documentation'],
         note: 'M2.5 高速版，响应更快，适合高频调用',
         pricing: { input: 0.40, output: 1.20 },
