@@ -258,6 +258,19 @@ const MODEL_DEFS: Record<string, ModelDef> = {
     },
 };
 
+/** Example model IDs shown in the Model ID input per provider group */
+const GROUP_MODEL_EXAMPLES: Record<string, string> = {
+    'DeepSeek': 'deepseek-chat / deepseek-reasoner',
+    'GLM (智谱)': 'glm-5 / glm-4.7',
+    'Qwen (通义)': 'qwen-max / qwen-plus',
+    'MiniMax': 'MiniMax-M2.5 / MiniMax-M2.5-highspeed',
+    'Kimi K2': 'kimi-k2-0711-preview',
+    'Anthropic (Claude)': 'claude-opus-4-5 / claude-sonnet-4-5',
+    'OpenAI': 'gpt-4o / gpt-4.1',
+    'Google (Gemini)': 'gemini-2.0-flash / gemini-1.5-pro',
+    'Mistral': 'mistral-large / mistral-small',
+};
+
 const GROUPS = [
     // 官方直连（国内）
     'DeepSeek',
@@ -782,12 +795,12 @@ const AddEditModal: React.FC<{
 
                         {isEdit && (
                             <div style={{ marginBottom: '14px' }}>
-                                <label style={s.label}>Model ID <span style={{ fontWeight: 400, opacity: 0.7 }}>(可直接修改型号，如 glm-5 / glm-4.7)</span></label>
+                                <label style={s.label}>Model ID <span style={{ fontWeight: 400, opacity: 0.7 }}>{`(可直接修改型号，如 ${GROUP_MODEL_EXAMPLES[selectedGroup] ?? 'glm-5 / glm-4.7'})`}</span></label>
                                 <input
                                     style={s.input}
                                     value={isCustomGroup ? customModelId : selectedModelId}
                                     onChange={e => isCustomGroup ? setCustomModelId(e.target.value) : setSelectedModelId(e.target.value)}
-                                    placeholder="如 glm-5、glm-4.7、deepseek-reasoner"
+                                    placeholder={GROUP_MODEL_EXAMPLES[selectedGroup] ?? '如 glm-5、deepseek-chat、MiniMax-M2.5'}
                                 />
                             </div>
                         )}
