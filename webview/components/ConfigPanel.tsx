@@ -692,6 +692,7 @@ const ConfigPanel: React.FC<ConfigPanelProps> = ({ lang }) => {
     const [showModal, setShowModal] = useState(false);
     const [editTarget, setEditTarget] = useState<{ model: ModelConfig; apiKey: string } | undefined>();
     const [showPricing, setShowPricing] = useState(false);
+    const [showRouting, setShowRouting] = useState(false);
 
     useEffect(() => {
         const handler = (ev: MessageEvent) => {
@@ -833,17 +834,103 @@ const ConfigPanel: React.FC<ConfigPanelProps> = ({ lang }) => {
                 )}
             </div>
 
+            {/* Routing Recommendation Table */}
+            <div style={{ marginTop: '18px' }}>
+                <button
+                    onClick={() => setShowRouting(!showRouting)}
+                    style={{
+                        ...s.btnSecondary,
+                        width: '100%', textAlign: 'left',
+                        display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                    }}
+                >
+                    <span>{lang === 'zh' ? '智能路由推荐参考（各任务最佳模型）' : 'Routing Reference (Best Model per Task)'}</span>
+                    <span style={{ fontSize: '10px' }}>{showRouting ? '▲' : '▼'}</span>
+                </button>
+                {showRouting && (
+                    <div style={{
+                        marginTop: '6px', border: '1px solid var(--vscode-input-border)',
+                        borderRadius: '4px', overflow: 'hidden',
+                    }}>
+                        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px' }}>
+                            <thead>
+                                <tr style={{ background: 'var(--vscode-editor-inactiveSelectionBackground)', textAlign: 'left' }}>
+                                    <th style={{ padding: '6px 10px', fontWeight: 600, whiteSpace: 'nowrap' }}>
+                                        {lang === 'zh' ? '任务类型' : 'Task Type'}
+                                    </th>
+                                    <th style={{ padding: '6px 10px', fontWeight: 600 }}>
+                                        {lang === 'zh' ? '推荐模型' : 'Recommended'}
+                                    </th>
+                                    <th style={{ padding: '6px 10px', fontWeight: 600 }}>
+                                        {lang === 'zh' ? '原因' : 'Why'}
+                                    </th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {(lang === 'zh' ? [
+                                    ['代码生成', 'DeepSeek-V3 / Qwen-Coder-Plus', '性价比最高，SWE-bench 顶尖；Qwen 代码专项同级'],
+                                    ['调试 / 重构', 'Claude Opus 4.6 / GPT-5.3 Codex', '全球编程最强，深度代码审查；Terminal-Bench #1'],
+                                    ['架构设计', 'Claude Opus 4.6 / GLM-5', 'Agentic 企业级设计；GLM 工程能力接近 Opus'],
+                                    ['文档 / 注释', 'Claude Sonnet 4.6 / Qwen-Max', '内容创作均衡首选；Qwen 中文文档最强'],
+                                    ['翻译', 'Qwen-Max / Mistral Large 3', '中文翻译全球第一；Mistral 欧洲多语言优秀'],
+                                    ['UI / 前端', 'Gemini 3.1 Flash / MiniMax-M2.5', 'Google 多模态视觉；MiniMax 100 tok/s 高速生成'],
+                                    ['图像理解', 'Gemini 3.1 Pro / GPT-5.1', '百万 token 多模态；OpenAI 视觉成熟稳定'],
+                                    ['长文本分析', 'Gemini 3.1 Pro / Kimi K2.5', '百万 token 上下文；256K MoE 超长文档处理'],
+                                    ['数学 / 推理', 'DeepSeek-R1 / Gemini 3.1 Pro', 'R1 思维链推理顶尖；ARC-AGI-2 全球第一'],
+                                    ['工具调用', 'Qwen-Max / GPT-5.1', 'Tau2-bench 全球第一；OpenAI Function Calling 标准'],
+                                    ['创意写作', 'Claude Sonnet 4.6 / Qwen-Max', '创意与表达力最强；中文写作首选'],
+                                    ['Agentic 任务', 'MiniMax-M2.5 / Claude Opus 4.6', 'SWE-bench 80.2%；企业级 Agentic 标杆'],
+                                    ['终端 / DevOps', 'GPT-5.3 Codex / Codex CLI', 'Terminal-Bench #1；CLI 直接读写本地文件'],
+                                ] : [
+                                    ['Code Generation', 'DeepSeek-V3 / Qwen-Coder-Plus', 'Best cost-efficiency, SWE-bench top; Qwen code specialist'],
+                                    ['Debug & Refactor', 'Claude Opus 4.6 / GPT-5.3 Codex', 'Best coding globally; Terminal-Bench #1'],
+                                    ['Architecture', 'Claude Opus 4.6 / GLM-5', 'Enterprise Agentic design; GLM near Opus level'],
+                                    ['Documentation', 'Claude Sonnet 4.6 / Qwen-Max', 'Balanced content creation; Qwen best for Chinese docs'],
+                                    ['Translation', 'Qwen-Max / Mistral Large 3', 'Best Chinese translation globally; Mistral EU multilingual'],
+                                    ['UI & Frontend', 'Gemini 3.1 Flash / MiniMax-M2.5', 'Google multimodal vision; MiniMax 100 tok/s fast gen'],
+                                    ['Vision', 'Gemini 3.1 Pro / GPT-5.1', 'Million token multimodal; OpenAI mature vision'],
+                                    ['Long Context', 'Gemini 3.1 Pro / Kimi K2.5', 'Million token context; 256K MoE ultra-long docs'],
+                                    ['Math & Reasoning', 'DeepSeek-R1 / Gemini 3.1 Pro', 'R1 chain-of-thought top; ARC-AGI-2 global #1'],
+                                    ['Tool Calling', 'Qwen-Max / GPT-5.1', 'Tau2-bench global #1; OpenAI Function Calling standard'],
+                                    ['Creative Writing', 'Claude Sonnet 4.6 / Qwen-Max', 'Best creativity & expression; Chinese writing first choice'],
+                                    ['Agentic Tasks', 'MiniMax-M2.5 / Claude Opus 4.6', 'SWE-bench 80.2%; Enterprise Agentic benchmark'],
+                                    ['Terminal / DevOps', 'GPT-5.3 Codex / Codex CLI', 'Terminal-Bench #1; CLI reads/writes local files'],
+                                ]).map(([task, model, reason], i) => (
+                                    <tr key={task} style={{
+                                        background: i % 2 === 0 ? 'transparent' : 'var(--vscode-editor-inactiveSelectionBackground)',
+                                        borderTop: '1px solid var(--vscode-input-border)',
+                                    }}>
+                                        <td style={{ padding: '5px 10px', whiteSpace: 'nowrap', fontWeight: 500 }}>{task}</td>
+                                        <td style={{ padding: '5px 10px', fontSize: '11px' }}>{model}</td>
+                                        <td style={{ padding: '5px 10px', fontSize: '11px', opacity: 0.8 }}>{reason}</td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                        <div style={{
+                            padding: '6px 10px', fontSize: '10px',
+                            color: 'var(--vscode-descriptionForeground)',
+                            borderTop: '1px solid var(--vscode-input-border)',
+                        }}>
+                            {lang === 'zh'
+                                ? '以上为参考建议，实际路由取决于您配置的模型和任务分配。L-Hub 支持所有 OpenAI 兼容接口的模型，不限于上表所列。'
+                                : 'These are recommendations only. Actual routing depends on your configured models. L-Hub supports any OpenAI-compatible model, not limited to the list above.'}
+                        </div>
+                    </div>
+                )}
+            </div>
+
             {/* Footer note */}
             <div style={{
-                marginTop: '18px', padding: '10px 14px',
+                marginTop: '12px', padding: '10px 14px',
                 background: 'var(--vscode-textBlockQuote-background)',
                 borderLeft: '3px solid var(--vscode-activityBarBadge-background)',
                 borderRadius: '0 4px 4px 0',
                 fontSize: '11px', color: 'var(--vscode-descriptionForeground)', lineHeight: '1.6',
             }}>
                 {lang === 'zh'
-                    ? '路由规则：L-Hub 收到请求时，按任务类型找出所有已启用的匹配模型，选优先级最高（列表最上方）的那个。'
-                    : 'Routing: L-Hub finds all enabled models matching the task type and picks the highest-priority one (top of list).'}
+                    ? '路由规则：L-Hub 收到请求时，按任务类型找出所有已启用的匹配模型，选优先级最高（列表最上方）的那个。您可以自由添加任何模型并自定义任务分配。'
+                    : 'Routing: L-Hub matches the task type to enabled models and picks the highest-priority one (top of list). You can add any model and customize task assignments.'}
             </div>
 
             {showModal && (

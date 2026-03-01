@@ -6,7 +6,7 @@
 
 *为 Antigravity 省钱 — 把日常任务委派给专家模型*
 
-[![Version](https://img.shields.io/badge/version-0.0.9-blue?style=flat-square&logo=visualstudiocode)](https://github.com/readysteadyscience/l-hub)
+[![Version](https://img.shields.io/badge/version-0.1.0-blue?style=flat-square&logo=visualstudiocode)](https://github.com/readysteadyscience/l-hub)
 [![License](https://img.shields.io/badge/license-MIT-green?style=flat-square)](https://github.com/readysteadyscience/l-hub/blob/main/LICENSE)
 [![Brand](https://img.shields.io/badge/%E8%B5%B0%E8%B5%B7%E6%99%BA%E9%80%A0-Ready%20Steady%20Science-orange?style=flat-square)](https://github.com/ReadySteadyScience)
 [![Universe](https://img.shields.io/badge/产品线-Linglan%20Realm-blueviolet?style=flat-square)](https://github.com/ReadySteadyScience)
@@ -19,37 +19,55 @@
 
 </div>
 
-<div align="center">
-  <a href="#chinese">🇨🇳 简体中文</a> | <a href="#english">🇬🇧 English</a>
-</div>
-
 ---
 
-<h2 id="chinese">🇨🇳 简体中文</h2>
+## 为什么需要 L-Hub？ / Why L-Hub?
 
-## 为什么需要 L-Hub？
+**Antigravity** 是功能强大的 AI 编程助手，主模型天生擅长任务调度和复杂推理，但处理每一个日常子任务都消耗大量 token，成本高。**L-Hub 解决了这个问题。** 它把请求路由给最合适、最具性价比的专家模型。
 
-**Antigravity** 是功能强大的 AI 编程助手，主模型天生擅长总任务调度和复杂推理，但处理每一个日常子任务（普通代码生成、翻译、UI 布局）需要消耗大量 token，成本高。
+Antigravity is a powerful AI coding assistant, but having it handle every routine sub-task burns through tokens fast. L-Hub routes each request to the most appropriate and cost-effective specialist model.
 
-**L-Hub 解决了这个问题。** 它是一个内嵌在 Antigravity 中的 MCP AI 桥接器。当 Antigravity（你的主控模型）需要委派子任务时，它调用 L-Hub 来完成。L-Hub 将请求路由给最合适、最具性价比的专家模型：
+### 默认智能路由推荐 / Default Smart Routing
 
-| 任务类型 | 路由至 | 原因 |
+以下为 L-Hub 根据任务类型推荐的最佳模型，覆盖国内与国际主流厂商。用户可自由配置，不限于此表。
+
+| 任务类型 / Task | 推荐模型 / Recommended | 原因 / Why |
 |---|---|---|
-| 代码生成、调试 | **DeepSeek** | 快速准确，成本极低 |
-| 架构设计、复杂工程 | **GLM（智谱）** | 推理能力强，擅长长上下文 |
-| 翻译、多语言文档 | **Qwen（通义）** | 语言任务专项优化 |
-| UI / 前端 / 设计 | **MiniMax** | 视觉与组件生成专家 |
-| **代码审查、文件重写、终端任务** | **✨ Codex CLI** | **用 OpenAI/ChatGPT 账号 OAuth 登录，无需手动配置 API Key，可直接读写本地文件** |
+| 代码生成 Code Gen | **DeepSeek-V3** / Qwen-Coder-Plus | SWE-bench 顶尖，性价比最高；Qwen 代码专项 |
+| 调试 / 重构 Debug | **Claude Opus 4.6** / GPT-5.3 Codex | 全球编程最强；Terminal-Bench #1 |
+| 架构设计 Architecture | **Claude Opus 4.6** / GLM-5 | 企业级 Agentic 设计；GLM 工程接近 Opus |
+| 文档 Documentation | **Claude Sonnet 4.6** / Qwen-Max | 均衡首选；Qwen 中文文档最强 |
+| 翻译 Translation | **Qwen-Max** / Mistral Large 3 | 中文翻译全球第一；Mistral 欧洲多语言 |
+| UI / 前端 Frontend | **Gemini 3.1 Flash** / MiniMax-M2.5 | Google 多模态视觉；MiniMax 100 tok/s |
+| 图像理解 Vision | **Gemini 3.1 Pro** / GPT-5.1 | 百万 token 多模态；OpenAI 视觉成熟 |
+| 长文本 Long Context | **Gemini 3.1 Pro** / Kimi K2.5 | 百万 token 上下文；256K MoE 超长文档 |
+| 数学 / 推理 Reasoning | **DeepSeek-R1** / Gemini 3.1 Pro | R1 思维链顶尖；ARC-AGI-2 全球第一 |
+| 工具调用 Tool Calling | **Qwen-Max** / GPT-5.1 | Tau2-bench #1；OpenAI Function Calling 标准 |
+| 创意写作 Creative | **Claude Sonnet 4.6** / Qwen-Max | 创意与表达力最强；中文写作首选 |
+| Agentic 任务 | **MiniMax-M2.5** / Claude Opus 4.6 | SWE-bench 80.2%；企业级 Agentic 标杆 |
+| 终端 / DevOps Terminal | **GPT-5.3 Codex** / Codex CLI | Terminal-Bench #1；CLI 直读写本地文件 |
 
 ---
 
-## 📦 支持的模型
+## 支持的模型 / Supported Models
 
-L-Hub 采用 **OpenAI 兼容接口**，只要模型支持该格式即可接入。
+L-Hub 采用 **OpenAI 兼容接口**，只要模型支持该格式即可接入。目前内置支持以下厂商的最新模型：
 
-在设置页面可自由添加任意模型，例如：**DeepSeek-V3**（代码）、**GLM-4**（架构/Agentic）、**Qwen-Max**（翻译）、**MiniMax**（UI 生成）、**Kimi 128K**（长文档）...
+| 厂商 / Provider | 模型 / Models |
+|---|---|
+| **DeepSeek** | V3 (deepseek-chat), R1 (deepseek-reasoner) |
+| **GLM 智谱** | GLM-5 |
+| **Qwen 通义** | Qwen-Max (Qwen3.5), Qwen-Coder-Plus |
+| **MiniMax** | M2.5, M2.5-HighSpeed |
+| **Kimi** | K2.5 (kimi-k2-instruct) |
+| **OpenAI** | GPT-5.1, GPT-5.3 Codex |
+| **Anthropic** | Claude Opus 4.6, Sonnet 4.6, Opus 4.5, Sonnet 4.5 |
+| **Google** | Gemini 3.1 Flash, 3.1 Pro Preview, Image Gen |
+| **Mistral** | Mistral Large 3 |
+| **Meta** | Llama 3.3 70B (需中转 / relay required) |
+| **API 聚合** | OpenRouter, 一步API, DMXAPI |
 
-同时支持**第三方中转 API**（如 [OpenRouter](https://openrouter.ai)、[硅基流动](https://siliconflow.cn) 等），填入 Base URL 即可接入 GPT-4o、Claude、Gemini、Llama 等几乎所有主流模型。完整模型列表请在插件设置面板中查看。
+同时支持自定义接口和第三方 API 中转，填入 Base URL 即可接入任何 OpenAI 兼容模型。
 
 <div align="center">
 
@@ -57,164 +75,62 @@ L-Hub 采用 **OpenAI 兼容接口**，只要模型支持该格式即可接入�
 
 </div>
 
-**实际截图** — Antigravity 通过 L-Hub 分发任务：
-
-<div align="center">
-
-![Antigravity 实际运行](https://raw.githubusercontent.com/readysteadyscience/l-hub/main/images/screenshot_antigravity.png)
-
-</div>
-
 ---
 
-## ⚙️ 核心功能
+## 核心功能 / Features
 
-| 功能 | 说明 |
+| 功能 / Feature | 说明 / Details |
 |---|---|
-| **智能路由** | 根据任务类型自动选择最佳专家模型 |
-| **Codex CLI Agent** | 无需 API Key，用 ChatGPT 账号登录即可让 Codex 直接对本地文件进行代码审查与重写 |
-| **可视化面板** | 图形界面配置 API Key，无需编辑 JSON |
-| **调用历史** | 记录每次调用的 Token 用量、耗时、使用模型 |
-| **零配置安装** | 激活后自动写入 Antigravity 的 MCP 配置，开箱即用 |
+| **智能路由** Smart Routing | 根据任务类型自动选择最佳专家模型 |
+| **Codex CLI Agent** | 无需 API Key，用 ChatGPT 账号 OAuth 登录，直接读写本地文件 |
+| **价格参考表** Pricing | 内置 OpenRouter 价格数据，帮助用户选择性价比最优模型 |
+| **可视化面板** Dashboard | 图形界面配置 API Key、管理模型，无需编辑 JSON |
+| **调用历史** History | 记录每次调用的 Token 用量、耗时、使用模型 |
+| **零配置安装** Zero-Config | 激活后自动写入 Antigravity MCP 配置，开箱即用 |
 
 ---
 
-## 🚀 快速开始（Antigravity）
+## 快速开始 / Quick Start
 
-### 第一步 — 安装插件
+### 第 1 步 — 安装 / Install
 
-从 VS Code 商城搜索安装 **L-Hub**，或命令行：
+从 VS Code 商城搜索安装 **L-Hub**，或：
 
 ```bash
 code --install-extension readysteadyscience.l-hub
 ```
 
-### 第二步 — 重启 Antigravity
+### 第 2 步 — 重启 Antigravity / Restart
 
 L-Hub 激活时自动注册到 `~/.gemini/antigravity/mcp_config.json`，**无需手动修改任何配置文件**。
 
-### 第三步 — 配置 API Key
+### 第 3 步 — 配置 API Key / Add Keys
 
 命令面板 (`Cmd/Ctrl + Shift + P`) → 输入 **L-Hub: Open Dashboard** → Settings 页填入 Key
 
-### 第四步（可选）— 启用 Codex CLI
+### 第 4 步（可选）— 启用 Codex CLI / Enable Codex
 
-Codex CLI 通过 OpenAI 账号（与 ChatGPT 同一账号）进行 OAuth 登录 ，无需手动去平台申请并粘贴 API Key：
+Codex CLI 通过 OpenAI 账号 OAuth 登录，无需手动申请 API Key：
 
 ```bash
-npm install -g @openai/codex   # 安装
-codex login                     # 用 ChatGPT 账号登录
+npm install -g @openai/codex   # 安装 / Install
+codex login                     # 用 ChatGPT 账号登录 / Login
 ```
 
-安装后，L-Hub 会自动识别并提供 `ai_codex_task` 工具，让 Antigravity 可以指派 Codex 直接对本地文件审查、重构或执行终端任务。
+安装后，L-Hub 自动提供 `ai_codex_task` 工具，让 Antigravity 指派 Codex 直接对本地文件审查、重构或执行终端任务。
 
-### 第五步 — 直接使用
+### 第 5 步 — 直接使用 / Done
 
-照常与 Antigravity 对话。当它需要委派任务时，会自动调用 L-Hub。
+照常与 Antigravity 对话即可。检查是否成功：
 
-> **✅ 验证方式**：在 Antigravity 工具面板看到 `MCP Tool: l-hub / ai_ask` 或 `l-hub / ai_codex_task` 出现，即表示 L-Hub 已成功接入并正常运行。
+> **验证 / Verify**：在 Antigravity 工具面板看到 `MCP Tool: l-hub / ai_ask` 或 `l-hub / ai_codex_task`。
 
 ---
 
-## 🤝 开源社区
+## 开源社区 / Community
 
 L-Hub 是 **走起智造 · Ready Steady Science** 旗下 **Linglan Realm** 的免费开源工具。
 
-[![⭐ 在 GitHub 点 Star](https://img.shields.io/badge/⭐_在_GitHub_上点_Star-readysteadyscience%2Fl--hub-brightgreen?style=flat-square&logo=github)](https://github.com/readysteadyscience/l-hub/stargazers)
-[![💬 Discord 社区](https://img.shields.io/badge/Discord-加入社区-5865F2?style=flat-square&logo=discord&logoColor=white)](https://discord.gg/gurEPMnn52)
-[![📝 提交反馈](https://img.shields.io/badge/📝_反馈与建议-GitHub_Issues-blue?style=flat-square&logo=github)](https://github.com/readysteadyscience/l-hub/issues/new)
-
----
-
-<h2 id="english">🇬🇧 English</h2>
-
-## Why L-Hub?
-
-**Antigravity** is a powerful AI coding assistant whose primary model excels at high-level reasoning and task orchestration. But having it handle every routine sub-task — code generation, translation, UI work — burns through tokens fast and costs more than necessary.
-
-**L-Hub solves this.** It is an MCP AI Bridge inside Antigravity. When Antigravity needs to delegate, it calls L-Hub, which routes each request to the most appropriate and cost-effective specialist model:
-
-| Task type | Routed to | Why |
-|---|---|---|
-| Code generation, debugging | **DeepSeek** | Fast, accurate, fraction of the cost |
-| Architecture, complex engineering | **GLM** | High reasoning, long-context specialist |
-| Translation, multilingual docs | **Qwen** | Optimized for language tasks |
-| UI / frontend / design | **MiniMax** | Visual & component generation specialist |
-| **Code review, file rewrites, terminal tasks** | **✨ Codex CLI** | **OpenAI/ChatGPT OAuth login — no manual API key setup. Reads/writes local files directly** |
-
----
-
-## 📦 Supported Models
-
-L-Hub uses the **OpenAI-compatible API format** — any model that supports this format works out of the box.
-
-Add any model from the Settings panel — for example: **DeepSeek-V3** (code), **GLM-4** (architecture / Agentic), **Qwen-Max** (translation), **MiniMax** (UI generation), **Kimi 128K** (long documents)...
-
-**Third-party relay services** are also supported — paste a Base URL from [OpenRouter](https://openrouter.ai), [SiliconFlow](https://siliconflow.cn), or any self-hosted relay to unlock GPT-4o, Claude, Gemini, Llama, and many more. See the full model list inside the Settings panel.
-
-<div align="center">
-
-![L-Hub Architecture](https://raw.githubusercontent.com/readysteadyscience/l-hub/main/images/architecture.png)
-
-</div>
-
-<div align="center">
-
-![Antigravity in action](https://raw.githubusercontent.com/readysteadyscience/l-hub/main/images/screenshot_antigravity.png)
-
-</div>
-
----
-
-## ⚙️ Features
-
-| Feature | Details |
-|---|---|
-| **Smart Routing** | Auto-selects the right specialist model by task type |
-| **Codex CLI Agent** | No API key — uses ChatGPT login. Codex reads/writes local files and executes commands autonomously |
-| **Dashboard** | GUI to configure API keys — no JSON editing |
-| **History Console** | Logs every call: tokens used, latency, model selected |
-| **Zero-Config Setup** | Auto-registers in Antigravity's MCP config on first activation |
-
----
-
-## 🚀 Quick Start (Antigravity)
-
-### Step 1 — Install
-
-```bash
-code --install-extension readysteadyscience.l-hub
-```
-
-### Step 2 — Restart Antigravity
-
-L-Hub auto-registers itself in `~/.gemini/antigravity/mcp_config.json`. **No manual config needed.**
-
-### Step 3 — Add API Keys
-
-Command Palette (`Cmd/Ctrl + Shift + P`) → type **L-Hub: Open Dashboard** → Settings tab
-
-### Step 4 (Optional) — Enable Codex CLI
-
-No manual API key needed — authenticates via your OpenAI account (same as ChatGPT) through browser OAuth:
-
-```bash
-npm install -g @openai/codex
-codex login
-```
-
-Once installed, L-Hub exposes `ai_codex_task` so Antigravity can delegate full file rewrites, code review, and terminal tasks directly to Codex.
-
-### Step 5 — Done
-
-> **✅ Verified**: Look for `MCP Tool: l-hub / ai_ask` or `l-hub / ai_codex_task` in Antigravity's tool panel.
-
----
-
-## 🤝 Community
-
-L-Hub is free and open-source by **走起智造 · Ready Steady Science**.
-
-[![⭐ Star on GitHub](https://img.shields.io/badge/⭐_Star_on_GitHub-readysteadyscience%2Fl--hub-brightgreen?style=flat-square&logo=github)](https://github.com/readysteadyscience/l-hub/stargazers)
-[![💬 Discord Community](https://img.shields.io/badge/Discord-Join_Community-5865F2?style=flat-square&logo=discord&logoColor=white)](https://discord.gg/gurEPMnn52)
-[![📝 Submit Feedback](https://img.shields.io/badge/📝_Feedback_%26_Issues-GitHub_Issues-blue?style=flat-square&logo=github)](https://github.com/readysteadyscience/l-hub/issues/new)
+[![Star on GitHub](https://img.shields.io/badge/Star_on_GitHub-readysteadyscience%2Fl--hub-brightgreen?style=flat-square&logo=github)](https://github.com/readysteadyscience/l-hub/stargazers)
+[![Discord Community](https://img.shields.io/badge/Discord-Join_Community-5865F2?style=flat-square&logo=discord&logoColor=white)](https://discord.gg/gurEPMnn52)
+[![Submit Feedback](https://img.shields.io/badge/Feedback-GitHub_Issues-blue?style=flat-square&logo=github)](https://github.com/readysteadyscience/l-hub/issues/new)
