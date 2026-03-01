@@ -279,7 +279,8 @@ const GROUPS = [
 /** Verified relay platforms with HTTPS, proper websites, and good reputation */
 const RELAY_PRESETS = [
     { name: 'OpenRouter', url: 'https://openrouter.ai/api/v1', site: 'https://openrouter.ai', note: '国际标杆，模型最全（500+）' },
-    { name: 'UniAPI', url: 'https://api.uniapi.io/v1', site: 'https://uniapi.io', note: '国内可用，支持 GPT/Claude/Gemini/DeepSeek' },
+    { name: 'UniAPI 内地 HK', url: 'https://hk.uniapi.io/v1', site: 'https://uniapi.io', note: '大陆优化线路，国内首选' },
+    { name: 'UniAPI 国际', url: 'https://api.uniapi.io/v1', site: 'https://uniapi.io', note: '国际线路，支持 GPT/Claude/Gemini/DeepSeek' },
     { name: 'CloseAI', url: 'https://api.closeai-asia.com/v1', site: 'https://closeai-asia.com', note: '亚洲企业级中转' },
     { name: '硅基流动 SiliconFlow', url: 'https://api.siliconflow.cn/v1', site: 'https://cloud.siliconflow.cn', note: '国内正规大平台' },
 ];
@@ -426,12 +427,19 @@ const ModelCard: React.FC<{
                 signal: AbortSignal.timeout(15000),
             });
             const json = await res.json() as any;
+            // Extract error message across multiple API formats (OpenAI, GLM top-level, etc.)
+            const extractErr = (j: any, status: number) => {
+                if (j?.error?.message) return j.error.message.substring(0, 70);
+                if (j?.error?.code) return `错误码 ${j.error.code}`;
+                if (j?.message) return j.message.substring(0, 70);
+                if (j?.msg) return j.msg.substring(0, 70);
+                if (j?.code && j?.code !== 200) return `错误码 ${j.code}`;
+                return `HTTP ${status}`;
+            };
             if (json?.choices?.[0]?.message?.content) {
                 setTestState('ok'); setTestMsg(json.choices[0].message.content.trim().substring(0, 20));
-            } else if (json?.error) {
-                setTestState('fail'); setTestMsg(json.error.message?.substring(0, 60) || 'Error');
             } else {
-                setTestState('fail'); setTestMsg(`HTTP ${res.status}`);
+                setTestState('fail'); setTestMsg(extractErr(json, res.status));
             }
         } catch (e: any) {
             setTestState('fail'); setTestMsg(e.message?.includes('timeout') ? lang === 'zh' ? '超时 15s' : 'Timeout 15s' : (e.message || 'Error').substring(0, 60));
@@ -916,12 +924,19 @@ const ConfigPanel: React.FC<ConfigPanelProps> = ({ lang }) => {
                                 signal: AbortSignal.timeout(12000),
                             });
                             const json = await res.json() as any;
+                            const extractErr2 = (j: any, status: number) => {
+                                if (j?.error?.message) return j.error.message.substring(0, 50);
+                                if (j?.error?.code) return `错误码 ${j.error.code}`;
+                                if (j?.message) return j.message.substring(0, 50);
+                                if (j?.msg) return j.msg.substring(0, 50);
+                                if (j?.code && j?.code !== 200) return `错误码 ${j.code}`;
+                                return `HTTP ${status}`;
+                            };
                             const content = json?.choices?.[0]?.message?.content;
                             if (content) {
                                 setTestResults(prev => ({ ...prev, [m.id]: { ok: true, msg: content.trim().substring(0, 15) } }));
                             } else {
-                                const errMsg = json?.error?.message?.substring(0, 50) || `HTTP ${res.status}`;
-                                setTestResults(prev => ({ ...prev, [m.id]: { ok: false, msg: errMsg } }));
+                                setTestResults(prev => ({ ...prev, [m.id]: { ok: false, msg: extractErr2(json, res.status) } }));
                             }
                         } catch (e: any) {
                             const errMsg = e.message?.includes('timeout') ? '超时15s' : (e.message || 'Error').substring(0, 40);
