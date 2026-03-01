@@ -51,7 +51,7 @@ const LEGACY_PROVIDERS: Record<string, { url: string; model: string }> = {
     deepseek: { url: 'https://api.deepseek.com/v1', model: 'deepseek-chat' },
     glm: { url: 'https://open.bigmodel.cn/api/paas/v4', model: 'glm-5' },
     qwen: { url: 'https://dashscope.aliyuncs.com/compatible-mode/v1', model: 'qwen-max' },
-    minimax: { url: 'https://api.minimax.io/v1', model: 'MiniMax-M2.5' },
+    minimax: { url: 'https://api.minimaxi.com/v1', model: 'MiniMax-M2.5' },
     kimi: { url: 'https://api.moonshot.cn/v1', model: 'kimi-k2-instruct' },
     openai: { url: 'https://api.openai.com/v1', model: 'gpt-5.1' },
     gpt: { url: 'https://api.openai.com/v1', model: 'gpt-5.3-codex' },
