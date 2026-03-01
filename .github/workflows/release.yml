@@ -1,0 +1,35 @@
+name: Release to Marketplace
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Compile
+        run: npm run compile
+
+      - name: Package & Publish
+        run: npx vsce publish -p ${{ secrets.VSCE_PAT }}
+
+      - name: Notify Discord
+        if: success() && env.DISCORD_WEBHOOK_URL != ''
+        env:
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          curl -s -X POST "$DISCORD_WEBHOOK_URL" \
+            -H "Content-Type: application/json" \
+            -d "{\"embeds\":[{\"title\":\"🚀 L-Hub v${VERSION} 已发布！\",\"description\":\"[在 Marketplace 查看](https://marketplace.visualstudio.com/items?itemName=readysteadyscience.l-hub)\\n\\n用户将收到自动更新通知。\",\"color\":5814783}]}"
