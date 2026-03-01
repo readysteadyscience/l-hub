@@ -262,9 +262,10 @@ const GROUPS = [
 
 /** Verified relay platforms with HTTPS, proper websites, and good reputation */
 const RELAY_PRESETS = [
-    { name: 'OpenRouter', url: 'https://openrouter.ai/api/v1', site: 'https://openrouter.ai', note: '国际标杆，模型最全' },
-    { name: 'CloseAI', url: 'https://api.closeai-asia.com/v1', site: 'https://closeai-asia.com', note: '亚洲最大企业级中转' },
-    { name: '硅基流动 SiliconFlow', url: 'https://api.siliconflow.cn/v1', site: 'https://cloud.siliconflow.cn', note: '国内正规大平台，获投资' },
+    { name: 'OpenRouter', url: 'https://openrouter.ai/api/v1', site: 'https://openrouter.ai', note: '国际标杆，模型最全（500+）' },
+    { name: 'UniAPI', url: 'https://api.uniapi.io/v1', site: 'https://uniapi.io', note: '国内可用，支持 GPT/Claude/Gemini/DeepSeek' },
+    { name: 'CloseAI', url: 'https://api.closeai-asia.com/v1', site: 'https://closeai-asia.com', note: '亚洲企业级中转' },
+    { name: '硅基流动 SiliconFlow', url: 'https://api.siliconflow.cn/v1', site: 'https://cloud.siliconflow.cn', note: '国内正规大平台' },
 ];
 
 /** Provider brand colors for visual distinction */
