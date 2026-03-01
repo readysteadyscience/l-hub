@@ -57,35 +57,43 @@ function autoRegisterMcpConfig(extensionPath: string) {
 }
 
 export async function activate(context: vscode.ExtensionContext) {
-    console.log('L-Hub extension is active!');
+    console.log('[L-Hub] Activating...');
 
-    const storagePath = context.globalStorageUri.fsPath;
-    const storage = new HistoryStorage(storagePath);
     const settings = new SettingsManager(context);
 
-    // Sync API keys to file so mcp-server.js can read them
-    await syncKeysToFile(settings);
+    // ── STEP 1: Register commands immediately — BEFORE anything that could throw ──
+    let storage: HistoryStorage | null = null;
 
-    // Auto-register standalone mcp-server.js into Antigravity config
-    autoRegisterMcpConfig(context.extensionPath);
-
-    // Register commands FIRST — before anything that could throw
     const openPanelCommand = vscode.commands.registerCommand('l-hub.openPanel', () => {
-        DashboardPanel.createOrShow(context.extensionUri, storage, settings);
+        if (!storage) {
+            vscode.window.showWarningMessage(
+                'L-Hub: History storage is unavailable (SQLite load failed). Settings panel will still work.',
+            );
+        }
+        DashboardPanel.createOrShow(context.extensionUri, storage!, settings);
     });
     context.subscriptions.push(openPanelCommand);
 
-    // Re-sync keys every time the Dashboard saves a key
-    context.subscriptions.push(
-        vscode.workspace.onDidChangeConfiguration(async () => {
-            await syncKeysToFile(settings);
-        })
-    );
+    console.log('[L-Hub] Command l-hub.openPanel registered ✅');
 
-    // Start the WebSocket MCP server (non-critical — errors won't block activation)
+    // ── STEP 2: Initialize history storage (may fail if better-sqlite3 ABI mismatch) ──
     try {
-        mcpServer = new LinglanMcpServer(storage, settings);
+        const storagePath = context.globalStorageUri.fsPath;
+        storage = new HistoryStorage(storagePath);
+        console.log('[L-Hub] HistoryStorage initialized ✅');
+    } catch (err) {
+        console.error('[L-Hub] HistoryStorage failed to init (SQLite ABI issue?), history will be disabled:', err);
+    }
+
+    // ── STEP 3: Sync keys + auto-register MCP config ──
+    await syncKeysToFile(settings);
+    autoRegisterMcpConfig(context.extensionPath);
+
+    // ── STEP 4: Start WebSocket server (non-critical) ──
+    try {
+        mcpServer = new LinglanMcpServer(storage!, settings);
         await mcpServer.start();
+        console.log('[L-Hub] WS MCP server started ✅');
     } catch (err) {
         console.error('[L-Hub] WS server failed to start (non-critical):', err);
     }
