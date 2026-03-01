@@ -441,35 +441,25 @@ const ModelCard: React.FC<{
         if (!apiKey) { setTestState('fail'); setTestMsg(lang === 'zh' ? '未配置 API Key' : 'API Key not set'); return; }
         if (!model.baseUrl) { setTestState('fail'); setTestMsg('Base URL 未设置'); return; }
         setTestState('testing'); setTestMsg('');
-        try {
-            const url = model.baseUrl.replace(/\/$/, '') + '/chat/completions';
-            const res = await fetch(url, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + apiKey },
-                body: JSON.stringify({ model: model.modelId, messages: [{ role: 'user', content: 'Reply with one word: OK' }], max_tokens: 10 }),
-                signal: AbortSignal.timeout(15000),
-            });
-            const json = await res.json() as any;
-            // Extract error message across multiple API formats (OpenAI, GLM top-level, etc.)
-            const extractErr = (j: any, status: number) => {
-                if (j?.error?.message) return j.error.message.substring(0, 70);
-                if (j?.error?.code) return `错误码 ${j.error.code}`;
-                if (j?.message) return j.message.substring(0, 70);
-                if (j?.msg) return j.msg.substring(0, 70);
-                if (j?.code && j?.code !== 200) return `错误码 ${j.code}`;
-                return `HTTP ${status}`;
-            };
-            if (res.ok) {
-                // HTTP 200 = connection success (GLM doc: 200 = 业务处理成功)
-                const content = json?.choices?.[0]?.message?.content;
-                setTestState('ok');
-                setTestMsg(content ? content.trim().substring(0, 20) : lang === 'zh' ? '已连通' : 'Connected');
-            } else {
-                setTestState('fail'); setTestMsg(extractErr(json, res.status));
+        // Route through extension host (Node.js) to bypass CORS restrictions
+        const requestId = `test_${Date.now()}`;
+        vscode.postMessage({ command: 'testConnection', modelId: model.modelId, baseUrl: model.baseUrl, apiKey, requestId });
+        // Listen for the response
+        const handler = (event: MessageEvent) => {
+            const msg = event.data;
+            if (msg.command === 'testResult' && msg.requestId === requestId) {
+                window.removeEventListener('message', handler);
+                setTestState(msg.ok ? 'ok' : 'fail');
+                setTestMsg(msg.msg || (msg.ok ? '已连通' : '失败'));
             }
-        } catch (e: any) {
-            setTestState('fail'); setTestMsg(e.message?.includes('timeout') ? lang === 'zh' ? '超时 15s' : 'Timeout 15s' : (e.message || 'Error').substring(0, 60));
-        }
+        };
+        window.addEventListener('message', handler);
+        // Fallback cleanup after 17s
+        setTimeout(() => {
+            window.removeEventListener('message', handler);
+            setTestState(s => s === 'testing' ? 'fail' : s);
+            setTestMsg(m => m === '' ? '超时 15s' : m);
+        }, 17000);
     };
 
     const testColor = testState === 'ok'

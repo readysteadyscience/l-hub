@@ -112,8 +112,39 @@ export class DashboardPanel {
                         this._panel.webview.postMessage({ command: 'loadModelsV2', models, apiKeys });
                         break;
                     }
+                    // ── Backend-proxied connection test (bypasses CORS) ───────
+                    case 'testConnection': {
+                        const { modelId, baseUrl, apiKey, requestId } = message;
+                        try {
+                            const url = baseUrl.replace(/\/$/, '') + '/chat/completions';
+                            const body = JSON.stringify({
+                                model: modelId,
+                                messages: [{ role: 'user', content: 'Reply with one word: OK' }],
+                                max_tokens: 10,
+                            });
+                            const res = await fetch(url, {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + apiKey },
+                                body,
+                                signal: AbortSignal.timeout(15000),
+                            });
+                            const json = await res.json() as any;
+                            if (res.ok) {
+                                const content = json?.choices?.[0]?.message?.content;
+                                const msg = content ? content.replace(/<think>[\s\S]*?<\/think>/g, '').trim().substring(0, 20) || '已连通' : '已连通';
+                                this._panel.webview.postMessage({ command: 'testResult', requestId, ok: true, msg });
+                            } else {
+                                const err = json?.error?.message || json?.message || json?.msg || `HTTP ${res.status}`;
+                                this._panel.webview.postMessage({ command: 'testResult', requestId, ok: false, msg: (err as string).substring(0, 70) });
+                            }
+                        } catch (e: any) {
+                            const msg = e.message?.includes('timeout') ? '超时 15s' : (e.message || 'Error').substring(0, 60);
+                            this._panel.webview.postMessage({ command: 'testResult', requestId, ok: false, msg });
+                        }
+                        break;
+                    }
 
-                    // ── History ───────────────────────────────────────────────
+
                     case 'getHistory': {
                         const page = message.page || 1;
                         const pageSize = message.pageSize || 50;
