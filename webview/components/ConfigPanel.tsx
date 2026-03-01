@@ -105,27 +105,19 @@ const MODEL_DEFS: Record<string, ModelDef> = {
     },
     // ─── MiniMax ──────────────────────────────────────────────────────────────
     'MiniMax-M2.5': {
-        label: 'MiniMax-M2.5 (推荐)',
+        label: 'MiniMax-M2.5（通用按量）',
         group: 'MiniMax',
         baseUrl: 'https://api.minimax.io/v1',
         defaultTasks: ['agentic', 'code_gen', 'tool_calling', 'long_context'],
-        note: '最新旗舰（2025-12），SWE-bench 80.2%，Agentic 顶尖',
+        note: '最新旗舰（2025-12），SWE-bench 80.2%，按量计费，普通 API Key',
         pricing: { input: 0.40, output: 1.20 },
     },
     'MiniMax-M2.5-highspeed': {
-        label: 'MiniMax-M2.5 HighSpeed',
-        group: 'MiniMax',
-        baseUrl: 'https://api.minimax.io/v1',
-        defaultTasks: ['code_gen', 'documentation'],
-        note: 'M2.5 高速版，响应更快，适合高频调用',
-        pricing: { input: 0.40, output: 1.20 },
-    },
-    'MiniMax-M2.5-highspeed-coding': {
-        label: 'MiniMax-M2.5 HighSpeed (Coding Plan ⭐)',
+        label: 'MiniMax-M2.5 HighSpeed（Coding Plan 包月 ⭐）',
         group: 'MiniMax',
         baseUrl: 'https://api.minimax.io/v1',
         defaultTasks: ['code_gen', 'code_review', 'agentic', 'long_context'],
-        note: 'Coding Plan 包月专用（填 sk-cp-... Key）· Plus 高速套餐 · 同等性能更快',
+        note: 'Coding Plan 包月专用，填 sk-cp-... Key · Plus 高速套餐 · 已验证可连通',
         pricing: undefined,
     },
     // ─── Kimi K2 ──────────────────────────────────────────────────────────────
