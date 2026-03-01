@@ -381,6 +381,39 @@ const ModelCard: React.FC<{
     onToggle: (id: string, enabled: boolean) => void;
 }> = ({ model, apiKey, lang, onEdit, onRemove, onToggle }) => {
     const def = MODEL_DEFS[model.modelId];
+    const [testState, setTestState] = React.useState<'idle' | 'testing' | 'ok' | 'fail'>('idle');
+    const [testMsg, setTestMsg] = React.useState('');
+
+    const handleTest = async () => {
+        if (!apiKey) { setTestState('fail'); setTestMsg(lang === 'zh' ? '未配置 API Key' : 'API Key not set'); return; }
+        if (!model.baseUrl) { setTestState('fail'); setTestMsg('Base URL 未设置'); return; }
+        setTestState('testing'); setTestMsg('');
+        try {
+            const url = model.baseUrl.replace(/\/$/, '') + '/chat/completions';
+            const res = await fetch(url, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + apiKey },
+                body: JSON.stringify({ model: model.modelId, messages: [{ role: 'user', content: 'Reply with one word: OK' }], max_tokens: 10 }),
+                signal: AbortSignal.timeout(15000),
+            });
+            const json = await res.json() as any;
+            if (json?.choices?.[0]?.message?.content) {
+                setTestState('ok'); setTestMsg(json.choices[0].message.content.trim().substring(0, 20));
+            } else if (json?.error) {
+                setTestState('fail'); setTestMsg(json.error.message?.substring(0, 60) || 'Error');
+            } else {
+                setTestState('fail'); setTestMsg(`HTTP ${res.status}`);
+            }
+        } catch (e: any) {
+            setTestState('fail'); setTestMsg(e.message?.includes('timeout') ? lang === 'zh' ? '超时 15s' : 'Timeout 15s' : (e.message || 'Error').substring(0, 60));
+        }
+    };
+
+    const testColor = testState === 'ok'
+        ? 'var(--vscode-testing-iconPassed)'
+        : testState === 'fail' ? 'var(--vscode-errorForeground)'
+            : 'var(--vscode-descriptionForeground)';
+
     return (
         <div style={{ ...s.card, opacity: model.enabled ? 1 : 0.5 }}>
             <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '8px' }}>
@@ -431,12 +464,29 @@ const ModelCard: React.FC<{
                     </button>
                 </div>
             </div>
-            {/* Footer: URL + key status */}
-            <div style={{ marginTop: '7px', fontSize: '11px', color: 'var(--vscode-descriptionForeground)', display: 'flex', gap: '14px', flexWrap: 'wrap' }}>
+            {/* Footer: URL + key status + test */}
+            <div style={{ marginTop: '7px', fontSize: '11px', color: 'var(--vscode-descriptionForeground)', display: 'flex', gap: '14px', flexWrap: 'wrap', alignItems: 'center' }}>
                 <span>{model.baseUrl || '(未设置 Base URL)'}</span>
                 <span style={{ color: apiKey ? 'var(--vscode-testing-iconPassed)' : 'var(--vscode-errorForeground)' }}>
-                    {apiKey ? 'API Key 已配置' : 'API Key 未配置'}
+                    {apiKey ? (lang === 'zh' ? 'API Key 已配置' : 'API Key set') : (lang === 'zh' ? 'API Key 未配置' : 'API Key missing')}
                 </span>
+                <button
+                    onClick={handleTest}
+                    disabled={testState === 'testing'}
+                    style={{
+                        background: 'none', border: '1px solid var(--vscode-input-border)',
+                        borderRadius: '3px', padding: '1px 8px', fontSize: '10px',
+                        cursor: testState === 'testing' ? 'default' : 'pointer',
+                        color: 'var(--vscode-descriptionForeground)',
+                    }}
+                >
+                    {testState === 'testing' ? (lang === 'zh' ? '测试中…' : 'Testing…') : (lang === 'zh' ? '测试连通' : 'Test')}
+                </button>
+                {testState !== 'idle' && testState !== 'testing' && (
+                    <span style={{ color: testColor, fontWeight: 500 }}>
+                        {testState === 'ok' ? `✅ ${testMsg}` : `❌ ${testMsg}`}
+                    </span>
+                )}
             </div>
         </div>
     );
