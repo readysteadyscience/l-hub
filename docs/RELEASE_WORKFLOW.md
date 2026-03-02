@@ -22,10 +22,17 @@ npx vsce login readysteadyscience
 # 粘贴上面的 PAT
 ```
 
-### 3. 设置 GitHub Secret（用于 CI/CD 自动发布）
+### 3. 获取 Open VSX PAT（Antigravity 默认 Marketplace）
+1. 打开 [open-vsx.org](https://open-vsx.org) → 用 GitHub 登录
+2. Profile → 用 Eclipse 账号签署 Publisher Agreement
+3. ACCESS TOKENS → Generate Token → 保存
+4. Namespace 已创建：`readysteadyscience`
+
+### 4. 设置 GitHub Secret（用于 CI/CD 自动发布）
 1. GitHub → `readysteadyscience/l-hub` → **Settings → Secrets → Actions**
-2. 新建 secret：`VSCE_PAT` = 上面的 PAT
-3. （可选）Discord Webhook：`DISCORD_WEBHOOK_URL` = Discord Server Webhook URL
+2. 新建 secret：`VSCE_PAT` = VS Code Marketplace PAT
+3. 新建 secret：`OVSX_PAT` = Open VSX PAT
+4. （可选）Discord Webhook：`DISCORD_WEBHOOK_URL` = Discord Server Webhook URL
 
 ---
 
@@ -41,8 +48,11 @@ cd /Users/sunbinhe/Desktop/ReadySteadyScience/l-hub
 npm run compile
 yes | npx vsce package
 
-# 3. 发布到 Marketplace
+# 3. 发布到 VS Code Marketplace
 npx vsce publish
+
+# 4. 发布到 Open VSX（Antigravity 用户从这里安装）
+npx ovsx publish l-hub-*.vsix -p <OVSX_PAT>
 
 # 4. 推送到 GitHub
 git add -A
@@ -51,7 +61,9 @@ git tag v0.1.0
 git push origin main --tags
 ```
 
-发布后在这里查看：https://marketplace.visualstudio.com/items?itemName=readysteadyscience.l-hub
+发布后在这里查看：
+- VS Code：https://marketplace.visualstudio.com/items?itemName=readysteadyscience.l-hub
+- Open VSX：https://open-vsx.org/extension/readysteadyscience/l-hub
 
 ---
 
@@ -118,8 +130,11 @@ jobs:
           node-version: '20'
       - run: npm ci
       - run: npm run compile
-      - name: Publish to Marketplace
+      - run: yes | npx vsce package
+      - name: Publish to VS Code Marketplace
         run: npx vsce publish -p ${{ secrets.VSCE_PAT }}
+      - name: Publish to Open VSX
+        run: npx ovsx publish *.vsix -p ${{ secrets.OVSX_PAT }}
       - name: Notify Discord
         if: success()
         run: |
@@ -148,10 +163,14 @@ jobs:
 
 ## 六、Marketplace 管理
 
+**VS Code Marketplace：**
 - **控制台**: https://marketplace.visualstudio.com/manage/publishers/readysteadyscience
 - **插件主页**: https://marketplace.visualstudio.com/items?itemName=readysteadyscience.l-hub
-- **评分/评论**: 在控制台 → Reviews 查看用户反馈
 - **下架**: `npx vsce unpublish readysteadyscience.l-hub`
+
+**Open VSX（Antigravity 默认）：**
+- **插件主页**: https://open-vsx.org/extension/readysteadyscience/l-hub
+- **管理**: https://open-vsx.org/user-settings/extensions
 
 ---
 

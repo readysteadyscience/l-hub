@@ -17,12 +17,12 @@ jobs:
 
       - name: Install dependencies
         run: npm ci
-
-      - name: Compile
-        run: npm run compile
-
-      - name: Package & Publish
+      - run: npm run compile
+      - run: yes | npx vsce package
+      - name: Publish to VS Code Marketplace
         run: npx vsce publish -p ${{ secrets.VSCE_PAT }}
+      - name: Publish to Open VSX
+        run: npx ovsx publish *.vsix -p ${{ secrets.OVSX_PAT }}
 
       - name: Notify Discord
         if: success() && env.DISCORD_WEBHOOK_URL != ''
