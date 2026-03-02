@@ -42,8 +42,10 @@
         },
         "l-hub.defaultModel": {
           "type": "string",
-          "default": "deepseek",
+          "default": "gpt",
           "enum": [
+            "gpt",
+            "gemini",
             "deepseek",
             "glm",
             "qwen",
