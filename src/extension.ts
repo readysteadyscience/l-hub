@@ -15,7 +15,7 @@ const KEYS_FILE = path.join(os.homedir(), '.l-hub-keys.json');
  * Export API keys from VS Code SecretStorage to ~/.l-hub-keys.json
  * so the standalone mcp-server.js can read them without vscode dependency.
  */
-async function syncKeysToFile(settings: SettingsManager) {
+async function syncKeysToFile(settings: SettingsManager, dbPath?: string) {
     try {
         // Read existing file to preserve v2 `models` and other fields
         let existing: Record<string, any> = {};
@@ -31,7 +31,9 @@ async function syncKeysToFile(settings: SettingsManager) {
             const k = await settings.getApiKey(provider);
             if (k) legacyKeys[provider] = k;
         }
-        const merged = { ...existing, legacy: legacyKeys };
+        const merged: Record<string, any> = { ...existing, legacy: legacyKeys };
+        // ── Write DB path so standalone mcp-server can log to the same SQLite ──
+        if (dbPath) { merged.dbPath = dbPath; }
         fs.writeFileSync(KEYS_FILE, JSON.stringify(merged, null, 2), 'utf8');
     } catch (e) {
         console.error('[L-Hub] Failed to sync keys:', e);
@@ -96,7 +98,8 @@ export async function activate(context: vscode.ExtensionContext) {
     }
 
     // ── STEP 3: Sync keys + auto-register MCP config ──
-    await syncKeysToFile(settings);
+    const dbFilePath = path.join(context.globalStorageUri.fsPath, 'history.db');
+    await syncKeysToFile(settings, dbFilePath);
     autoRegisterMcpConfig(context.extensionPath);
 
     // ── STEP 4: Start WebSocket server (non-critical) ──
