@@ -91,17 +91,27 @@ function readConfig(): LHubConfig {
 
 // ─── Legacy fallback (v1 format) ─────────────────────────────────────────────
 
+// ─── L-Hub Routing Philosophy ──────────────────────────────────────────────────
+// L-Hub supplements Antigravity (Claude Sonnet 4.6), it does NOT replace it.
+// → Do NOT route tasks to Claude here: Claude is already the orchestrator doing
+//   complex reasoning, architecture analysis, and long-context work natively.
+// → L-Hub's value: specialized models for cost-efficient domain tasks, local
+//   CLI tools (Codex, Gemini CLI), and Chinese-ecosystem models.
+// ─────────────────────────────────────────────────────────────────────────────
+
 const LEGACY_PROVIDERS: Record<string, { url: string; model: string }> = {
-    deepseek: { url: 'https://api.deepseek.com/v1', model: 'deepseek-chat' },
-    glm: { url: 'https://open.bigmodel.cn/api/paas/v4', model: 'glm-5' },
+    // Code quality tier (2026 SWE-bench ranking)
+    glm: { url: 'https://open.bigmodel.cn/api/coding/paas/v4', model: 'glm-4.7' },  // Agentic coding, matches Claude Sonnet 4.5
+    deepseek: { url: 'https://api.deepseek.com/v1', model: 'deepseek-chat' },        // Cost-efficient, still strong
+    // Specialized
     qwen: { url: 'https://dashscope.aliyuncs.com/compatible-mode/v1', model: 'qwen-max' },
-    minimax: { url: 'https://api.minimax.io/v1', model: 'MiniMax-M2.5' },
+    minimax: { url: 'https://api.minimax.io/v1', model: 'MiniMax-M2.5-highspeed' },
     kimi: { url: 'https://api.moonshot.cn/v1', model: 'kimi-k2-instruct' },
-    openai: { url: 'https://api.openai.com/v1', model: 'gpt-5.1' },
     gpt: { url: 'https://api.openai.com/v1', model: 'gpt-5.3-codex' },
-    claude: { url: 'https://api.anthropic.com/v1', model: 'claude-sonnet-4-6' },
-    gemini: { url: 'https://generativelanguage.googleapis.com/v1beta/openai', model: 'gemini-3.1-flash' },
+    gemini: { url: 'https://generativelanguage.googleapis.com/v1beta/openai', model: 'gemini-3.1-pro-preview' },
     mistral: { url: 'https://api.mistral.ai/v1', model: 'mistral-large-latest' },
+    // NOTE: 'claude' intentionally omitted — Antigravity IS Claude. Routing tasks
+    // back to Claude via L-Hub wastes tokens and adds latency with no benefit.
 };
 
 // ─── Smart routing ────────────────────────────────────────────────────────────
@@ -181,14 +191,19 @@ function resolveRoute(message: string, config: LHubConfig, forcedProvider?: stri
 
     // v1 legacy fallback
     const legacy: Record<string, string> = config.legacy || (config as any);
-    let providerKey = forcedProvider || 'deepseek';
+    // Routing philosophy:
+    // - Code writing  → gpt (Codex 5.3 API). For file-level code, prefer ai_codex_task (CLI).
+    // - Planning/arch → Claude (Antigravity itself — no need to route via L-Hub)
+    // - Chinese/docs  → qwen | UI/creative → minimax | Math/algo → gemini
+    let providerKey = forcedProvider || 'gpt'; // Codex 5.3 as default code writer
 
     if (!forcedProvider) {
         const msg = message.toLowerCase();
-        if (msg.includes('architecture') || msg.includes('架构') || msg.includes('agentic')) { providerKey = 'glm'; }
-        else if (msg.includes('translate') || msg.includes('翻译') || msg.includes('中文')) { providerKey = 'qwen'; }
-        else if (msg.includes('terminal') || msg.includes('devops') || msg.includes('shell')) { providerKey = 'gpt'; }
-        else if (msg.includes('reasoning') || msg.includes('推理') || msg.includes('algorithm')) { providerKey = 'gemini'; }
+        if (msg.includes('translate') || msg.includes('翻译') || msg.includes('中文') || msg.includes('documentation') || msg.includes('文档')) { providerKey = 'qwen'; }
+        else if (msg.includes('terminal') || msg.includes('devops') || msg.includes('shell') || msg.includes('script')) { providerKey = 'gpt'; }
+        else if (msg.includes('math') || msg.includes('数学') || msg.includes('algorithm') || msg.includes('reasoning') || msg.includes('推理')) { providerKey = 'gemini'; }
+        else if (msg.includes('ui') || msg.includes('frontend') || msg.includes('design') || msg.includes('前端') || msg.includes('页面') || msg.includes('组件')) { providerKey = 'gemini'; }
+        else { providerKey = 'gpt'; } // default: Codex 5.3 for code
     }
 
     const legacyKey = legacy[providerKey];
@@ -238,6 +253,143 @@ async function callProvider(route: RouteResult, message: string, systemPrompt?: 
     };
 }
 
+// ─── Auto Fallback Retry Chain ───────────────────────────────────────────────
+
+/**
+ * Determines if an error is retryable (network issues, rate limits, server errors).
+ * Non-retryable: auth errors (401/403), bad requests (400), unknown providers.
+ */
+function isRetryableError(msg: string): boolean {
+    return (
+        msg.includes('ETIMEDOUT') ||
+        msg.includes('ECONNREFUSED') ||
+        msg.includes('ENOTFOUND') ||
+        msg.includes('fetch failed') ||
+        msg.includes('network') ||
+        msg.includes('429') ||
+        msg.includes('500') ||
+        msg.includes('502') ||
+        msg.includes('503') ||
+        msg.includes('504')
+    );
+}
+
+/**
+ * Call a provider with automatic fallback to other enabled models on retryable errors.
+ * Returns { text, inputTokens, outputTokens, usedModel } where usedModel may differ from route.
+ */
+async function callProviderWithFallback(
+    primaryRoute: RouteResult,
+    message: string,
+    systemPrompt: string | undefined,
+    config: LHubConfig
+): Promise<{ text: string; inputTokens: number; outputTokens: number; usedModel: string; didFallback: boolean }> {
+    // Build fallback queue: primary first, then other enabled models sorted by priority
+    const enabledModels = (config.models || [])
+        .filter(m => m.enabled && m.apiKey && m.modelId !== primaryRoute.modelId)
+        .sort((a, b) => a.priority - b.priority);
+
+    const fallbackRoutes: RouteResult[] = enabledModels.slice(0, 3).map(m => ({
+        label: m.label,
+        apiKey: m.apiKey!,
+        baseUrl: m.baseUrl.replace(/\/$/, ''),
+        modelId: m.modelId,
+    }));
+
+    const attemptQueue = [primaryRoute, ...fallbackRoutes];
+    const errors: string[] = [];
+
+    for (let i = 0; i < attemptQueue.length; i++) {
+        const route = attemptQueue[i];
+        try {
+            const result = await callProvider(route, message, systemPrompt);
+            return {
+                ...result,
+                usedModel: route.modelId,
+                didFallback: i > 0,
+            };
+        } catch (e: unknown) {
+            const msg = e instanceof Error ? e.message : String(e);
+            errors.push(`[${route.label}] ${msg}`);
+
+            // Only retry on retryable errors
+            if (!isRetryableError(msg)) {
+                // Non-retryable: bail immediately
+                throw new Error(msg);
+            }
+            // else: continue to next model in queue
+        }
+    }
+
+    // All models failed
+    throw new Error(`All models failed:\n${errors.join('\n')}`);
+}
+
+// ─── File Context Injection ───────────────────────────────────────────────────
+
+const MAX_FILE_BYTES = 200 * 1024;      // 200 KB per file
+const MAX_TOTAL_BYTES = 1024 * 1024;    // 1 MB total
+
+/**
+ * Reads a list of file paths and formats their contents as a context block
+ * to be prepended to the system prompt.
+ */
+function buildFileContext(filePaths: string[]): { context: string; warnings: string[] } {
+    const sections: string[] = [];
+    const warnings: string[] = [];
+    let totalBytes = 0;
+
+    const homeDir = os.homedir();
+
+    for (const rawPath of filePaths) {
+        try {
+            // Resolve path (support ~ expansion and relative to home)
+            const absPath = rawPath.startsWith('~')
+                ? path.join(homeDir, rawPath.slice(1))
+                : path.resolve(rawPath);
+
+            // Security: basic traversal sanity (no ../../ tricks after resolve)
+            const normalized = path.normalize(absPath);
+
+            if (!fs.existsSync(normalized)) {
+                warnings.push(`File not found: ${rawPath}`);
+                continue;
+            }
+
+            const stat = fs.statSync(normalized);
+            if (!stat.isFile()) {
+                warnings.push(`Not a file: ${rawPath}`);
+                continue;
+            }
+            if (stat.size > MAX_FILE_BYTES) {
+                warnings.push(`Skipped (too large, >${MAX_FILE_BYTES / 1024}KB): ${rawPath}`);
+                continue;
+            }
+
+            totalBytes += stat.size;
+            if (totalBytes > MAX_TOTAL_BYTES) {
+                warnings.push(`Stopped reading files: total size limit (${MAX_TOTAL_BYTES / 1024}KB) exceeded`);
+                break;
+            }
+
+            const content = fs.readFileSync(normalized, 'utf8');
+            const displayName = path.basename(normalized);
+
+            sections.push(`=== FILE: ${displayName} ===\n${content.trimEnd()}\n=== END FILE ===`);
+        } catch (e: unknown) {
+            const msg = e instanceof Error ? e.message : String(e);
+            warnings.push(`Error reading ${rawPath}: ${msg}`);
+        }
+    }
+
+    return {
+        context: sections.length > 0
+            ? `The following file(s) have been provided as context:\n\n${sections.join('\n\n')}`
+            : '',
+        warnings,
+    };
+}
+
 // ─── Codex CLI ────────────────────────────────────────────────────────────────
 
 function callCodex(task: string, workingDir?: string): string {
@@ -260,11 +412,53 @@ function callCodex(task: string, workingDir?: string): string {
     return result.stdout?.trim() || '(Codex completed with no output)';
 }
 
+// ─── Gemini CLI ───────────────────────────────────────────────────────────────
+
+/**
+ * Call the local Gemini CLI in non-interactive mode via --prompt flag.
+ * Strips ANSI escape codes from output.
+ */
+function callGemini(prompt: string, model?: string, workingDir?: string): string {
+    const cwd = workingDir || process.cwd();
+
+    // Build args: use -p (short for --prompt) + --yolo to auto-accept any tool confirmations
+    const args: string[] = ['-p', prompt, '--yolo'];
+    if (model) { args.push('-m', model); }
+
+    const result = spawnSync('gemini', args, {
+        cwd,
+        encoding: 'utf8',
+        timeout: 300_000,
+        maxBuffer: 10 * 1024 * 1024, // 10 MB
+        env: { ...process.env },
+    });
+
+    if (result.error) {
+        const err = result.error as NodeJS.ErrnoException;
+        if (err.code === 'ENOENT') {
+            throw new Error('Gemini CLI not found. Install: https://github.com/google-gemini/gemini-cli — then run `gemini` to log in.');
+        }
+        throw new Error(`Gemini CLI error: ${err.message}`);
+    }
+
+    // Gemini CLI may write to stderr for progress; non-zero exit on hard error
+    if (result.status !== 0 && !result.stdout?.trim()) {
+        const errMsg = result.stderr?.trim() || `Gemini CLI exited with code ${result.status}`;
+        throw new Error(errMsg);
+    }
+
+    // Strip ANSI escape codes (colors, cursor movement, etc.)
+    const raw = (result.stdout || '').trim();
+    // eslint-disable-next-line no-control-regex
+    const clean = raw.replace(/\x1B\[[0-9;]*[a-zA-Z]|\x1B[@-_]/g, '');
+    return clean || '(Gemini completed with no output)';
+}
+
 // ─── MCP Server ───────────────────────────────────────────────────────────────
 
 async function main() {
     const server = new Server(
-        { name: 'l-hub', version: '0.1.0' },
+        { name: 'l-hub', version: '0.1.3' },
         { capabilities: { tools: {} } }
     );
 
@@ -279,6 +473,11 @@ async function main() {
                         message: { type: 'string', description: 'The question or task.' },
                         provider: { type: 'string', description: 'Force a specific provider (e.g. "deepseek", "glm"). Omit for smart auto-routing.' },
                         system_prompt: { type: 'string', description: 'Optional system-level instructions.' },
+                        file_paths: {
+                            type: 'array',
+                            items: { type: 'string' },
+                            description: 'Optional local file paths whose contents will be injected as context (max 200KB each, 1MB total). Supports absolute paths and ~ expansion.',
+                        },
                     },
                     required: ['message'],
                 },
@@ -301,6 +500,19 @@ async function main() {
                 },
             },
             {
+                name: 'ai_gemini_task',
+                description: 'Run an autonomous task using the local Gemini CLI (Google Gemini). Gemini has deep file/tool access via its built-in tools. Best for: reasoning tasks, code generation, file analysis, multi-step agentic workflows. Requires Gemini CLI installed (`npm i -g @google/gemini-cli`).',
+                inputSchema: {
+                    type: 'object',
+                    properties: {
+                        prompt: { type: 'string', description: 'The prompt / task to send to Gemini.' },
+                        model: { type: 'string', description: 'Optional Gemini model to use (e.g. "gemini-2.5-pro"). Defaults to CLI default.' },
+                        working_dir: { type: 'string', description: 'Working directory for Gemini CLI. Defaults to current directory.' },
+                    },
+                    required: ['prompt'],
+                },
+            },
+            {
                 name: 'ai_multi_ask',
                 description: 'Ask multiple AI models the same question in parallel and compare their responses. Best for getting diverse perspectives, cross-validating answers, or finding the best response.',
                 inputSchema: {
@@ -313,6 +525,11 @@ async function main() {
                             description: 'List of provider names to query in parallel (e.g. ["deepseek", "glm", "qwen"]). Omit to use all enabled models.',
                         },
                         system_prompt: { type: 'string', description: 'Optional system-level instructions for all models.' },
+                        file_paths: {
+                            type: 'array',
+                            items: { type: 'string' },
+                            description: 'Optional local file paths whose contents will be injected as context.',
+                        },
                     },
                     required: ['message'],
                 },
@@ -330,13 +547,17 @@ async function main() {
             const codexStatus = codexCheck.error
                 ? '❌ Not installed (run: npm install -g @openai/codex)'
                 : '✅ Ready (uses ChatGPT login)';
+            const geminiCheck = spawnSync('gemini', ['--version'], { encoding: 'utf8', timeout: 5000 });
+            const geminiStatus = geminiCheck.error
+                ? '❌ Not installed (npm i -g @google/gemini-cli)'
+                : `✅ Ready (${(geminiCheck.stdout || '').trim() || 'gemini'})`;
 
             if (enabledModels.length > 0) {
                 const lines = enabledModels.map(m =>
                     `✅ ${m.label} (${m.modelId}) — tasks: ${m.tasks.join(', ') || 'none'}`
                 );
                 return {
-                    content: [{ type: 'text', text: `Configured models:\n${lines.join('\n')}\n\n🤖 Codex CLI: ${codexStatus}` }],
+                    content: [{ type: 'text', text: `Configured models:\n${lines.join('\n')}\n\n🤖 Codex CLI: ${codexStatus}\n🔷 Gemini CLI: ${geminiStatus}` }],
                 };
             }
 
@@ -347,7 +568,7 @@ async function main() {
             return {
                 content: [{
                     type: 'text',
-                    text: `✅ Configured: ${configured.join(', ') || 'none'}\n❌ Missing key: ${missing.join(', ') || 'none'}\n🤖 Codex CLI: ${codexStatus}\n\nTip: Open L-Hub Dashboard (Cmd+Shift+P → "L-Hub: Open Dashboard") to manage models.`,
+                    text: `✅ Configured: ${configured.join(', ') || 'none'}\n❌ Missing key: ${missing.join(', ') || 'none'}\n🤖 Codex CLI: ${codexStatus}\n🔷 Gemini CLI: ${geminiStatus}\n\nTip: Open L-Hub Dashboard (Cmd+Shift+P → "L-Hub: Open Dashboard") to manage models.`,
                 }],
             };
         }
@@ -380,11 +601,55 @@ async function main() {
             }
         }
 
+        // ── ai_gemini_task ────────────────────────────────────────────────
+        if (request.params.name === 'ai_gemini_task') {
+            const args = request.params.arguments as { prompt: string; model?: string; working_dir?: string };
+            if (!args?.prompt) {
+                return { content: [{ type: 'text', text: 'Error: prompt is required' }], isError: true };
+            }
+            const t0 = Date.now();
+            try {
+                const result = callGemini(args.prompt, args.model, args.working_dir);
+                saveHistory((config as any).dbPath, {
+                    method: 'ai_gemini_task', model: args.model || 'gemini-cli',
+                    duration: Date.now() - t0,
+                    requestPreview: args.prompt, responsePreview: result,
+                    status: 'success',
+                });
+                return { content: [{ type: 'text', text: result }] };
+            } catch (e: unknown) {
+                const msg = e instanceof Error ? e.message : String(e);
+                saveHistory((config as any).dbPath, {
+                    method: 'ai_gemini_task', model: args.model || 'gemini-cli',
+                    duration: Date.now() - t0,
+                    requestPreview: args.prompt, responsePreview: msg,
+                    status: 'error', errorMessage: msg,
+                });
+                return { content: [{ type: 'text', text: `Gemini CLI error: ${msg}` }], isError: true };
+            }
+        }
+
         // ── ai_ask ────────────────────────────────────────────────────────
         if (request.params.name === 'ai_ask') {
-            const args = request.params.arguments as { message: string; provider?: string; system_prompt?: string };
+            const args = request.params.arguments as {
+                message: string;
+                provider?: string;
+                system_prompt?: string;
+                file_paths?: string[];
+            };
             if (!args?.message) {
                 return { content: [{ type: 'text', text: 'Error: message is required' }], isError: true };
+            }
+
+            // Build system prompt with file context if provided
+            let systemPrompt = args.system_prompt;
+            const warningLines: string[] = [];
+            if (args.file_paths && args.file_paths.length > 0) {
+                const { context, warnings } = buildFileContext(args.file_paths);
+                warningLines.push(...warnings);
+                if (context) {
+                    systemPrompt = systemPrompt ? `${systemPrompt}\n\n${context}` : context;
+                }
             }
 
             const route = resolveRoute(args.message, config, args.provider);
@@ -392,7 +657,7 @@ async function main() {
                 return {
                     content: [{
                         type: 'text',
-                        text: `❌ No configured model found${args.provider ? ` for provider "${args.provider}"` : ''}.\n\nPlease open L-Hub Dashboard (Cmd+Shift+P → "L-Hub: Open Dashboard") and add a model with an API key.`,
+                        text: `❌ No configured model found${args.provider ? ` for provider "${args.provider}"` : ''}.\\n\\nPlease open L-Hub Dashboard (Cmd+Shift+P → "L-Hub: Open Dashboard") and add a model with an API key.`,
                     }],
                     isError: true,
                 };
@@ -400,15 +665,21 @@ async function main() {
 
             const t0 = Date.now();
             try {
-                const result = await callProvider(route, args.message, args.system_prompt);
+                const result = await callProviderWithFallback(route, args.message, systemPrompt, config);
+                const fallbackNote = result.didFallback
+                    ? `\n\n---\n⚡ *Auto-fallback: responded by **${result.usedModel}** (primary model unavailable)*`
+                    : '';
+                const warningNote = warningLines.length > 0
+                    ? `\n\n> ⚠️ File context warnings: ${warningLines.join('; ')}`
+                    : '';
                 saveHistory((config as any).dbPath, {
-                    method: 'ai_ask', model: route.modelId,
+                    method: 'ai_ask', model: result.usedModel,
                     duration: Date.now() - t0,
                     inputTokens: result.inputTokens, outputTokens: result.outputTokens,
                     requestPreview: args.message, responsePreview: result.text,
                     status: 'success',
                 });
-                return { content: [{ type: 'text', text: result.text }] };
+                return { content: [{ type: 'text', text: result.text + fallbackNote + warningNote }] };
             } catch (e: unknown) {
                 const msg = e instanceof Error ? e.message : String(e);
                 saveHistory((config as any).dbPath, {
@@ -423,9 +694,25 @@ async function main() {
 
         // ── ai_multi_ask ──────────────────────────────────────────────────
         if (request.params.name === 'ai_multi_ask') {
-            const args = request.params.arguments as { message: string; providers?: string[]; system_prompt?: string };
+            const args = request.params.arguments as {
+                message: string;
+                providers?: string[];
+                system_prompt?: string;
+                file_paths?: string[];
+            };
             if (!args?.message) {
                 return { content: [{ type: 'text', text: 'Error: message is required' }], isError: true };
+            }
+
+            // Build system prompt with file context if provided
+            let systemPrompt = args.system_prompt;
+            const warningLines: string[] = [];
+            if (args.file_paths && args.file_paths.length > 0) {
+                const { context, warnings } = buildFileContext(args.file_paths);
+                warningLines.push(...warnings);
+                if (context) {
+                    systemPrompt = systemPrompt ? `${systemPrompt}\n\n${context}` : context;
+                }
             }
 
             // Determine which providers to query
@@ -449,7 +736,7 @@ async function main() {
                 if (!route) return { provider, error: `No config for "${provider}"` };
                 const ts = Date.now();
                 try {
-                    const result = await callProvider(route, args.message, args.system_prompt);
+                    const result = await callProvider(route, args.message, systemPrompt);
                     saveHistory(dbPath, {
                         method: 'ai_multi_ask', model: route.modelId,
                         duration: Date.now() - ts,
@@ -475,6 +762,9 @@ async function main() {
 
             // Format comparison output
             const sections: string[] = [`🔀 **ai_multi_ask** — ${providerList.length} models | ${totalMs}ms total\n`];
+            if (warningLines.length > 0) {
+                sections.push(`> ⚠️ File context warnings: ${warningLines.join('; ')}\n`);
+            }
             for (const r of results) {
                 if (r.status === 'fulfilled') {
                     const v = r.value;

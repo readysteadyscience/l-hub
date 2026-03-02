@@ -104,13 +104,24 @@ export class SettingsManager {
     // ── Default starter models ──────────────────────────────────────────────
 
     private getDefaultModels(): ModelConfig[] {
+        // L-Hub routing philosophy (2026-Q1, based on actual subscriptions):
+        // Claude Sonnet 4.6 (Antigravity) handles planning/arch natively — NOT routed here.
+        // Code writing → GPT/Codex 5.3 (primary), then MiniMax M2.5 (SWE-bench 80.2%!)
+        // MiniMax M2.5 Coding Plan: SWE-bench 80.2% ≈ Claude Opus 4.6, BFCL 76.8% #1
+        // GLM-5 Coding Plan: SWE-bench 77.8%, open-source #1, strong agentic & tool use
+        // Claude intentionally absent: Antigravity IS Claude Sonnet 4.6.
         return [
-            { id: 'default-deepseek', modelId: 'deepseek-chat', label: 'DeepSeek-V3 (推荐)', baseUrl: 'https://api.deepseek.com/v1', tasks: ['code_gen', 'code_review'], enabled: true, priority: 0 },
-            { id: 'default-deepseek-r1', modelId: 'deepseek-reasoner', label: 'DeepSeek-R1 (推理)', baseUrl: 'https://api.deepseek.com/v1', tasks: ['math_reasoning'], enabled: true, priority: 0 },
-            { id: 'default-glm', modelId: 'glm-5', label: 'GLM-5 (通用 API)', baseUrl: 'https://open.bigmodel.cn/api/paas/v4', tasks: ['architecture', 'agentic', 'tool_calling', 'long_context'], enabled: true, priority: 0 },
-            { id: 'default-glm-coding', modelId: 'glm-4.7', label: 'GLM-4.7 (Coding Plan)', baseUrl: 'https://open.bigmodel.cn/api/coding/paas/v4', tasks: ['code_gen', 'code_review', 'agentic'], enabled: true, priority: 0 },
-            { id: 'default-qwen', modelId: 'qwen-max', label: 'Qwen-Max (推荐)', baseUrl: 'https://dashscope.aliyuncs.com/compatible-mode/v1', tasks: ['translation', 'documentation', 'tool_calling'], enabled: true, priority: 0 },
-            { id: 'default-minimax', modelId: 'MiniMax-M2.5', label: 'MiniMax-M2.5', baseUrl: 'https://api.minimax.io/v1', tasks: ['ui_design', 'creative', 'long_context'], enabled: true, priority: 0 },
+            // ── Code tier ─────────────────────────────────────────────────────────
+            { id: 'default-gpt', modelId: 'gpt-5.3-codex', label: 'GPT/Codex 5.3 (代码首选)', baseUrl: 'https://api.openai.com/v1', tasks: ['code_gen', 'code_review'], enabled: true, priority: 0 },
+            // MiniMax M2.5 Coding Plan: SWE-bench 80.2%, BFCL tool-calling 76.8% (beats Claude Opus 4.6!)
+            { id: 'default-minimax', modelId: 'MiniMax-M2.5-highspeed', label: 'MiniMax-M2.5 Coding (代码/工具⭐)', baseUrl: 'https://api.minimax.io/v1', tasks: ['code_gen', 'code_review', 'agentic', 'tool_calling', 'creative'], enabled: true, priority: 1 },
+            // GLM-5 Coding Plan: SWE-bench 77.8%, open-source SOTA for agentic coding
+            { id: 'default-glm-coding', modelId: 'glm-5', label: 'GLM-5 Coding (Agentic/工具链)', baseUrl: 'https://open.bigmodel.cn/api/coding/paas/v4', tasks: ['agentic', 'tool_calling', 'long_context', 'code_gen'], enabled: true, priority: 2 },
+            { id: 'default-deepseek', modelId: 'deepseek-chat', label: 'DeepSeek-V3 (代码经济型)', baseUrl: 'https://api.deepseek.com/v1', tasks: ['code_gen', 'code_review'], enabled: true, priority: 3 },
+            // ── Specialized tier ──────────────────────────────────────────────────
+            { id: 'default-qwen', modelId: 'qwen-max', label: 'Qwen-Max (中文/工具调用)', baseUrl: 'https://dashscope.aliyuncs.com/compatible-mode/v1', tasks: ['translation', 'documentation', 'tool_calling'], enabled: true, priority: 0 },
+            // Gemini: ARC-AGI-2 #1 (77.1%) — best for frontend UI design + math reasoning
+            { id: 'default-gemini', modelId: 'gemini-3.1-pro-preview', label: 'Gemini 3.1 Pro (前端UI⭐/推理)', baseUrl: 'https://generativelanguage.googleapis.com/v1beta/openai', tasks: ['ui_design', 'math_reasoning', 'long_context'], enabled: true, priority: 0 },
         ];
     }
 
