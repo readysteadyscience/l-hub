@@ -9,3 +9,6 @@ dist/
 HANDOVER.md
 docs/HOW_TO_FEED_LINGLAN.md
 .vscode/
+
+# Local dev journal
+docs/DEVLOG.md

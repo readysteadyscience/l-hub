@@ -15,6 +15,50 @@ import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { ListToolsRequestSchema, CallToolRequestSchema } from '@modelcontextprotocol/sdk/types.js';
 
+// ── History DB (opened lazily, writes silently suppressed on error) ────────────────
+let _historyDb: any = null;
+function getHistoryDb(dbPath?: string): any {
+    if (_historyDb) { return _historyDb; }
+    if (!dbPath || !fs.existsSync(path.dirname(dbPath))) { return null; }
+    try {
+        // eslint-disable-next-line @typescript-eslint/no-var-requires
+        const Database = require('better-sqlite3');
+        _historyDb = new Database(dbPath);
+        _historyDb.exec(`CREATE TABLE IF NOT EXISTS request_history (
+            id TEXT PRIMARY KEY, timestamp INTEGER NOT NULL,
+            client_name TEXT, client_version TEXT, method TEXT NOT NULL,
+            tool_name TEXT, model TEXT, duration INTEGER,
+            input_tokens INTEGER, output_tokens INTEGER, total_tokens INTEGER,
+            request_preview TEXT, response_preview TEXT,
+            status TEXT NOT NULL, error_message TEXT
+        )`);
+        return _historyDb;
+    } catch { return null; }
+}
+function saveHistory(dbPath: string | undefined, rec: {
+    model?: string; method: string; toolName?: string;
+    duration: number; inputTokens?: number; outputTokens?: number;
+    requestPreview: string; responsePreview: string;
+    status: 'success' | 'error'; errorMessage?: string;
+}) {
+    const db = getHistoryDb(dbPath);
+    if (!db) { return; }
+    try {
+        const id = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+        db.prepare(`INSERT OR IGNORE INTO request_history
+            (id,timestamp,client_name,method,tool_name,model,duration,input_tokens,output_tokens,total_tokens,request_preview,response_preview,status,error_message)
+            VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)`
+        ).run(
+            id, Date.now(), 'l-hub-mcp', rec.method, rec.toolName ?? rec.method,
+            rec.model ?? null, rec.duration,
+            rec.inputTokens ?? null, rec.outputTokens ?? null,
+            (rec.inputTokens ?? 0) + (rec.outputTokens ?? 0) || null,
+            rec.requestPreview.slice(0, 500), rec.responsePreview.slice(0, 500),
+            rec.status, rec.errorMessage ?? null
+        );
+    } catch { /* never crash the server */ }
+}
+
 // ─── Config ───────────────────────────────────────────────────────────────────
 
 const KEYS_FILE = path.join(os.homedir(), '.l-hub-keys.json');
@@ -288,11 +332,24 @@ async function main() {
             if (!args?.task) {
                 return { content: [{ type: 'text', text: 'Error: task is required' }], isError: true };
             }
+            const t0 = Date.now();
             try {
                 const result = callCodex(args.task, args.working_dir);
+                saveHistory((config as any).dbPath, {
+                    method: 'ai_codex_task', model: 'codex-cli',
+                    duration: Date.now() - t0,
+                    requestPreview: args.task, responsePreview: result,
+                    status: 'success',
+                });
                 return { content: [{ type: 'text', text: result }] };
             } catch (e: unknown) {
                 const msg = e instanceof Error ? e.message : String(e);
+                saveHistory((config as any).dbPath, {
+                    method: 'ai_codex_task', model: 'codex-cli',
+                    duration: Date.now() - t0,
+                    requestPreview: args.task, responsePreview: msg,
+                    status: 'error', errorMessage: msg,
+                });
                 return { content: [{ type: 'text', text: `Codex error: ${msg}` }], isError: true };
             }
         }
@@ -315,11 +372,25 @@ async function main() {
                 };
             }
 
+            const t0 = Date.now();
             try {
                 const result = await callProvider(route, args.message, args.system_prompt);
+                saveHistory((config as any).dbPath, {
+                    method: 'ai_ask', model: route.modelId,
+                    duration: Date.now() - t0,
+                    inputTokens: result.inputTokens, outputTokens: result.outputTokens,
+                    requestPreview: args.message, responsePreview: result.text,
+                    status: 'success',
+                });
                 return { content: [{ type: 'text', text: result.text }] };
             } catch (e: unknown) {
                 const msg = e instanceof Error ? e.message : String(e);
+                saveHistory((config as any).dbPath, {
+                    method: 'ai_ask', model: route.modelId,
+                    duration: Date.now() - t0,
+                    requestPreview: args.message, responsePreview: msg,
+                    status: 'error', errorMessage: msg,
+                });
                 return { content: [{ type: 'text', text: `Error calling ${route.label}: ${msg}` }], isError: true };
             }
         }
