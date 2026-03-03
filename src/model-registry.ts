@@ -36,9 +36,9 @@ export const MODEL_REGISTRY: Record<string, ModelDefinition> = {
         label: 'DeepSeek-V3 (推荐)',
         providerGroup: 'DeepSeek',
         defaultBaseUrl: 'https://api.deepseek.com/v1',
-        defaultTasks: ['code_gen', 'code_review', 'math_reasoning'],
-        note_zh: '最新 V3.2（2025-12）综合能力强，性价比最高',
-        note_en: 'Latest V3.2, best cost-efficiency, fast',
+        defaultTasks: ['translation', 'documentation'],
+        note_zh: '性价比之王（$0.028/M），翻译/文档/体力活首选',
+        note_en: 'Best value ($0.028/M), ideal for translation/docs/routine tasks',
         requiresApiKey: true,
     },
     'deepseek-reasoner': {
@@ -55,18 +55,18 @@ export const MODEL_REGISTRY: Record<string, ModelDefinition> = {
         label: 'GLM-5',
         providerGroup: 'GLM (智谱)',
         defaultBaseUrl: 'https://open.bigmodel.cn/api/paas/v4',
-        defaultTasks: ['architecture', 'agentic', 'tool_calling', 'code_gen'],
-        note_zh: '最新旗舰（2026-02），通用 API 端点，按量计费',
-        note_en: 'Latest flagship (2026-02), general API endpoint, pay-per-use',
+        defaultTasks: ['code_review', 'long_context', 'agentic'],
+        note_zh: '复杂工程/调试首选，长文本连贯性前3',
+        note_en: 'Complex engineering/debugging, top-3 long-text coherence',
         requiresApiKey: true,
     },
     'glm-5-coding': {
         label: 'GLM-5 (Coding Plan)',
         providerGroup: 'GLM (智谱)',
         defaultBaseUrl: 'https://open.bigmodel.cn/api/coding/paas/v4',
-        defaultTasks: ['architecture', 'agentic', 'code_gen', 'code_review'],
-        note_zh: 'Coding Plan 包月 · 专属端点 · 消耗 2x-3x 套餐配额',
-        note_en: 'Coding Plan monthly · dedicated endpoint · costs 2x-3x quota',
+        defaultTasks: ['code_review', 'agentic', 'long_context'],
+        note_zh: 'Coding Plan 包月 · 复杂跨文件工程/调试 · 消耗 2x-3x 套餐配额',
+        note_en: 'Coding Plan · complex multi-file engineering · 2x-3x quota',
         requiresApiKey: true,
     },
     'glm-4.7': {
@@ -83,9 +83,9 @@ export const MODEL_REGISTRY: Record<string, ModelDefinition> = {
         label: 'Qwen-Max (推荐)',
         providerGroup: 'Qwen (通义)',
         defaultBaseUrl: 'https://dashscope.aliyuncs.com/compatible-mode/v1',
-        defaultTasks: ['translation', 'documentation', 'tool_calling', 'code_gen'],
-        note_zh: '通义最新旗舰（Qwen3.5），中文理解与翻译最强',
-        note_en: 'Latest (Qwen3.5), best Chinese understanding & translation',
+        defaultTasks: ['translation', 'documentation', 'tool_calling'],
+        note_zh: '多语言 + 结构化写作 + 工具调用 Tau2-bench #1',
+        note_en: 'Multilingual, structured writing, Tau2-bench #1 tool calls',
         requiresApiKey: true,
     },
     'qwen-coder-plus': {
@@ -102,18 +102,18 @@ export const MODEL_REGISTRY: Record<string, ModelDefinition> = {
         label: 'MiniMax-M2.5 (推荐)',
         providerGroup: 'MiniMax',
         defaultBaseUrl: 'https://api.minimax.io/v1',
-        defaultTasks: ['agentic', 'code_gen', 'tool_calling', 'long_context'],
-        note_zh: '最新旗舰（2025-12），SWE-bench 80.2%，Agentic 顶尖',
-        note_en: 'Latest (2025-12), SWE-bench 80.2%, top Agentic',
+        defaultTasks: ['creative', 'agentic', 'long_context'],
+        note_zh: '中文文学创作 #1 + 高速生成（100+ tok/s）',
+        note_en: 'Chinese creative writing #1, high-speed (100+ tok/s)',
         requiresApiKey: true,
     },
     'MiniMax-M2.5-highspeed': {
         label: 'MiniMax-M2.5 HighSpeed',
         providerGroup: 'MiniMax',
         defaultBaseUrl: 'https://api.minimax.io/v1',
-        defaultTasks: ['code_gen', 'documentation'],
-        note_zh: 'M2.5 高速版，响应更快，适合高频调用',
-        note_en: 'M2.5 high-speed, faster response, high-frequency calls',
+        defaultTasks: ['creative', 'documentation'],
+        note_zh: 'M2.5 高速版，去GPT味/文笔打磨，高频调用',
+        note_en: 'M2.5 high-speed, writing polish, high-frequency calls',
         requiresApiKey: true,
     },
     // ── Kimi K2 ──────────────────────────────────────────────
@@ -140,9 +140,9 @@ export const MODEL_REGISTRY: Record<string, ModelDefinition> = {
         label: 'GPT-5.3 Codex (编程)',
         providerGroup: 'OpenAI',
         defaultBaseUrl: 'https://api.openai.com/v1',
-        defaultTasks: ['code_gen', 'code_review', 'agentic', 'tool_calling'],
-        note_zh: 'Terminal-Bench #1，Agentic 编程与 DevOps 顶尖',
-        note_en: 'Terminal-Bench #1, top Agentic coding & DevOps',
+        defaultTasks: ['code_gen', 'code_review', 'agentic'],
+        note_zh: '代码生成首选 · Terminal-Bench #1 · 编码优化版',
+        note_en: 'Code generation primary · Terminal-Bench #1 · coding-optimized',
         requiresApiKey: true,
     },
     // ── Anthropic (Claude) ───────────────────────────────────
@@ -151,8 +151,8 @@ export const MODEL_REGISTRY: Record<string, ModelDefinition> = {
         providerGroup: 'Anthropic (Claude)',
         defaultBaseUrl: 'https://api.anthropic.com/v1',
         defaultTasks: ['architecture', 'agentic', 'code_review', 'long_context'],
-        note_zh: '最新旗舰（2026-02），全球编程最强，企业级 Agentic',
-        note_en: 'Latest flagship (2026-02), best coding globally, enterprise Agentic',
+        note_zh: '综合质量顶级梯队，架构与 Agentic 优选',
+        note_en: 'Top-tier overall quality, architecture & Agentic strong contender',
         requiresApiKey: true,
     },
     'claude-sonnet-4-6': {
@@ -196,9 +196,9 @@ export const MODEL_REGISTRY: Record<string, ModelDefinition> = {
         label: 'Gemini 3.1 Pro Preview',
         providerGroup: 'Google (Gemini)',
         defaultBaseUrl: 'https://generativelanguage.googleapis.com/v1beta/openai',
-        defaultTasks: ['math_reasoning', 'architecture', 'long_context', 'vision'],
-        note_zh: '顶级推理，百万 token 上下文',
-        note_en: 'Top reasoning, million token context',
+        defaultTasks: ['math_reasoning', 'ui_design', 'long_context', 'vision'],
+        note_zh: 'ARC-AGI-2 #1（77.1%）· 推理/算法/前端UI 顶级梯队',
+        note_en: 'ARC-AGI-2 #1 (77.1%), top-tier reasoning/algo/frontend UI',
         requiresApiKey: true,
     },
     'gemini-3-image': {
@@ -209,27 +209,6 @@ export const MODEL_REGISTRY: Record<string, ModelDefinition> = {
         note_zh: '专用图像生成与编辑（Imagen 3 驱动）',
         note_en: 'Image generation & editing (Imagen 3)',
         requiresApiKey: true,
-    },
-    // ── Mistral ──────────────────────────────────────────────
-    'mistral-large-latest': {
-        label: 'Mistral Large 3 (推荐)',
-        providerGroup: 'Mistral',
-        defaultBaseUrl: 'https://api.mistral.ai/v1',
-        defaultTasks: ['translation', 'tool_calling', 'code_gen'],
-        note_zh: '欧洲隐私合规，多语言优秀',
-        note_en: 'EU privacy compliant, excellent multilingual',
-        requiresApiKey: true,
-    },
-    // ── Meta Llama (中转) ────────────────────────────────────
-    'meta-llama/llama-3.3-70b-instruct': {
-        label: 'Llama 3.3 70B',
-        providerGroup: 'Meta (Llama) — 需中转',
-        defaultBaseUrl: '',
-        defaultTasks: ['code_gen', 'translation'],
-        note_zh: '业界最强开源模型，需通过 OpenRouter 等中转',
-        note_en: 'Top open-source model, relay required (OpenRouter)',
-        requiresApiKey: true,
-        isRelay: true,
     },
 };
 
@@ -243,10 +222,9 @@ export const PROVIDER_GROUPS = [
     'OpenAI',
     'Anthropic (Claude)',
     'Google (Gemini)',
-    'Mistral',
-    'Meta (Llama) — 需中转',
 ];
 
 export function getModelsInGroup(group: string): Array<[string, ModelDefinition]> {
     return Object.entries(MODEL_REGISTRY).filter(([, def]) => def.providerGroup === group);
 }
+

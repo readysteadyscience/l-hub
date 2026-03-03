@@ -14,7 +14,7 @@ const RoutingGuidePanel: React.FC<{ lang: Lang }> = ({ lang }) => {
             data: [
                 { task: 'Code Generation', model: 'GPT/Codex 5.3', reason: 'Terminal-Bench #1; Codex CLI directly modifies local workspace.' },
                 { task: 'Agentic Coding', model: 'MiniMax-M2.5 Coding', reason: 'SWE-bench 80.2% ≈ Claude Opus 4.6; BFCL Tool Calling 76.8% surpasses Opus.' },
-                { task: 'Multi-step / Chains', model: 'GLM-5 Coding Plan', reason: 'SWE-bench 77.8% (Open-Source SOTA); Outstanding long context planning.' },
+                { task: 'Multi-step / Chains', model: 'GLM-5 Coding Plan', reason: 'SWE-bench 77.8% (top-tier); Outstanding long context planning.' },
                 { task: 'Economical Code', model: 'DeepSeek-V3', reason: 'Unbeatable cost-effectiveness, lightning fast.' },
                 { task: 'Translation / Docs', model: 'Qwen-Max', reason: 'Superior Chinese localization; Tau2-bench #1 for tool calls.' },
                 { task: 'UI / Frontend', model: 'Gemini 3.1 Pro', reason: 'ARC-AGI-2 Global #1 (77.1%); Unmatched frontend design.' },
@@ -35,7 +35,7 @@ const RoutingGuidePanel: React.FC<{ lang: Lang }> = ({ lang }) => {
             data: [
                 { task: '代码生成', model: 'GPT/Codex 5.3', reason: 'Terminal-Bench #1；自带 Codex CLI 能够直接读写操作本地代码' },
                 { task: 'Agentic 复杂编码', model: 'MiniMax-M2.5 Coding', reason: 'SWE-bench 80.2% ≈ Claude Opus 4.6；BFCL 工具调用 76.8% 全球第二' },
-                { task: '多步调试 / 工具链', model: 'GLM-5 Coding Plan', reason: 'SWE-bench 77.8%，开源最强；长程任务规划能力极强' },
+                { task: '多步调试 / 工具链', model: 'GLM-5 Coding Plan', reason: 'SWE-bench 77.8%，顶级梯队；长程任务规划能力极强' },
                 { task: '代码经济型', model: 'DeepSeek-V3', reason: '无敌的性价比与极快的首字输出' },
                 { task: '翻译 / 中文环境与文档', model: 'Qwen-Max', reason: '中文母语级；工具调用 Tau2-bench 称霸' },
                 { task: 'UI / 前端视觉设计', model: 'Gemini 3.1 Pro', reason: 'ARC-AGI-2 全球 #1（77.1%）；美学品位独步天下' },
@@ -44,7 +44,7 @@ const RoutingGuidePanel: React.FC<{ lang: Lang }> = ({ lang }) => {
                 { task: '终端命令 / DevOps', model: 'GPT-5.3 Codex', reason: 'Terminal-Bench 霸榜选手' },
                 { task: '极速生成 / 闲聊 / 脑暴', model: 'MiniMax-M2.5 HighSpeed', reason: '100 tok/s，流式体验拉满' },
                 { task: '独立安全本地文件操作', model: 'Codex CLI (`ai_codex_task`)', reason: '直接走 OAuth 免 Key 嫖；以隔离全功能独立 Agent 形态干脏活' },
-                { task: '系统级深度本地爬虫', model: 'Gemini CLI (`ai_gemini_task`)', reason: '直接走 Google OAuth 免费白嫖；原厂自带逆天级视效浏览器控制系统' }
+                { task: '系统级深度本地爬虫', model: 'Gemini CLI (`ai_gemini_task`)', reason: '走 Google OAuth 订阅额度；原厂自带视效浏览器控制系统' }
             ]
         }
     }[lang];

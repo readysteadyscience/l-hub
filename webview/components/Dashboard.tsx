@@ -3,6 +3,8 @@ import OverviewPanel from './OverviewPanel';
 import ConfigPanel from './ConfigPanel';
 import HistoryConsole from './HistoryConsole';
 import RoutingGuidePanel from './RoutingGuidePanel';
+import SkillPanel from './SkillPanel';
+import TestPanel from './TestPanel';
 import { colors, radius, s } from '../theme';
 import { vscode } from '../vscode-api';
 
@@ -14,6 +16,8 @@ const t = {
         settings: '⚙️ Models & Keys',
         history: '📡 History',
         guide: '🧭 Routing Guide',
+        skill: '🤖 AI Skill',
+        test: '🧪 Test',
         subtitle: 'AI Model Bridge — Smart routing for every task',
         github: '⭐ GitHub',
         docs: '📖 Docs',
@@ -24,6 +28,8 @@ const t = {
         settings: '⚙️ 模型管理',
         history: '📡 调用历史',
         guide: '🧭 路由推荐',
+        skill: '🤖 AI 调度',
+        test: '🧪 测试',
         subtitle: 'AI 模型网关 — 智能路由，按需分配',
         github: '⭐ GitHub',
         docs: '📖 文档',
@@ -32,7 +38,7 @@ const t = {
 };
 
 const Dashboard: React.FC = () => {
-    const [activeTab, setActiveTab] = useState<'overview' | 'config' | 'history' | 'guide'>('overview');
+    const [activeTab, setActiveTab] = useState<'overview' | 'config' | 'history' | 'guide' | 'skill' | 'test'>('overview');
     const [lang, setLang] = useState<Lang>('zh');
 
     // Read logo URI passed from extension host via data attribute
@@ -118,6 +124,12 @@ const Dashboard: React.FC = () => {
                     <span onClick={() => setActiveTab('guide')} style={s.pillTab(activeTab === 'guide')}>
                         {t[lang].guide}
                     </span>
+                    <span onClick={() => setActiveTab('skill')} style={s.pillTab(activeTab === 'skill')}>
+                        {t[lang].skill}
+                    </span>
+                    <span onClick={() => setActiveTab('test')} style={s.pillTab(activeTab === 'test')}>
+                        {t[lang].test}
+                    </span>
                 </div>
             </div>
 
@@ -127,6 +139,8 @@ const Dashboard: React.FC = () => {
                 {activeTab === 'config' && <ConfigPanel lang={lang} />}
                 {activeTab === 'history' && <HistoryConsole lang={lang} />}
                 {activeTab === 'guide' && <RoutingGuidePanel lang={lang} />}
+                {activeTab === 'skill' && <SkillPanel lang={lang} />}
+                {activeTab === 'test' && <TestPanel lang={lang} />}
             </div>
 
             {/* ── Footer ───────────────────────────────────────────────────── */}

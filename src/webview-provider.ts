@@ -166,6 +166,33 @@ export class DashboardPanel {
                         vscode.env.openExternal(vscode.Uri.parse(message.url));
                         break;
                     }
+                    // ── Copy to clipboard ─────────────────────────────────────
+                    case 'copyToClipboard': {
+                        vscode.env.clipboard.writeText(message.text || '');
+                        break;
+                    }
+                    // ── Generate diagnostics report ──────────────────────────
+                    case 'generateDiagnostics': {
+                        const models = await this.settings.getModels();
+                        const enabledCount = models.filter((m: any) => m.enabled).length;
+                        const { spawnSync } = require('child_process');
+                        const codexVer = spawnSync('codex', ['--version'], { encoding: 'utf8', timeout: 3000, shell: true });
+                        const geminiVer = spawnSync('gemini', ['--version'], { encoding: 'utf8', timeout: 3000, shell: true });
+                        const report = [
+                            '## L-Hub 诊断报告',
+                            `- 时间: ${new Date().toISOString()}`,
+                            `- L-Hub 版本: 0.2.0`,
+                            `- 已配置模型: ${models.length} 个（${enabledCount} 个已启用）`,
+                            `- Codex CLI: ${codexVer.error ? '未安装' : (codexVer.stdout || '').trim()}`,
+                            `- Gemini CLI: ${geminiVer.error ? '未安装' : (geminiVer.stdout || '').trim()}`,
+                            '',
+                            '### 模型配置',
+                            ...models.map((m: any) => `- ${m.id}: ${m.enabled ? '✅ 启用' : '❌ 禁用'} | Key: ${m.apiKey ? '已配' : '未配'}`),
+                        ].join('\n');
+                        vscode.env.clipboard.writeText(report);
+                        vscode.window.showInformationMessage('诊断报告已复制到剪贴板，可粘贴到 GitHub Issue');
+                        break;
+                    }
                     // ── Codex CLI status ──────────────────────────────────────
                     case 'getCodexStatus': {
                         const { spawnSync } = require('child_process');

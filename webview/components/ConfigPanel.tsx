@@ -220,7 +220,7 @@ const MODEL_DEFS: Record<string, ModelDef> = {
         group: 'Meta (Llama) — 需中转',
         baseUrl: '',
         defaultTasks: ['code_gen', 'translation'],
-        note: '业界最强开源模型，需通过 OpenRouter / 硅基流动等中转',
+        note: '业界顶级梯队模型，需通过 OpenRouter / 硅基流动等中转',
         relay: true,
     },
     // ─── API 聚合平台 ─────────────────────────────────────────────────────────
@@ -1008,6 +1008,9 @@ const ConfigPanel: React.FC<ConfigPanelProps> = ({ lang }) => {
                         </button>
                     </div>
                 </div>
+                {codexStatus?.installed && codexStatus.loggedIn && (
+                    <div style={{ textAlign: 'right', marginTop: '6px', fontSize: '11px', color: '#10A37F', fontWeight: 500 }}>✅ 已连通</div>
+                )}
             </div>
 
             {/* Gemini CLI Card */}
@@ -1049,6 +1052,9 @@ const ConfigPanel: React.FC<ConfigPanelProps> = ({ lang }) => {
                         </button>
                     </div>
                 </div>
+                {geminiStatus?.installed && geminiStatus.loggedIn && (
+                    <div style={{ textAlign: 'right', marginTop: '6px', fontSize: '11px', color: '#4285F4', fontWeight: 500 }}>✅ 已连通</div>
+                )}
             </div>
 
             {/* Pricing Reference Table */}

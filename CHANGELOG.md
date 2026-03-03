@@ -6,6 +6,18 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.2.0] - 2026-03-04
+
+### Added
+- **AI 调度规则自动注入** — 扩展激活时自动写入 Antigravity 代理规则，让 Claude 自动把体力活（代码生成、翻译、调试等）委派给 L-Hub 中的便宜模型，主模型 token 消耗降低 50%+
+- 动态检测用户已配置的模型（DeepSeek/GLM/Qwen/MiniMax）和 CLI 工具（Codex/Gemini），仅推荐实际可用的路由
+- Codex CLI 安装后自动成为代码审查/Bug检查的首选（GPT 5.3 Codex）
+- 幂等保护：`[L-Hub Auto-Routing]` 标记防止重复注入，不覆盖用户自定义规则
+
+> 灵感致谢：用户 **"来自星星的我"** 提出 Skill 驱动 AI 团队协同的概念
+
+---
+
 ## [0.1.15] - 2026-03-04
 
 ### Fixed
