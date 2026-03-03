@@ -6,6 +6,11 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.11] - 2026-03-03
+
+### Changed
+- **自动化发布验证** — 商店 `0.1.10` 手动传版后锁号，发布 `0.1.11` 全景补完版以验证整套 GitHub Actions 的 CD (持续部署) 工作流的首次自动化上架连通性。
+
 ## [0.1.10] - 2026-03-03
 
 ### Fixed
