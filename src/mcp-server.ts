@@ -78,6 +78,7 @@ interface LHubConfig {
     version?: number;
     models?: ModelConfig[];
     legacy?: Record<string, string>;
+    dbPath?: string;
 }
 
 function readConfig(): LHubConfig {
@@ -106,7 +107,7 @@ const LEGACY_PROVIDERS: Record<string, { url: string; model: string }> = {
     // Specialized
     qwen: { url: 'https://dashscope.aliyuncs.com/compatible-mode/v1', model: 'qwen-max' },
     minimax: { url: 'https://api.minimax.io/v1', model: 'MiniMax-M2.5-highspeed' },
-    kimi: { url: 'https://api.moonshot.cn/v1', model: 'kimi-k2-instruct' },
+    kimi: { url: 'https://api.moonshot.cn/v1', model: 'moonshot-v1-auto' }, // k2-instruct 并非全用户开放，使用 v1-auto 兜底
     gpt: { url: 'https://api.openai.com/v1', model: 'gpt-5.3-codex' },
     gemini: { url: 'https://generativelanguage.googleapis.com/v1beta/openai', model: 'gemini-3.1-pro-preview' },
     mistral: { url: 'https://api.mistral.ai/v1', model: 'mistral-large-latest' },
@@ -458,7 +459,7 @@ function callGemini(prompt: string, model?: string, workingDir?: string): string
 
 async function main() {
     const server = new Server(
-        { name: 'l-hub', version: '0.1.3' },
+        { name: 'lhub', version: '0.2.0' },
         { capabilities: { tools: {} } }
     );
 
@@ -534,6 +535,30 @@ async function main() {
                     required: ['message'],
                 },
             },
+            {
+                name: 'ai_consensus',
+                description: 'Multi-model voting engine. Asks multiple models the same question, then uses a judge model to score and select the best answer based on preset criteria. Returns the winning answer with scores and reasoning.',
+                inputSchema: {
+                    type: 'object',
+                    properties: {
+                        message: { type: 'string', description: 'The question or task to send to all models.' },
+                        criteria: { type: 'string', description: 'Judging criteria: "code_quality", "creativity", "accuracy", "completeness", or custom description. Defaults to "accuracy".' },
+                        providers: {
+                            type: 'array',
+                            items: { type: 'string' },
+                            description: 'List of provider names to query. Omit to use all enabled models.',
+                        },
+                        judge: { type: 'string', description: 'Provider to use as judge. Omit to auto-select the strongest available model.' },
+                        system_prompt: { type: 'string', description: 'Optional system-level instructions for candidate models.' },
+                        file_paths: {
+                            type: 'array',
+                            items: { type: 'string' },
+                            description: 'Optional local file paths for context.',
+                        },
+                    },
+                    required: ['message'],
+                },
+            },
         ],
     }));
 
@@ -543,14 +568,19 @@ async function main() {
         // ── ai_list_providers ─────────────────────────────────────────────
         if (request.params.name === 'ai_list_providers') {
             const enabledModels = (config.models || []).filter(m => m.enabled && m.apiKey);
+
             const codexCheck = spawnSync('codex', ['--version'], { encoding: 'utf8', timeout: 5000 });
             const codexStatus = codexCheck.error
                 ? '❌ Not installed (run: npm install -g @openai/codex)'
-                : '✅ Ready (uses ChatGPT login)';
+                : `✅ Installed (${(codexCheck.stdout || '').trim() || 'uses ChatGPT login'})`;
+
             const geminiCheck = spawnSync('gemini', ['--version'], { encoding: 'utf8', timeout: 5000 });
-            const geminiStatus = geminiCheck.error
-                ? '❌ Not installed (npm i -g @google/gemini-cli)'
-                : `✅ Ready (${(geminiCheck.stdout || '').trim() || 'gemini'})`;
+            let geminiStatus = '❌ Not installed (npm i -g @google/gemini-cli)';
+            if (!geminiCheck.error && geminiCheck.status === 0) {
+                // gemini-cli version string can sometimes have ANSI or multiline
+                const out = (geminiCheck.stdout || '').split('\n')[0].replace(/\x1B\[[0-9;]*[a-zA-Z]|\x1B[@-_]/g, '').trim();
+                geminiStatus = `✅ Installed (Auto local credentials)`;
+            }
 
             if (enabledModels.length > 0) {
                 const lines = enabledModels.map(m =>
@@ -582,7 +612,7 @@ async function main() {
             const t0 = Date.now();
             try {
                 const result = callCodex(args.task, args.working_dir);
-                saveHistory((config as any).dbPath, {
+                saveHistory(config.dbPath, {
                     method: 'ai_codex_task', model: 'codex-cli',
                     duration: Date.now() - t0,
                     requestPreview: args.task, responsePreview: result,
@@ -591,7 +621,7 @@ async function main() {
                 return { content: [{ type: 'text', text: result }] };
             } catch (e: unknown) {
                 const msg = e instanceof Error ? e.message : String(e);
-                saveHistory((config as any).dbPath, {
+                saveHistory(config.dbPath, {
                     method: 'ai_codex_task', model: 'codex-cli',
                     duration: Date.now() - t0,
                     requestPreview: args.task, responsePreview: msg,
@@ -610,7 +640,7 @@ async function main() {
             const t0 = Date.now();
             try {
                 const result = callGemini(args.prompt, args.model, args.working_dir);
-                saveHistory((config as any).dbPath, {
+                saveHistory(config.dbPath, {
                     method: 'ai_gemini_task', model: args.model || 'gemini-cli',
                     duration: Date.now() - t0,
                     requestPreview: args.prompt, responsePreview: result,
@@ -672,7 +702,7 @@ async function main() {
                 const warningNote = warningLines.length > 0
                     ? `\n\n> ⚠️ File context warnings: ${warningLines.join('; ')}`
                     : '';
-                saveHistory((config as any).dbPath, {
+                saveHistory(config.dbPath, {
                     method: 'ai_ask', model: result.usedModel,
                     duration: Date.now() - t0,
                     inputTokens: result.inputTokens, outputTokens: result.outputTokens,
@@ -682,7 +712,7 @@ async function main() {
                 return { content: [{ type: 'text', text: result.text + fallbackNote + warningNote }] };
             } catch (e: unknown) {
                 const msg = e instanceof Error ? e.message : String(e);
-                saveHistory((config as any).dbPath, {
+                saveHistory(config.dbPath, {
                     method: 'ai_ask', model: route.modelId,
                     duration: Date.now() - t0,
                     requestPreview: args.message, responsePreview: msg,
@@ -779,6 +809,131 @@ async function main() {
             }
 
             return { content: [{ type: 'text', text: sections.join('\n') }] };
+        }
+
+        // ── ai_consensus ─────────────────────────────────────────────────
+        if (request.params.name === 'ai_consensus') {
+            const args = request.params.arguments as {
+                message: string;
+                criteria?: string;
+                providers?: string[];
+                judge?: string;
+                system_prompt?: string;
+                file_paths?: string[];
+            };
+            if (!args?.message) {
+                return { content: [{ type: 'text', text: 'Error: message is required' }], isError: true };
+            }
+
+            const criteria = args.criteria || 'accuracy';
+
+            // Build system prompt with file context
+            let systemPrompt = args.system_prompt;
+            if (args.file_paths && args.file_paths.length > 0) {
+                const { context } = buildFileContext(args.file_paths);
+                if (context) {
+                    systemPrompt = systemPrompt ? `${systemPrompt}\n\n${context}` : context;
+                }
+            }
+
+            // Step 1: Get candidate responses (reuse ai_multi_ask logic)
+            const enabledModels = (config.models || []).filter(m => m.enabled && m.apiKey);
+            let providerList: string[];
+            if (args.providers && args.providers.length > 0) {
+                providerList = args.providers;
+            } else if (enabledModels.length > 0) {
+                providerList = enabledModels.slice(0, 5).map(m => m.id);
+            } else {
+                providerList = ['deepseek', 'glm', 'qwen'];
+            }
+
+            const dbPath = (config as any).dbPath;
+            const t0 = Date.now();
+
+            const tasks = providerList.map(async (provider) => {
+                const route = resolveRoute(args.message, config, provider);
+                if (!route) return { provider, label: provider, error: `No config for "${provider}"` };
+                const ts = Date.now();
+                try {
+                    const result = await callProvider(route, args.message, systemPrompt);
+                    return { provider, label: route.label, text: result.text, duration: Date.now() - ts };
+                } catch (e: unknown) {
+                    const msg = e instanceof Error ? e.message : String(e);
+                    return { provider, label: route.label, error: msg };
+                }
+            });
+
+            const rawResults = await Promise.allSettled(tasks);
+            const candidates: Array<{ label: string; text: string }> = [];
+            for (const r of rawResults) {
+                if (r.status === 'fulfilled' && r.value.text) {
+                    candidates.push({ label: r.value.label, text: r.value.text });
+                }
+            }
+
+            if (candidates.length === 0) {
+                return { content: [{ type: 'text', text: 'Error: all candidate models failed to respond.' }], isError: true };
+            }
+
+            if (candidates.length === 1) {
+                // Only one candidate, no need to judge
+                return { content: [{ type: 'text', text: `🏆 **ai_consensus** — Only 1 candidate responded\n\n**Winner: ${candidates[0].label}**\n\n${candidates[0].text}` }] };
+            }
+
+            // Step 2: Ask judge model to evaluate
+            const judgeProvider = args.judge || providerList[0];
+            const judgeRoute = resolveRoute('', config, judgeProvider);
+            if (!judgeRoute) {
+                // Fallback: just return all candidates
+                const fallback = candidates.map((c, i) => `### Candidate ${i + 1}: ${c.label}\n${c.text}`).join('\n\n---\n\n');
+                return { content: [{ type: 'text', text: `🔀 **ai_consensus** — Judge unavailable, showing all candidates\n\n${fallback}` }] };
+            }
+
+            const candidateBlock = candidates.map((c, i) => `=== Candidate ${i + 1} (${c.label}) ===\n${c.text}`).join('\n\n');
+
+            const judgePrompt = `You are an expert judge. Evaluate the following ${candidates.length} candidate answers to the user's question.
+
+User's Question: ${args.message}
+
+Judging Criteria: ${criteria}
+
+${candidateBlock}
+
+=== Your Task ===
+1. Score each candidate from 1-10 based on the criteria "${criteria}"
+2. Explain your reasoning for each score in 1-2 sentences
+3. Declare the winner
+4. Output the winning answer in full
+
+Format your response as:
+SCORES:
+- Candidate 1 (name): X/10 — reason
+- Candidate 2 (name): X/10 — reason
+...
+
+WINNER: Candidate N (name)
+
+BEST ANSWER:
+[full winning answer here]`;
+
+            try {
+                const judgeResult = await callProvider(judgeRoute, judgePrompt);
+                const totalMs = Date.now() - t0;
+
+                saveHistory(dbPath, {
+                    method: 'ai_consensus', model: judgeRoute.modelId,
+                    duration: totalMs,
+                    inputTokens: judgeResult.inputTokens, outputTokens: judgeResult.outputTokens,
+                    requestPreview: args.message, responsePreview: judgeResult.text.slice(0, 200),
+                    status: 'success',
+                });
+
+                return { content: [{ type: 'text', text: `🏆 **ai_consensus** — ${candidates.length} candidates | Judge: ${judgeRoute.label} | ${totalMs}ms\nCriteria: **${criteria}**\n\n${judgeResult.text}` }] };
+            } catch (e: unknown) {
+                const msg = e instanceof Error ? e.message : String(e);
+                const fallback = candidates.map((c, i) => `### Candidate ${i + 1}: ${c.label}\n${c.text}`).join('\n\n---\n\n');
+                return { content: [{ type: 'text', text: `⚠️ **ai_consensus** — Judge failed (${msg}), showing all candidates\n\n${fallback}` }] };
+            }
         }
 
         return {

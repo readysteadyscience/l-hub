@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { vscode } from '../vscode-api';
+import { s, colors, radius, shadow, providerColors } from '../theme';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -219,7 +220,7 @@ const MODEL_DEFS: Record<string, ModelDef> = {
         group: 'Meta (Llama) — 需中转',
         baseUrl: '',
         defaultTasks: ['code_gen', 'translation'],
-        note: '业界最强开源模型，需通过 OpenRouter / 硅基流动等中转',
+        note: '业界顶级梯队模型，需通过 OpenRouter / 硅基流动等中转',
         relay: true,
     },
     // ─── API 聚合平台 ─────────────────────────────────────────────────────────
@@ -298,18 +299,7 @@ const RELAY_PRESETS = [
     { name: '硅基流动 SiliconFlow', url: 'https://api.siliconflow.cn/v1', site: 'https://cloud.siliconflow.cn', note: '国内正规大平台' },
 ];
 
-/** Provider brand colors for visual distinction */
-const PROVIDER_COLORS: Record<string, string> = {
-    'DeepSeek': '#4A90D9',
-    'GLM (智谱)': '#6B5CE7',
-    'Qwen (通义)': '#E8740C',
-    'MiniMax': '#D94B86',
-    'Kimi K2': '#2AB5A0',
-    'OpenAI': '#10A37F',
-    'Anthropic (Claude)': '#CC785C',
-    'Google (Gemini)': '#4285F4',
-    'Mistral': '#FF6F00',
-};
+// Provider colors imported from theme.ts
 
 /** All models with known pricing, for the reference table */
 const PRICE_TABLE = Object.entries(MODEL_DEFS)
@@ -329,66 +319,7 @@ const formatPrice = (usd: number, lang: string) => {
 
 // ─── Shared Styles ────────────────────────────────────────────────────────────
 
-const s = {
-    card: {
-        background: 'var(--vscode-editor-inactiveSelectionBackground)',
-        borderRadius: '6px',
-        padding: '12px 14px',
-        marginBottom: '8px',
-        border: '1px solid var(--vscode-panel-border)',
-    } as React.CSSProperties,
-    input: {
-        width: '100%',
-        padding: '6px 9px',
-        background: 'var(--vscode-input-background)',
-        color: 'var(--vscode-input-foreground)',
-        border: '1px solid var(--vscode-input-border)',
-        borderRadius: '4px',
-        boxSizing: 'border-box' as const,
-        fontSize: '13px',
-    } as React.CSSProperties,
-    select: {
-        width: '100%',
-        padding: '6px 9px',
-        background: 'var(--vscode-input-background)',
-        color: 'var(--vscode-input-foreground)',
-        border: '1px solid var(--vscode-input-border)',
-        borderRadius: '4px',
-        boxSizing: 'border-box' as const,
-        fontSize: '13px',
-    } as React.CSSProperties,
-    btnPrimary: {
-        padding: '7px 16px',
-        background: 'var(--vscode-button-background)',
-        color: 'var(--vscode-button-foreground)',
-        border: 'none',
-        borderRadius: '4px',
-        cursor: 'pointer',
-        fontSize: '13px',
-        fontWeight: '600' as const,
-    } as React.CSSProperties,
-    btnSecondary: {
-        padding: '6px 13px',
-        background: 'transparent',
-        color: 'var(--vscode-descriptionForeground)',
-        border: '1px solid var(--vscode-input-border)',
-        borderRadius: '4px',
-        cursor: 'pointer',
-        fontSize: '13px',
-    } as React.CSSProperties,
-    label: {
-        display: 'block',
-        marginBottom: '5px',
-        fontSize: '12px',
-        fontWeight: '600' as const,
-        color: 'var(--vscode-editor-foreground)',
-    } as React.CSSProperties,
-    hint: {
-        margin: '4px 0 0',
-        fontSize: '11px',
-        color: 'var(--vscode-descriptionForeground)',
-    } as React.CSSProperties,
-};
+// Styles imported from '../theme' — s, colors, radius, shadow, providerColors
 
 // ─── TaskBadge ────────────────────────────────────────────────────────────────
 
@@ -468,13 +399,18 @@ const ModelCard: React.FC<{
             : 'var(--vscode-descriptionForeground)';
 
     return (
-        <div style={{ ...s.card, opacity: model.enabled ? 1 : 0.5 }}>
+        <div style={{
+            ...s.card,
+            opacity: model.enabled ? 1 : 0.55,
+            borderLeft: `3px solid ${providerColors[def?.group || ''] || colors.brand}`,
+            position: 'relative' as const,
+        }}>
             <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '8px' }}>
                 <div style={{ flex: 1, minWidth: 0 }}>
                     {/* Group name (big) + model label (small subtitle) + price */}
                     <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px', flexWrap: 'wrap' }}>
                         <span style={{ fontWeight: 600, fontSize: '13px' }}>{def?.group || model.modelId}</span>
-                        <span style={{ fontSize: '11px', color: PROVIDER_COLORS[def?.group || ''] || 'var(--vscode-descriptionForeground)', fontWeight: 500 }}>{model.label}</span>
+                        <span style={{ fontSize: '11px', color: providerColors[def?.group || ''] || 'var(--vscode-descriptionForeground)', fontWeight: 500 }}>{model.label}</span>
                         {def?.pricing && (
                             <span style={{ fontSize: '10px', color: 'var(--vscode-descriptionForeground)', background: 'var(--vscode-input-background)', border: '1px solid var(--vscode-input-border)', borderRadius: '3px', padding: '0 5px' }}>
                                 {formatPrice(def.pricing.input, lang)} / {formatPrice(def.pricing.output, lang)} per M
@@ -596,7 +532,7 @@ const AddEditModal: React.FC<{
     const [baseUrl, setBaseUrl] = useState(existing?.model.baseUrl || '');
     const [tasks, setTasks] = useState<string[]>(existing?.model.tasks || []);
     const [apiKey, setApiKey] = useState(existing?.apiKey || '');
-    const [step, setStep] = useState(1);
+    const [step, setStep] = useState(existing ? 2 : 1);
 
     const isCustomGroup = selectedGroup === '自定义接口';
     const isRelayGroup = selectedGroup === '第三方中转';
@@ -796,11 +732,21 @@ const AddEditModal: React.FC<{
                         )}
 
                         <div style={{ marginBottom: '16px' }}>
-                            <label style={s.label}>
-                                {lang === 'zh' ? '任务类型（多选）' : 'Task Types (multi-select)'}
-                                <span style={{ fontWeight: 400, fontSize: '11px', opacity: 0.65, marginLeft: '8px' }}>
-                                    已按模型特点预设，可自由修改
+                            <label style={{ ...s.label, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                                <span>
+                                    {lang === 'zh' ? '任务类型（多选）' : 'Task Types (multi-select)'}
+                                    <span style={{ fontWeight: 400, fontSize: '11px', opacity: 0.65, marginLeft: '8px' }}>
+                                        已按模型特点预设，可自由修改
+                                    </span>
                                 </span>
+                                {def?.defaultTasks && (
+                                    <button
+                                        style={{ ...s.btnSecondary, padding: '2px 8px', fontSize: '10px', marginLeft: '8px' }}
+                                        onClick={() => setTasks([...(def?.defaultTasks || [])])}
+                                    >
+                                        {lang === 'zh' ? '恢复默认' : 'Reset'}
+                                    </button>
+                                )}
                             </label>
                             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginTop: '4px' }}>
                                 {TASK_TYPES.map(t => {
@@ -843,10 +789,7 @@ const AddEditModal: React.FC<{
                         </div>
 
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '20px' }}>
-                            {!isEdit
-                                ? <button style={s.btnSecondary} onClick={() => setStep(1)}>上一步</button>
-                                : <div />
-                            }
+                            <button style={s.btnPrimary} onClick={() => setStep(1)}>上一步</button>
                             <div style={{ display: 'flex', gap: '8px' }}>
                                 <button style={s.btnSecondary} onClick={onClose}>取消</button>
                                 <button style={s.btnPrimary} onClick={() => setStep(3)}>下一步</button>
@@ -893,7 +836,7 @@ const AddEditModal: React.FC<{
                         })()}
 
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '24px' }}>
-                            <button style={s.btnSecondary} onClick={() => setStep(2)}>上一步</button>
+                            <button style={s.btnPrimary} onClick={() => setStep(2)}>上一步</button>
                             <div style={{ display: 'flex', gap: '8px' }}>
                                 <button style={s.btnSecondary} onClick={onClose}>取消</button>
                                 <button style={s.btnPrimary} onClick={handleSave}>保存</button>
@@ -919,6 +862,8 @@ const ConfigPanel: React.FC<ConfigPanelProps> = ({ lang }) => {
     const [showRouting, setShowRouting] = useState(false);
     const [testResults, setTestResults] = useState<Record<string, { ok: boolean; msg: string }>>({});
     const [codexStatus, setCodexStatus] = useState<{ installed: boolean; version?: string; loggedIn?: boolean } | null>(null);
+    const [geminiStatus, setGeminiStatus] = useState<{ installed: boolean; version?: string; loggedIn?: boolean } | null>(null);
+    const hasAutoTested = React.useRef(false);
 
     useEffect(() => {
         const handler = (ev: MessageEvent) => {
@@ -927,48 +872,37 @@ const ConfigPanel: React.FC<ConfigPanelProps> = ({ lang }) => {
                 const loadedKeys: Record<string, string> = ev.data.apiKeys || {};
                 setModels(loadedModels);
                 setApiKeys(loadedKeys);
-                // Auto-test all models with configured keys after 2s delay
-                setTimeout(() => {
-                    loadedModels.forEach(async (m) => {
-                        const key = loadedKeys[m.id];
-                        if (!key || !m.baseUrl || !m.enabled) return;
-                        try {
-                            const url = m.baseUrl.replace(/\/$/, '') + '/chat/completions';
-                            const res = await fetch(url, {
-                                method: 'POST',
-                                headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + key },
-                                body: JSON.stringify({ model: m.modelId, messages: [{ role: 'user', content: 'OK' }], max_tokens: 5 }),
-                                signal: AbortSignal.timeout(12000),
-                            });
-                            const json = await res.json() as any;
-                            if (res.ok) {
-                                const content = json?.choices?.[0]?.message?.content;
-                                setTestResults(prev => ({ ...prev, [m.id]: { ok: true, msg: content ? content.trim().substring(0, 15) : '已连通' } }));
-                            } else {
-                                const extractErr2 = (j: any, status: number) => {
-                                    if (j?.error?.message) return j.error.message.substring(0, 50);
-                                    if (j?.error?.code) return `错误码 ${j.error.code}`;
-                                    if (j?.message) return j.message.substring(0, 50);
-                                    if (j?.msg) return j.msg.substring(0, 50);
-                                    if (j?.code && j?.code !== 200) return `错误码 ${j.code}`;
-                                    return `HTTP ${status}`;
-                                };
-                                setTestResults(prev => ({ ...prev, [m.id]: { ok: false, msg: extractErr2(json, res.status) } }));
-                            }
-                        } catch (e: any) {
-                            const errMsg = e.message?.includes('timeout') ? '超时15s' : (e.message || 'Error').substring(0, 40);
-                            setTestResults(prev => ({ ...prev, [m.id]: { ok: false, msg: errMsg } }));
-                        }
-                    });
-                }, 2000);
+                // Only auto-test on first load, not on every tab switch
+                if (!hasAutoTested.current) {
+                    hasAutoTested.current = true;
+                    setTimeout(() => {
+                        loadedModels.forEach((m) => {
+                            const key = loadedKeys[m.id];
+                            if (!key || !m.baseUrl || !m.enabled) return;
+                            const requestId = `autotest_${m.id}_${Date.now()}`;
+                            vscode.postMessage({ command: 'testConnection', modelId: m.modelId, baseUrl: m.baseUrl, apiKey: key, requestId });
+                        });
+                    }, 2000);
+                }
+            }
+            // Handle auto-test results (same handler as manual test)
+            if (ev.data.command === 'testResult' && ev.data.requestId?.startsWith('autotest_')) {
+                // Extract model config id from requestId: autotest_{configId}_{timestamp}
+                const parts = ev.data.requestId.split('_');
+                const configId = parts.slice(1, -1).join('_');
+                setTestResults(prev => ({ ...prev, [configId]: { ok: ev.data.ok, msg: ev.data.ok ? '已连通' : (ev.data.msg || '失败') } }));
             }
             if (ev.data.command === 'codexStatus') {
                 setCodexStatus({ installed: ev.data.installed, version: ev.data.version, loggedIn: ev.data.loggedIn });
+            }
+            if (ev.data.command === 'geminiStatus') {
+                setGeminiStatus({ installed: ev.data.installed, version: ev.data.version, loggedIn: ev.data.loggedIn });
             }
         };
         window.addEventListener('message', handler);
         vscode.postMessage({ command: 'getModelsV2' });
         vscode.postMessage({ command: 'getCodexStatus' });
+        vscode.postMessage({ command: 'getGeminiStatus' });
         return () => window.removeEventListener('message', handler);
     }, []);
 
@@ -1045,7 +979,9 @@ const ConfigPanel: React.FC<ConfigPanelProps> = ({ lang }) => {
                         {codexStatus?.version && <span style={{ marginLeft: '8px', opacity: 0.6, fontSize: '11px' }}>v{codexStatus.version}</span>}
                         <div style={{ fontSize: '11px', opacity: 0.7, marginTop: '2px' }}>
                             {codexStatus?.installed
-                                ? 'ChatGPT 账号已接入 · ai_codex_task 工具可用 · 无需 API Key'
+                                ? (codexStatus.loggedIn
+                                    ? 'ChatGPT 账号已登录 · ai_codex_task 工具可用 · 无需 API Key'
+                                    : 'Codex CLI 已安装 · 使用前需先登录 ChatGPT 账号')
                                 : '安装后可用 ChatGPT Plus 账号直接调用，无需 API Key'}
                         </div>
                     </div>
@@ -1072,6 +1008,53 @@ const ConfigPanel: React.FC<ConfigPanelProps> = ({ lang }) => {
                         </button>
                     </div>
                 </div>
+                {codexStatus?.installed && codexStatus.loggedIn && (
+                    <div style={{ textAlign: 'right', marginTop: '6px', fontSize: '11px', color: '#10A37F', fontWeight: 500 }}>✅ 已连通</div>
+                )}
+            </div>
+
+            {/* Gemini CLI Card */}
+            <div style={{ ...s.card, marginTop: '12px', borderLeft: `3px solid ${geminiStatus?.installed ? '#4285F4' : '#E8740C'}` }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div>
+                        <span style={{ fontWeight: 600, fontSize: '13px' }}>
+                            {geminiStatus === null ? '🔍 检测 Gemini CLI…' : geminiStatus.installed ? '✅ Gemini CLI 已安装' : '⚠️ Gemini CLI 未安装'}
+                        </span>
+                        {geminiStatus?.version && <span style={{ marginLeft: '8px', opacity: 0.6, fontSize: '11px' }}>v{geminiStatus.version}</span>}
+                        <div style={{ fontSize: '11px', opacity: 0.7, marginTop: '2px' }}>
+                            {geminiStatus?.installed
+                                ? (geminiStatus.loggedIn
+                                    ? 'Google 账号已登录 · ai_gemini_task 工具可用 · 无需 API Key'
+                                    : 'Gemini CLI 已安装 · 使用前需先登录 Google 账号')
+                                : '安装后可用 Google 账号本地凭据调用，无需 API Key'}
+                        </div>
+                    </div>
+                    <div style={{ display: 'flex', gap: '6px', flexShrink: 0 }}>
+                        {!geminiStatus?.installed && (
+                            <button
+                                style={{ ...s.btnPrimary, fontSize: '11px', padding: '4px 10px' }}
+                                onClick={() => vscode.postMessage({ command: 'openTerminalWithCmd', cmd: 'npm install -g @google/gemini-cli && gemini' })}
+                            >
+                                安装并登录
+                            </button>
+                        )}
+                        {geminiStatus?.installed && (
+                            <button
+                                style={{ ...s.btnSecondary, fontSize: '11px', padding: '4px 10px' }}
+                                onClick={() => vscode.postMessage({ command: 'openTerminalWithCmd', cmd: 'gemini' })}
+                            >
+                                重新登录
+                            </button>
+                        )}
+                        <button style={{ ...s.btnSecondary, fontSize: '11px', padding: '4px 10px' }}
+                            onClick={() => vscode.postMessage({ command: 'openUrl', url: 'https://github.com/google/gemini-cli' })}>
+                            文档
+                        </button>
+                    </div>
+                </div>
+                {geminiStatus?.installed && geminiStatus.loggedIn && (
+                    <div style={{ textAlign: 'right', marginTop: '6px', fontSize: '11px', color: '#4285F4', fontWeight: 500 }}>✅ 已连通</div>
+                )}
             </div>
 
             {/* Pricing Reference Table */}
@@ -1116,7 +1099,7 @@ const ConfigPanel: React.FC<ConfigPanelProps> = ({ lang }) => {
                                         borderTop: '1px solid var(--vscode-input-border)',
                                     }}>
                                         <td style={{ padding: '5px 10px' }}>{row.label}</td>
-                                        <td style={{ padding: '5px 10px', color: PROVIDER_COLORS[row.group] || 'inherit', fontWeight: 500 }}>{row.group}</td>
+                                        <td style={{ padding: '5px 10px', color: providerColors[row.group] || 'inherit', fontWeight: 500 }}>{row.group}</td>
                                         <td style={{ padding: '5px 10px', textAlign: 'right', fontFamily: 'monospace' }}>
                                             {formatPrice(row.pricing.input, lang)}
                                         </td>
@@ -1197,7 +1180,7 @@ const ConfigPanel: React.FC<ConfigPanelProps> = ({ lang }) => {
                                                 <span key={j}>
                                                     {j > 0 && <span style={{ opacity: 0.4, margin: '0 4px' }}>/</span>}
                                                     <span style={{
-                                                        color: PROVIDER_COLORS[prov] || 'inherit',
+                                                        color: providerColors[prov] || 'inherit',
                                                         fontWeight: 600,
                                                     }}>{name}</span>
                                                 </span>

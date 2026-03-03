@@ -4,128 +4,192 @@
 
 **MCP AI Bridge — 智能多模型路由**
 
-*让 Antigravity 自动把子任务委派给最合适的专家模型，省 token、降成本*
+*Smart Multi-Model Routing for Antigravity*
 
-[![Version](https://img.shields.io/badge/version-0.1.4-blue?style=flat-square&logo=visualstudiocode)](https://github.com/readysteadyscience/l-hub)
-[![License](https://img.shields.io/badge/license-MIT-green?style=flat-square)](https://github.com/readysteadyscience/l-hub/blob/main/LICENSE)
+&nbsp;
+
+让 Antigravity 自动把子任务委派给最合适的专家模型，省 token、降成本
+
+*Delegate subtasks to the best expert models — save tokens, cut costs*
+
+&nbsp;
+
+[![Version](https://img.shields.io/badge/version-0.2.0-blue?style=flat-square&logo=visualstudiocode)](https://github.com/readysteadyscience/L-Hub)
+[![License](https://img.shields.io/badge/license-MIT-green?style=flat-square)](https://github.com/readysteadyscience/L-Hub/blob/main/LICENSE)
 [![Brand](https://img.shields.io/badge/%E8%B5%B0%E8%B5%B7%E6%99%BA%E9%80%A0-Ready%20Steady%20Science-orange?style=flat-square)](https://github.com/ReadySteadyScience)
-[![Universe](https://img.shields.io/badge/产品线-Linglan%20Realm-blueviolet?style=flat-square)](https://github.com/ReadySteadyScience)
 
-[![GitHub Stars](https://img.shields.io/github/stars/readysteadyscience/l-hub?style=flat-square&logo=github&label=Stars&color=yellow)](https://github.com/readysteadyscience/l-hub/stargazers)
+[![GitHub Stars](https://img.shields.io/github/stars/readysteadyscience/L-Hub?style=flat-square&logo=github&label=Stars)](https://github.com/readysteadyscience/L-Hub/stargazers)
 [![Discord](https://img.shields.io/badge/Discord-Community-5865F2?style=flat-square&logo=discord&logoColor=white)](https://discord.gg/gurEPMnn52)
-[![Feedback](https://img.shields.io/badge/Feedback-Issues-blue?style=flat-square&logo=github)](https://github.com/readysteadyscience/l-hub/issues/new)
+[![Feedback](https://img.shields.io/badge/Feedback-Issues-blue?style=flat-square&logo=github)](https://github.com/readysteadyscience/L-Hub/issues/new)
 
-> **走起智造 · Ready Steady Science** 旗下 **Linglan Realm** 产品线 — 免费开源
-
-</div>
-
----
-
-## 为什么需要 L-Hub？
-
-Antigravity 的主控模型擅长调度与推理，但让它处理每一个子任务（写代码、翻译、UI）成本极高。
-
-**L-Hub 是内置的 MCP AI 桥接器** — 自动把每个子任务路由到最合适的专家模型，只用最低的 token 开销。
-
----
-
-## 产品亮点
-
-**按任务类型智能路由** — 代码任务走 GPT/Codex 5.3，翻译走 Qwen，前端 UI 走 Gemini（ARC-AGI-2 全球 #1），Agentic 任务走 MiniMax-M2.5 或 GLM-5 Coding，无需手动选。13 种任务类型全自动匹配。
-
-**国内外 20+ 模型一站接入** — DeepSeek、GLM、Qwen、MiniMax、Kimi（国内直连）+ OpenAI、Claude、Gemini、Mistral（国际）+ OpenRouter/一步API/DMXAPI（聚合中转），统一管理。
-
-**ChatGPT / Google 账号零门槛** — 内置 Codex CLI（ChatGPT OAuth）和 Gemini CLI（Google OAuth），无需申请 API Key，可直接对本地文件做代码审查、重写和 Agentic 任务。
-
-**装上就能用** — 激活后自动写入 Antigravity 的 MCP 配置，零手动配置。可视化面板管理 Key 和模型，不用编辑 JSON。
-
-**内置价格参考** — OpenRouter 实时价格数据，在设置页直接对比各模型的输入/输出成本。
-
----
-
-## 默认路由推荐
-
-以下为 L-Hub 按任务类型推荐的最佳模型。这只是默认参考，您可以自由修改任务分配。
-
-| 任务 | 推荐模型 | 原因 |
-|---|---|---|
-| 代码生成 | **GPT/Codex 5.3** | Terminal-Bench #1；对 Codex CLI 可直接读写本地文件 |
-| Agentic 编码 | **MiniMax-M2.5 Coding** | SWE-bench 80.2% ≈ Claude Opus 4.6；BFCL 工具调用 76.8% 超 Opus |
-| 多步调试 / 工具链 | **GLM-5 Coding Plan** | SWE-bench 77.8%，开源 SOTA；长程任务规划强 |
-| 代码经济型 | **DeepSeek-V3** | 性价比高，快速输出 |
-| 翻译 / 中文文档 | **Qwen-Max** | 中文第一；工具调用 Tau2-bench #1 |
-| UI / 前端设计 | **Gemini 3.1 Pro** | ARC-AGI-2 全球 #1（77.1%）；前端页面美观度领先 |
-| 数学 / 推理 / 算法 | **Gemini 3.1 Pro** | GPQA 94.3%；竞技编程 Elo 2887 |
-| 长文本 / 总结 | **Gemini 3.1 Pro** | 百万 token 上下文 |
-| 终端 / DevOps | **GPT-5.3 Codex** | Terminal-Bench #1 |
-| 创意 / 大量生成 | **MiniMax-M2.5 HighSpeed** | 100 tok/s，高速输出 |
-| 本地文件操作 | **Codex CLI** (`ai_codex_task`) | OAuth 免 Key；自主读写本地代码库 |
-| 本地 Agentic | **Gemini CLI** (`ai_gemini_task`) | Google OAuth 免 Key；内置文件 / 浏览器工具 |
-
----
-
-## 支持的模型
-
-L-Hub 采用 OpenAI 兼容接口，任何支持该格式的模型均可接入。内置支持：
-
-| 厂商 | 内置型号 |
-|---|---|
-| DeepSeek | V3, R1 |
-| GLM 智谱 | GLM-5 |
-| Qwen 通义 | Qwen-Max, Qwen-Coder-Plus |
-| MiniMax | M2.5, M2.5-HighSpeed |
-| Kimi | K2.5 |
-| OpenAI | GPT-5.1, GPT-5.3 Codex |
-| Anthropic | Opus 4.6, Sonnet 4.6, Opus 4.5, Sonnet 4.5 |
-| Google | Gemini 3.1 Flash, 3.1 Pro, Image Gen |
-| Mistral | Large 3 |
-| Meta | Llama 3.3 70B (需中转) |
-| 聚合平台 | OpenRouter, 一步API, DMXAPI |
-
-也可自定义 Base URL 接入任何 OpenAI 兼容模型。
-
-<div align="center">
-
-![L-Hub 架构图](https://raw.githubusercontent.com/readysteadyscience/l-hub/main/images/architecture_zh.png)
+**走起智造 · Ready Steady Science** — Linglan Realm
 
 </div>
 
+&nbsp;
+
 ---
 
-## 快速开始
+&nbsp;
 
-**1. 安装** — 商城搜索 L-Hub，或命令行：
+## 🤖 内置 AI 调度 Skill（Built-in AI Routing Skill）
 
-```bash
-code --install-extension readysteadyscience.l-hub
-```
+安装后自动注入 Antigravity 调度 Skill，按四层规则将体力活、代码审查、专业任务委派给低成本专家模型，创意写作走多模型协作链，让主模型优先处理高价值工作，最大化节省额度。
 
-**2. 重启 Antigravity** — L-Hub 自动注册 MCP 配置，无需手动操作。
+*Auto-injects a routing Skill into Antigravity with 4-tier rules. Delegates routine work to low-cost models. Creative writing uses multi-model chains. Maximizes quota savings.*
 
-**3. 配置 API Key** — `Cmd/Ctrl + Shift + P` → `L-Hub: Open Dashboard` → 添加模型并填入 Key。
+&nbsp;
 
-**4. （可选）启用 Codex CLI** — 用 ChatGPT 账号 OAuth 登录，无需 API Key，可直接读写本地文件：
+## 🏆 多模型投票引擎（Multi-Model Voting Engine）
+
+`ai_consensus` — 对话中告诉主模型"投票择优"即可启动，多模型并行回答、裁判打分、返回最佳答案。按需手动触发，不自动消耗额度。
+
+*Tell the host model "vote for the best" to activate. Multiple models answer in parallel, a judge scores them. Manual trigger only.*
+
+&nbsp;
+
+## 🔀 自动路由寻优（Smart Auto-Routing）
+
+13 大类型任务无缝桥接，按任务属性自动分发给性价比对应的模型。
+
+*13 task types seamlessly bridged, auto-dispatched to cost-effective models.*
+
+&nbsp;
+
+## 🌐 8 大厂商全覆盖（8 Providers）
+
+DeepSeek · GLM · Qwen · MiniMax · Kimi · OpenAI · Claude · Gemini，外加聚合平台中转。
+
+*Plus relay platforms like OpenRouter, DMXAPI. Custom Base URL supported.*
+
+&nbsp;
+
+## 🔌 内置 CLI Agent（Built-in CLI Agents）
+
+支持 Codex CLI（ChatGPT OAuth）和 Gemini CLI（Google OAuth），享受订阅账户额度。
+
+*Codex CLI (ChatGPT OAuth) and Gemini CLI (Google OAuth) — uses your subscription quota.*
+
+&nbsp;
+
+## 🧪 标准测试 & 诊断（Test & Diagnostics）
+
+Dashboard 内置测试 Prompt，一键验证全部 8 项功能（7 个 MCP 工具 + Skill）。
+
+*Dashboard includes a test prompt to verify all 8 features (7 MCP tools + Skill) with one click.*
+
+&nbsp;
+
+---
+
+&nbsp;
+
+## 快速开始（Quick Start）
+
+> ⚠️ L-Hub 仅支持 Antigravity IDE
+>
+> *L-Hub only supports Antigravity IDE*
+
+&nbsp;
+
+**1. 安装（Install）**
+
+在 Antigravity 扩展商城搜索 **L-Hub** 并安装。
+
+*Search L-Hub in the Antigravity Extensions Marketplace.*
+
+&nbsp;
+
+**2. 重启（Reload）**
+
+L-Hub 自动注册 MCP 配置 + 安装 AI 调度 Skill。
+
+*Auto-registers MCP config and installs the Routing Skill.*
+
+&nbsp;
+
+**3. 配置 API Key（Setup）**
+
+`Cmd/Ctrl + Shift + P` → `L-Hub: Open Dashboard` → 添加模型并填入 Key。
+
+*Add models and enter API keys in the Dashboard.*
+
+&nbsp;
+
+**4.（可选）Codex CLI（Optional）**
+
+支持 ChatGPT OAuth 登录，享受订阅额度。
+
+*ChatGPT OAuth login — uses your subscription quota.*
 
 ```bash
 npm install -g @openai/codex && codex login
 ```
 
-**5. （可选）启用 Gemini CLI** — 用 Google 账号 OAuth 登录，无需 API Key，内置文件 / 浏览器工具：
+&nbsp;
+
+**5.（可选）Gemini CLI（Optional）**
+
+支持 Google OAuth 登录，享受订阅额度。
+
+*Google OAuth login — uses your subscription quota.*
 
 ```bash
 npm install -g @google/gemini-cli && gemini
 ```
 
-**6. 开始使用** — 照常与 Antigravity 对话，L-Hub 自动接管子任务路由。
+&nbsp;
 
-> 验证：工具面板出现 `l-hub / ai_ask`、`l-hub / ai_codex_task`、`l-hub / ai_gemini_task` 即成功。
+**6. 测试（Test）**
+
+Dashboard → 🧪 测试 → 一键复制 → 粘贴到聊天 → 自动生成报告。
+
+*Copy test prompt from Dashboard → paste in chat → auto-generates report.*
+
+&nbsp;
+
+**7. 开始使用（Go）**
+
+照常对话，L-Hub 自动接管子任务路由。
+
+*Chat normally, L-Hub handles subtask routing.*
+
+&nbsp;
+
+**验证（Verify）：** 工具面板出现以下工具即成功：
+
+```
+lhub / ai_ask
+lhub / ai_consensus
+lhub / ai_codex_task
+lhub / ai_gemini_task
+```
+
+&nbsp;
 
 ---
 
-## 社区
+&nbsp;
 
-**走起智造 · Ready Steady Science** — Linglan Realm 免费开源工具。
+## 社区（Community）
 
-[![Star on GitHub](https://img.shields.io/badge/Star-GitHub-brightgreen?style=flat-square&logo=github)](https://github.com/readysteadyscience/l-hub/stargazers)
+**走起智造 · Ready Steady Science** — Linglan Realm 免费开源
+
+&nbsp;
+
+<div align="center">
+
+**微信入群 / WeChat Group**
+
+<img src="assets/wechat-yelzap.png" alt="WeChat QR" width="200">
+
+添加 **YelZap** · 备注来源（如 GitHub / Antigravity）
+*Add YelZap on WeChat, note where you found us*
+
+</div>
+
+&nbsp;
+
+[![Stars](https://img.shields.io/github/stars/readysteadyscience/L-Hub?style=flat-square&logo=github&label=Stars)](https://github.com/readysteadyscience/L-Hub/stargazers)
 [![Discord](https://img.shields.io/badge/Discord-Join-5865F2?style=flat-square&logo=discord&logoColor=white)](https://discord.gg/gurEPMnn52)
-[![Feedback](https://img.shields.io/badge/Feedback-Issues-blue?style=flat-square&logo=github)](https://github.com/readysteadyscience/l-hub/issues/new)
+[![Issues](https://img.shields.io/badge/Feedback-Issues-blue?style=flat-square&logo=github)](https://github.com/readysteadyscience/L-Hub/issues/new)

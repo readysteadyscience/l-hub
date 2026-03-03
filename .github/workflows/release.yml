@@ -19,8 +19,6 @@ jobs:
         run: npm ci
       - run: npm run compile
       - run: yes | npx vsce package
-      - name: Publish to VS Code Marketplace
-        run: npx vsce publish -p ${{ secrets.VSCE_PAT }}
       - name: Publish to Open VSX
         run: npx ovsx publish *.vsix -p ${{ secrets.OVSX_PAT }}
 
