@@ -449,7 +449,66 @@ export async function activate(context: vscode.ExtensionContext) {
     }
 }
 
+/**
+ * Cleanup all L-Hub residuals when the extension is disabled or uninstalled.
+ * Keeps ~/.l-hub-keys.json (API keys) intact.
+ */
+function cleanupLHub() {
+    const home = os.homedir();
+
+    // 1. Remove lhub entry from mcp_config.json
+    try {
+        const mcpConfigPath = path.join(home, '.gemini', 'antigravity', 'mcp_config.json');
+        if (fs.existsSync(mcpConfigPath)) {
+            const config = JSON.parse(fs.readFileSync(mcpConfigPath, 'utf8'));
+            if (config.mcpServers) {
+                delete config.mcpServers['lhub'];
+                delete config.mcpServers['l-hub'];
+                fs.writeFileSync(mcpConfigPath, JSON.stringify(config, null, 4), 'utf8');
+                console.log('[L-Hub] Removed MCP config entry ✅');
+            }
+        }
+    } catch (e) { console.error('[L-Hub] cleanup: mcp_config error', e); }
+
+    // 2. Remove Skill directory
+    try {
+        const skillDir = path.join(home, '.gemini', 'antigravity', 'skills', 'lhub-ai-routing');
+        if (fs.existsSync(skillDir)) {
+            fs.rmSync(skillDir, { recursive: true, force: true });
+            console.log('[L-Hub] Removed Skill directory ✅');
+        }
+    } catch (e) { console.error('[L-Hub] cleanup: skill dir error', e); }
+
+    // 3. Remove L-Hub injection block from GEMINI.md
+    try {
+        const geminiMdPath = path.join(home, '.gemini', 'GEMINI.md');
+        if (fs.existsSync(geminiMdPath)) {
+            let content = fs.readFileSync(geminiMdPath, 'utf8');
+            // Remove the injection block (between start and end markers, inclusive)
+            content = content.replace(
+                /\n?<!-- L-Hub Mandatory.*?-->(\n[\s\S]*?<!-- L-Hub Mandatory.*?End -->)?\n?/gs,
+                ''
+            );
+            fs.writeFileSync(geminiMdPath, content.trimEnd() + '\n', 'utf8');
+            console.log('[L-Hub] Removed GEMINI.md injection block ✅');
+        }
+    } catch (e) { console.error('[L-Hub] cleanup: GEMINI.md error', e); }
+
+    // 4. Remove L-Hub routing rules from geminicodeassist.rules
+    try {
+        const config = vscode.workspace.getConfiguration('geminicodeassist');
+        const currentRules = config.get<string>('rules', '');
+        if (currentRules.includes(LHUB_RULES_MARKER)) {
+            const markerIdx = currentRules.indexOf(LHUB_RULES_MARKER);
+            const cleaned = currentRules.substring(0, markerIdx).trimEnd();
+            config.update('rules', cleaned || undefined, vscode.ConfigurationTarget.Global);
+            console.log('[L-Hub] Removed routing rules from geminicodeassist.rules ✅');
+        }
+    } catch (e) { console.error('[L-Hub] cleanup: routing rules error', e); }
+}
+
 export function deactivate() {
+    // Stop timers and servers
     if (statusRefreshTimer) {
         clearInterval(statusRefreshTimer);
         statusRefreshTimer = undefined;
@@ -457,4 +516,7 @@ export function deactivate() {
     if (mcpServer) {
         mcpServer.stop();
     }
+
+    // Clean up all L-Hub system residuals
+    cleanupLHub();
 }
