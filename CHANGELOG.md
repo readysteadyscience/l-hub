@@ -6,7 +6,14 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
-## [0.2.2] - unreleased
+## [0.2.3] - 2026-03-10
+
+### Fixed
+- **SQLite ABI 跨平台兼容性** — extension host 侧（Electron 进程）改用 `sql.js`（WebAssembly WASM），彻底消除 `better-sqlite3` 原生模块 ABI 不兼容问题，所有平台均可正常使用历史记录功能
+
+---
+
+## [0.2.2] - 2026-03-10
 
 ### Added
 - **卸载自动清理** — 扩展禁用/卸载时自动执行 `cleanupLHub()`，移除 MCP 配置条目、Skill 目录、`GEMINI.md` 注入段、路由规则；API Keys（`~/.l-hub-keys.json`）保留不删
