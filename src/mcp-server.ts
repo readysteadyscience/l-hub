@@ -645,12 +645,12 @@ async function main() {
         if (request.params.name === 'ai_list_providers') {
             const enabledModels = (config.models || []).filter(m => m.enabled && m.apiKey);
 
-            const codexCheck = spawnSync('codex', ['--version'], { encoding: 'utf8', timeout: 5000 });
+            const codexCheck = spawnSync('codex', ['--version'], { encoding: 'utf8', timeout: 5000, shell: true })
             const codexStatus = codexCheck.error
                 ? '❌ Not installed (run: npm install -g @openai/codex)'
                 : `✅ Installed (${(codexCheck.stdout || '').trim() || 'uses ChatGPT login'})`;
 
-            const geminiCheck = spawnSync('gemini', ['--version'], { encoding: 'utf8', timeout: 5000 });
+            const geminiCheck = spawnSync('gemini', ['--version'], { encoding: 'utf8', timeout: 5000, shell: true });
             let geminiStatus = '❌ Not installed (npm i -g @google/gemini-cli)';
             if (!geminiCheck.error && geminiCheck.status === 0) {
                 // gemini-cli version string can sometimes have ANSI or multiline

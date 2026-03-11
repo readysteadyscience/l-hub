@@ -58,10 +58,8 @@ export class DashboardPanel {
                     }
                     case 'saveApiKey': {
                         if (message.provider && message.key !== undefined) {
-                            if (message.key === '') {
-                                // L2 fix: delete key instead of storing empty string
-                                await this.settings.saveApiKey(message.provider, message.key);
-                            } else {
+                            // L2 fix: skip storing empty string (prevents blank token overwriting valid key)
+                            if (message.key !== '') {
                                 await this.settings.saveApiKey(message.provider, message.key);
                             }
                         }

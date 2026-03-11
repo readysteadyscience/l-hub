@@ -6,6 +6,14 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.2.6] - 2026-03-11
+
+### Fixed
+- **L2** `saveApiKey` 空字符串存储（上一版 fix 是 no-op，本次正确跳过空 key 写入）
+- **Windows CLI 检测** `mcp-server.ts` 中 `ai_list_providers` 的 `spawnSync` 加 `shell: true`，修复 Windows 下 `codex.cmd`/`gemini.cmd` 无法被识别的问题
+
+---
+
 ## [0.2.5] - 2026-03-11
 
 ### Fixed

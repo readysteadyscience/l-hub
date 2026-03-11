@@ -13,6 +13,7 @@ node_modules/
 # Development & CI
 .github/
 .vscode/
+.agents/
 .eslintrc*
 **/*.test.ts
 **/*.spec.ts
@@ -22,6 +23,7 @@ node_modules/
 *.vsix
 *.sqlite3
 releases/
+dist/sql-wasm.wasm
 
 # Platform noise
 .DS_Store
