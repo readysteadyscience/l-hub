@@ -12,7 +12,7 @@ export class DashboardPanel {
     /** Cache model test results so Overview panel can display them across tab switches */
     private _modelTestCache: Map<string, 'online' | 'offline'> = new Map();
 
-    public static createOrShow(extensionUri: vscode.Uri, storage: HistoryStorage, settings: SettingsManager, onConfigChanged?: () => void) {
+    public static createOrShow(extensionUri: vscode.Uri, storage: HistoryStorage | null, settings: SettingsManager, onConfigChanged?: () => void) {
         const column = vscode.window.activeTextEditor
             ? vscode.window.activeTextEditor.viewColumn
             : undefined;
@@ -39,7 +39,7 @@ export class DashboardPanel {
         DashboardPanel.currentPanel = new DashboardPanel(panel, extensionUri, storage, settings, onConfigChanged);
     }
 
-    private constructor(panel: vscode.WebviewPanel, extensionUri: vscode.Uri, private storage: HistoryStorage, private settings: SettingsManager, onConfigChanged?: () => void) {
+    private constructor(panel: vscode.WebviewPanel, extensionUri: vscode.Uri, private storage: HistoryStorage | null, private settings: SettingsManager, onConfigChanged?: () => void) {
         this._panel = panel;
         this._extensionUri = extensionUri;
         this._onConfigChanged = onConfigChanged;
@@ -58,7 +58,12 @@ export class DashboardPanel {
                     }
                     case 'saveApiKey': {
                         if (message.provider && message.key !== undefined) {
-                            await this.settings.saveApiKey(message.provider, message.key);
+                            if (message.key === '') {
+                                // L2 fix: delete key instead of storing empty string
+                                await this.settings.saveApiKey(message.provider, message.key);
+                            } else {
+                                await this.settings.saveApiKey(message.provider, message.key);
+                            }
                         }
                         break;
                     }
@@ -332,8 +337,13 @@ export class DashboardPanel {
                     case 'testAllModels': {
                         const models2 = await this.settings.getModels();
                         const enabledModels = models2.filter(m => m.enabled !== false);
+                        // H2 fix: helper to safely post — bail out if panel already disposed
+                        const safePost = (msg: any) => {
+                            try { this._panel.webview.postMessage(msg); } catch { /* panel disposed */ }
+                        };
                         // Stagger requests with 1.5s delay to avoid 429 rate limits
                         for (let i = 0; i < enabledModels.length; i++) {
+                            if (!DashboardPanel.currentPanel) { break; } // H2: panel closed, stop
                             const m = enabledModels[i];
                             if (i > 0) await new Promise(r => setTimeout(r, 1500));
                             const key = await this.settings.getApiKey(`model.${m.id}`);
@@ -350,19 +360,19 @@ export class DashboardPanel {
                                 const json = await res.json() as any;
                                 if (res.ok) {
                                     this._modelTestCache.set(m.id, 'online');
-                                    this._panel.webview.postMessage({ command: 'testResult', requestId, ok: true, msg: '已连通' });
+                                    safePost({ command: 'testResult', requestId, ok: true, msg: '已连通' });
                                 } else {
                                     this._modelTestCache.set(m.id, 'offline');
                                     const err = json?.error?.message || json?.message || `HTTP ${res.status}`;
-                                    this._panel.webview.postMessage({ command: 'testResult', requestId, ok: false, msg: (err as string).substring(0, 70) });
+                                    safePost({ command: 'testResult', requestId, ok: false, msg: (err as string).substring(0, 70) });
                                 }
                             } catch (e: any) {
                                 this._modelTestCache.set(m.id, 'offline');
                                 const msg = e.message?.includes('timeout') ? '超时 15s' : (e.message || 'Error').substring(0, 60);
-                                this._panel.webview.postMessage({ command: 'testResult', requestId, ok: false, msg });
+                                safePost({ command: 'testResult', requestId, ok: false, msg });
                             }
                         }
-                        this._panel.webview.postMessage({ command: 'testAllComplete' });
+                        safePost({ command: 'testAllComplete' });
                         break;
                     }
                 }
@@ -387,7 +397,8 @@ export class DashboardPanel {
             }
             // Also keep legacy keys for backward compat
             const legacy = await this.settings.getAllApiKeys();
-            fs.writeFileSync(keysFile, JSON.stringify({ version: 2, models: enriched, legacy, dbPath: this.storage.getDbPath() }, null, 2), 'utf8');
+            // C1 fix: storage may be null if SQLite failed to init
+            fs.writeFileSync(keysFile, JSON.stringify({ version: 2, models: enriched, legacy, dbPath: this.storage?.getDbPath() ?? '' }, null, 2), 'utf8');
         } catch (e) {
             console.error('[L-Hub] Failed to sync models to file:', e);
         }

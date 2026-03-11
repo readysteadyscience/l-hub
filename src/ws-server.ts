@@ -46,7 +46,7 @@ export class LinglanMcpServer {
     private portFile = path.join(os.homedir(), '.l-hub.port');
 
     constructor(
-        private storage: HistoryStorage,
+        private storage: HistoryStorage | null,
         private settings: SettingsManager
     ) {
         this.httpServer = http.createServer();
@@ -164,8 +164,11 @@ export class LinglanMcpServer {
     }
 
     private logTransaction(toolName: string, model: string, startTime: number, reqStr: string, resStr: string, status: 'success' | 'error', inputTokens: number, outputTokens: number, errorMsg?: string) {
+        // M2 fix: guard against null storage
+        if (!this.storage) { return; }
         this.storage.saveRecord({
-            id: Date.now().toString(),
+            // L1 fix: add random suffix to avoid millisecond ID collision
+            id: `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
             timestamp: startTime,
             clientName: 'VS Code Client',
             clientVersion: '1.0',
@@ -207,8 +210,9 @@ export class LinglanMcpServer {
             url = 'https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions';
             model = 'qwen-max';
         } else if (provider === 'minimax') {
-            url = 'https://api.minimax.chat/v1/text/chatcompletion_v2';
-            model = 'abab6.5-chat'; // Based on MiniMax standard api
+            // M3 fix: updated to current MiniMax API endpoint and model
+            url = 'https://api.minimax.io/v1/chat/completions';
+            model = 'MiniMax-M2.5';
         }
 
         const body = JSON.stringify({

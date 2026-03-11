@@ -6,6 +6,21 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.2.5] - 2026-03-11
+
+### Fixed
+- **C1** `storage` null 崩溃 — 去掉 `storage!` 强制断言，`DashboardPanel`、`LinglanMcpServer` 均接受可空 storage；`_syncModelsToFile` 加 `?.` 防护
+- **H1** CLI fallback SQL 注入 — 改用 sanitize helper，同时转义反斜杠和单引号
+- **H2** `testAllModels` 无取消 — 面板关闭时 `safePost` helper 捕获异常，并提前退出循环
+- **M1** `cleanupLHub` config.update 未 await — `deactivate` 改为 async，正确等待 cleanup 完成
+- **M2** ws-server `logTransaction` null 崩溃 — 加 null guard
+- **M3** ws-server MiniMax URL / model 过时 — 更新为 `api.minimax.io` + `MiniMax-M2.5`
+- **M4** `mapDbRowToRecord` this 绑定丢失 — 改用箭头函数调用
+- **L1** `Date.now()` ID 碰撞 — 追加随机后缀
+- **L2** 空字符串 API Key 写入 — 空时跳过存储
+
+---
+
 ## [0.2.4] - 2026-03-10
 
 ### Fixed

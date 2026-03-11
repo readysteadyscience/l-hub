@@ -397,8 +397,8 @@ export async function activate(context: vscode.ExtensionContext) {
     let storage: HistoryStorage | null = null;
 
     const openPanelCommand = vscode.commands.registerCommand('l-hub.openPanel', () => {
-        // SQLite failure is handled silently — history tab shows in-panel message
-        DashboardPanel.createOrShow(context.extensionUri, storage!, settings, () => updateStatusBar(settings));
+        // storage may be null if SQLite failed — DashboardPanel handles null gracefully
+        DashboardPanel.createOrShow(context.extensionUri, storage, settings, () => updateStatusBar(settings));
     });
     context.subscriptions.push(openPanelCommand);
 
@@ -439,7 +439,7 @@ export async function activate(context: vscode.ExtensionContext) {
 
     // ── STEP 5: Start WebSocket server (non-critical) ──
     try {
-        mcpServer = new LinglanMcpServer(storage!, settings);
+        mcpServer = new LinglanMcpServer(storage, settings);
         await mcpServer.start();
         console.log('[L-Hub] WS MCP server started ✅');
     } catch (err) {
@@ -451,7 +451,7 @@ export async function activate(context: vscode.ExtensionContext) {
  * Cleanup all L-Hub residuals when the extension is disabled or uninstalled.
  * Keeps ~/.l-hub-keys.json (API keys) intact.
  */
-function cleanupLHub() {
+async function cleanupLHub() {
     const home = os.homedir();
 
     // 1. Remove lhub entry from mcp_config.json
@@ -499,13 +499,14 @@ function cleanupLHub() {
         if (currentRules.includes(LHUB_RULES_MARKER)) {
             const markerIdx = currentRules.indexOf(LHUB_RULES_MARKER);
             const cleaned = currentRules.substring(0, markerIdx).trimEnd();
-            config.update('rules', cleaned || undefined, vscode.ConfigurationTarget.Global);
+            // M1 fix: await the Promise so cleanup completes before deactivation exits
+            await config.update('rules', cleaned || undefined, vscode.ConfigurationTarget.Global);
             console.log('[L-Hub] Removed routing rules from geminicodeassist.rules ✅');
         }
     } catch (e) { console.error('[L-Hub] cleanup: routing rules error', e); }
 }
 
-export function deactivate() {
+export async function deactivate() {
     // Stop timers and servers
     if (statusRefreshTimer) {
         clearInterval(statusRefreshTimer);
@@ -515,6 +516,6 @@ export function deactivate() {
         mcpServer.stop();
     }
 
-    // Clean up all L-Hub system residuals
-    cleanupLHub();
+    // M1 fix: await cleanupLHub so config.update() Promise completes before exit
+    await cleanupLHub();
 }

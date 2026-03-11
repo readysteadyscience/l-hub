@@ -123,7 +123,10 @@ export class HistoryStorage {
 
     public saveRecord(record: RequestRecord) {
         if (this.useCliFallback) {
-            const sql = `INSERT OR IGNORE INTO request_history (id,timestamp,client_name,client_version,method,tool_name,model,duration,input_tokens,output_tokens,total_tokens,request_preview,response_preview,status,error_message) VALUES ('${record.id}',${record.timestamp},'${record.clientName || ''}','${record.clientVersion || ''}','${record.method}','${record.toolName || ''}','${record.model || ''}',${record.duration},${record.inputTokens || 0},${record.outputTokens || 0},${record.totalTokens || 0},'${(record.requestPreview || '').replace(/'/g, "''")}','${(record.responsePreview || '').replace(/'/g, "''")}','${record.status}','${(record.errorMessage || '').replace(/'/g, "''")}');`;
+            // H1 fix: sanitize string fields to prevent shell/SQL injection via CLI
+            const s = (v: string | undefined | null) => (v ?? '').replace(/'/g, "''").replace(/\\/g, '\\\\');
+            const n = (v: number | undefined | null) => isFinite(v as number) ? (v ?? 0) : 0;
+            const sql = `INSERT OR IGNORE INTO request_history (id,timestamp,client_name,client_version,method,tool_name,model,duration,input_tokens,output_tokens,total_tokens,request_preview,response_preview,status,error_message) VALUES ('${s(record.id)}',${n(record.timestamp)},'${s(record.clientName)}','${s(record.clientVersion)}','${s(record.method)}','${s(record.toolName)}','${s(record.model)}',${n(record.duration)},${n(record.inputTokens)},${n(record.outputTokens)},${n(record.totalTokens)},'${s(record.requestPreview)}','${s(record.responsePreview)}','${s(record.status)}','${s(record.errorMessage)}');`;
             this._execCli(sql);
             return;
         }
@@ -156,7 +159,8 @@ export class HistoryStorage {
                 `SELECT COUNT(*) as count FROM request_history`
             );
             return {
-                records: rows.map(this.mapDbRowToRecord),
+                // M4 fix: use arrow function to preserve 'this' binding
+                records: rows.map(row => this.mapDbRowToRecord(row)),
                 total: countRows[0]?.count || 0,
             };
         }
@@ -165,7 +169,7 @@ export class HistoryStorage {
         const total = this.db.prepare('SELECT COUNT(*) as count FROM request_history').get() as { count: number };
 
         return {
-            records: records.map(this.mapDbRowToRecord),
+            records: records.map((row: any) => this.mapDbRowToRecord(row)),
             total: total.count
         };
     }
