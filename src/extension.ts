@@ -45,34 +45,40 @@ async function syncKeysToFile(settings: SettingsManager, dbPath?: string) {
 }
 
 /**
- * Auto-register the standalone mcp-server.js into Antigravity's mcp_config.json.
+ * Auto-register the standalone mcp-server.js into Antigravity's MCP config.
+ * By default it writes to ~/.gemini/antigravity/mcp_config.json under the "mcpServers" block.
  * Idempotent — safe to call on every activation.
  */
 function autoRegisterMcpConfig(extensionPath: string) {
     const serverPath = path.join(extensionPath, 'dist', 'mcp-server.js');
     const mcpConfigPath = path.join(os.homedir(), '.gemini', 'antigravity', 'mcp_config.json');
 
-    if (!fs.existsSync(mcpConfigPath)) return; // Antigravity not installed
-
     try {
-        const raw = fs.readFileSync(mcpConfigPath, 'utf8');
-        const config = JSON.parse(raw);
-        if (!config.mcpServers) config.mcpServers = {};
+        // Ensure parent directory exists (e.g. ~/.gemini/antigravity/ may not exist yet)
+        const configDir = path.dirname(mcpConfigPath);
+        if (!fs.existsSync(configDir)) {
+            fs.mkdirSync(configDir, { recursive: true });
+        }
+
+        let config: Record<string, any> = {};
+        if (fs.existsSync(mcpConfigPath)) {
+            try { config = JSON.parse(fs.readFileSync(mcpConfigPath, 'utf8')); } catch { }
+        }
+
+        if (!config.mcpServers) { config.mcpServers = {}; }
 
         const existing = config.mcpServers['lhub'];
         const newEntry = { command: 'node', args: [serverPath], env: {} };
 
         if (!existing || existing.args?.[0] !== serverPath) {
-            // 清理旧的连字符命名，如果在的话
-            if (config.mcpServers['l-hub']) {
-                delete config.mcpServers['l-hub'];
-            }
+            // Clean up hyphenated alias if present
+            if (config.mcpServers['l-hub']) { delete config.mcpServers['l-hub']; }
             config.mcpServers['lhub'] = newEntry;
             fs.writeFileSync(mcpConfigPath, JSON.stringify(config, null, 4), 'utf8');
-            console.log('[L-Hub] Auto-registered mcp-server.js in Antigravity mcp_config.json');
+            console.log(`[L-Hub] Auto-registered MCP server in Antigravity config (${mcpConfigPath}) ✅`);
         }
     } catch (err) {
-        console.error('[L-Hub] Failed to auto-register MCP config:', err);
+        console.error(`[L-Hub] Failed to auto-register MCP config:`, err);
     }
 }
 
@@ -221,69 +227,106 @@ async function autoInjectRoutingRules(settings: SettingsManager) {
         const geminiInstalled = !spawnSync('gemini', ['--version'], { encoding: 'utf8', timeout: 3000, shell: true }).error;
 
         // Build dynamic rules based on what's actually available
+        const creativeConfig = await settings.getCreativeChainConfig();
+
+        // ── Map tasks to configured model IDs ──
+        const taskAssignments: Record<string, string[]> = {};
+        for (const m of enabledModels) {
+            for (const task of m.tasks) {
+                if (!taskAssignments[task]) taskAssignments[task] = [];
+                taskAssignments[task].push(m.modelId);
+            }
+        }
+
+        const getRouteCall = (modelId: string) => {
+             if (modelId === 'Codex CLI') return 'mcp_lhub_ai_codex_task()';
+             if (modelId === 'Gemini CLI') return 'mcp_lhub_ai_gemini_task()';
+             // Default to deepseek if no map found
+             const lower = modelId.toLowerCase();
+             let provider = 'deepseek';
+             if (lower.includes('glm') || lower.includes('zhipu')) provider = 'glm';
+             if (lower.includes('qwen')) provider = 'qwen';
+             if (lower.includes('minimax')) provider = 'minimax';
+             return `mcp_lhub_ai_ask(provider="${provider}")`;
+        };
+
+        const formatRouteLine = (logicLabel: string, taskKey: string) => {
+            const assigned = taskAssignments[taskKey];
+            if (!assigned || assigned.length === 0) return null;
+            const primary = assigned[0];
+            const secondary = assigned.length > 1 ? assigned.slice(1).join(', ') : '';
+            const backupTxt = secondary ? `，备选: ${secondary}` : '';
+            return `- ${logicLabel} → ${getRouteCall(primary)} (首选: ${primary}${backupTxt})`;
+        };
+
         const rules: string[] = [
             LHUB_RULES_MARKER,
             LHUB_RULES_VERSION,
-            '核心策略：多模型并行 + 主模型裁决（最大化节省 Antigravity 额度）',
-            '主模型只做调度、决策和交付，体力活委派给 L-Hub 中的专家模型。',
+            '核心策略：多模型智能分发（根据您的 L-Hub 路由配置，最大化节省 Antigravity 额度）',
+            '主模型（你）只做调度、决策和交付，必须通过 MCP 委派具体任务给 L-Hub 中的专家模型。',
             '',
-            '=== 体力活（低成本梯队优先）===',
+            '=== 基础开发委派矩阵 ===',
         ];
 
-        if (hasProvider('deepseek')) {
-            rules.push('- 翻译/文档/注释/简单文本/信息整理 → mcp_lhub_ai_ask(provider="deepseek")');
-        }
+        const rCodeGen = formatRouteLine('代码生成 / 新功能实现', 'code_gen');
+        if (rCodeGen) rules.push(rCodeGen);
+        const rCodeReview = formatRouteLine('复杂调试 / 重构检查', 'code_review');
+        if (rCodeReview) rules.push(rCodeReview);
+        const rArch = formatRouteLine('系统架构 / 方案设计', 'architecture');
+        if (rArch) rules.push(rArch);
+        const rAgentic = formatRouteLine('独立多步 Agentic 探测', 'agentic');
+        if (rAgentic) rules.push(rAgentic);
+        const rTool = formatRouteLine('复杂 API / 工具调用链', 'tool_calling');
+        if (rTool) rules.push(rTool);
 
-        rules.push('', '=== 代码（质量优先）===');
-        if (codexInstalled) {
-            rules.push('- 代码审查/Bug检查 → mcp_lhub_ai_codex_task()（首选，GPT 5.3 Codex 编码优化版）');
-            rules.push('- 代码生成/实现功能 → 主模型首选（综合质量顶级梯队），备选 mcp_lhub_ai_codex_task()');
-        }
-        if (hasProvider('glm') || hasProvider('zhipu')) {
-            const backup = codexInstalled ? '，备选 mcp_lhub_ai_codex_task()' : '';
-            rules.push(`- 复杂调试/跨文件工程 → mcp_lhub_ai_ask(provider="glm")（中文工程理解 + 长文本逻辑稳定）${backup}`);
-        }
+        rules.push('', '=== 通用任务委派矩阵 ===');
+        const rTrans = formatRouteLine('任意语言互相翻译', 'translation');
+        if (rTrans) rules.push(rTrans);
+        const rDoc = formatRouteLine('文档编写 / 代码注释', 'documentation');
+        if (rDoc) rules.push(rDoc);
+        const rLong = formatRouteLine('超长文本连贯性分析', 'long_context');
+        if (rLong) rules.push(rLong);
+        const rVision = formatRouteLine('图像理解 / 多模态视觉', 'vision');
+        if (rVision) rules.push(rVision);
+        const rUI = formatRouteLine('前端 UI / UX 设计', 'ui_design');
+        if (rUI) rules.push(rUI);
+        const rMath = formatRouteLine('算法设计 / 数学推理', 'math_reasoning');
+        if (rMath) rules.push(rMath);
 
-        rules.push('', '=== 专业领域 ===');
-        if (geminiInstalled) {
-            rules.push('- 推理/算法/数学 → mcp_lhub_ai_gemini_task()（推理顶级梯队），备选主模型');
-            rules.push('- 前端UI/UX → mcp_lhub_ai_gemini_task()（经验优选），备选主模型');
-        }
-        if (hasProvider('qwen')) {
-            rules.push('- 多语言/结构化写作 → mcp_lhub_ai_ask(provider="qwen")（中文优选之一）');
-        }
-        if (hasProvider('minimax')) {
-            rules.push('- 大量高速生成 → mcp_lhub_ai_ask(provider="minimax")（高速低成本优选）');
-        }
+        const hasOutline = creativeConfig.outlineModels.length > 0;
+        const hasDraft = creativeConfig.draftModels.length > 0;
+        const hasPolish = creativeConfig.polishModel;
+        const hasEval = creativeConfig.evalModel;
 
-        // Creative writing pipeline
-        const hasWritingModels = hasProvider('qwen') || hasProvider('glm') || hasProvider('minimax');
-        if (hasWritingModels && enabledModels.length > 1) {
-            rules.push('', '=== 创意写作（多模型协作链）===');
-            rules.push('中文小说/文章写作时，使用多模型并行 + 主模型裁决：');
-            rules.push('1. 大纲竞标：mcp_lhub_ai_multi_ask() 至少2模型并行出大纲');
-            rules.push('2. 初稿竞写：mcp_lhub_ai_multi_ask() 多模型并行写初稿');
-            rules.push('3. 主模型综合择优，融合最好段落');
-            if (hasProvider('minimax')) {
-                rules.push('4. mcp_lhub_ai_ask(provider="minimax") 去GPT味 + 文笔打磨');
+        if (hasOutline || hasDraft || hasPolish || hasEval) {
+            rules.push('', '=== 创意写作链（多模型协作）===');
+            rules.push('中文小说/文章写作时，严格按照用户配置的串流执行：');
+            
+            if (hasOutline) {
+                rules.push(`1. 大纲竞标：使用 ${creativeConfig.outlineModels.join(' 与 ')} 并行出大纲，主模型综合择优。`);
             }
-            if (hasProvider('glm') || hasProvider('zhipu')) {
-                rules.push('5. mcp_lhub_ai_ask(provider="glm") 逻辑连贯性最终检查');
+            if (hasDraft) {
+                rules.push(`2. 初稿竞写：使用 ${creativeConfig.draftModels.join(' 与 ')} 并行写初稿，主模型融合最好段落。`);
             }
-            rules.push('6. 主模型交付（不再修改内容）');
+            if (hasPolish) {
+                rules.push(`3. 文笔打磨：mcp_lhub_ai_ask 委派给 ${creativeConfig.polishModel} 进行去GPT味/润色。`);
+            }
+            if (hasEval) {
+                rules.push(`4. 逻辑审查：mcp_lhub_ai_ask 委派给 ${creativeConfig.evalModel} 进行最后连贯性与幻觉检查。`);
+            }
+            rules.push('5. 主模型交付最终结果（不再亲自修改内容）');
         }
 
         if (enabledModels.length > 1) {
             rules.push('', '=== 多方案对比 ===');
-            rules.push('- 需要多视角/对比方案 → mcp_lhub_ai_multi_ask()');
+            rules.push('- 需要多视角/对比方案 → mcp_lhub_ai_multi_ask() 并行问复数提供商');
         }
 
         rules.push('', '=== 主模型专属（不委派）===');
+        rules.push('（如果用户明确说"你来写"，或任务不在上述矩阵中，则主模型直接执行，不再强制委派）');
         rules.push('- 架构设计/系统方案 → 主模型自己做');
         rules.push('- 最终决策/综合输出 → 主模型自己做');
         rules.push('- 与用户对话 → 主模型自己做');
-
-        rules.push('', '设计哲学：顶级梯队互有胜负，不押宝单一模型。多模型并行 + 主模型裁决。');
 
         const routingRules = rules.join('\n');
 
@@ -317,6 +360,17 @@ async function updateStatusBar(settings: SettingsManager) {
             const key = await settings.getModelApiKey(m.id);
             modelStatuses.push({ label: m.label, enabled: m.enabled, hasKey: !!key });
         }
+
+        // ── CLI status ──
+        const codexCheck = spawnSync('codex', ['--version'], { encoding: 'utf8', timeout: 3000, shell: true });
+        const codexOk = !codexCheck.error;
+        
+        const geminiCheck = spawnSync('gemini', ['--version'], { encoding: 'utf8', timeout: 3000, shell: true });
+        const geminiOk = !geminiCheck.error;
+
+        // Add CLIs to statuses
+        modelStatuses.push({ label: 'Codex CLI', enabled: true, hasKey: codexOk });
+        modelStatuses.push({ label: 'Gemini CLI', enabled: true, hasKey: geminiOk });
 
         const ready = modelStatuses.filter(m => m.enabled && m.hasKey);
         const total = modelStatuses.length;
@@ -357,6 +411,7 @@ async function updateStatusBar(settings: SettingsManager) {
             tooltip.appendMarkdown('_未配置任何模型。请打开 Dashboard 添加。_\n\n');
         } else {
             for (const m of modelStatuses) {
+                if (m.label.includes('CLI')) continue; // Skip CLIs in the API models list
                 const status = (m.enabled && m.hasKey) ? '✅' : '❌';
                 const note = !m.hasKey ? ' — 未配置 Key' : (!m.enabled ? ' — 已禁用' : '');
                 tooltip.appendMarkdown(`${status} **${m.label}**${note}  \n`);
@@ -364,13 +419,8 @@ async function updateStatusBar(settings: SettingsManager) {
             tooltip.appendMarkdown('\n---\n\n');
         }
 
-        // ── CLI status ──
-        const codexCheck = spawnSync('codex', ['--version'], { encoding: 'utf8', timeout: 3000, shell: true });
-        const codexOk = !codexCheck.error;
+        // ── CLI status tooltip ──
         tooltip.appendMarkdown(`🤖 Codex CLI: ${codexOk ? '✅ 已安装' : '❌ 未安装'}  \n`);
-
-        const geminiCheck = spawnSync('gemini', ['--version'], { encoding: 'utf8', timeout: 3000, shell: true });
-        const geminiOk = !geminiCheck.error;
         tooltip.appendMarkdown(`🔷 Gemini CLI: ${geminiOk ? '✅ 已安装 (使用 Google 本地凭据)' : '❌ 未安装'}  \n`);
 
         tooltip.appendMarkdown('\n---\n\n_点击打开 Dashboard_');
@@ -414,11 +464,13 @@ export async function activate(context: vscode.ExtensionContext) {
         console.error('[L-Hub] HistoryStorage failed to init (SQLite ABI issue?), history will be disabled:', err);
     }
 
-    // ── STEP 3: Sync keys + auto-register MCP config ──
+    // ── STEP 3: Detect IDE + Sync keys + auto-register MCP config ──
     const dbFilePath = path.join(context.globalStorageUri.fsPath, 'history.db');
     await syncKeysToFile(settings, dbFilePath);
     currentExtensionPath = context.extensionPath;  // save for deactivate cleanup
     autoRegisterMcpConfig(context.extensionPath);
+
+    // Antigravity-specific features: Skill install, GEMINI.md injection, routing rules
     autoInstallSkill(context.extensionPath);
     autoInjectGeminiMd();
     await autoInjectRoutingRules(settings);
@@ -454,9 +506,9 @@ export async function activate(context: vscode.ExtensionContext) {
 async function cleanupLHub() {
     const home = os.homedir();
 
-    // 1. Remove lhub entry from mcp_config.json
+    // 1. Remove lhub entry from Antigravity MCP config
+    const mcpConfigPath = path.join(home, '.gemini', 'antigravity', 'mcp_config.json');
     try {
-        const mcpConfigPath = path.join(home, '.gemini', 'antigravity', 'mcp_config.json');
         if (fs.existsSync(mcpConfigPath)) {
             const config = JSON.parse(fs.readFileSync(mcpConfigPath, 'utf8'));
             if (config.mcpServers) {
@@ -466,7 +518,7 @@ async function cleanupLHub() {
                 console.log('[L-Hub] Removed MCP config entry ✅');
             }
         }
-    } catch (e) { console.error('[L-Hub] cleanup: mcp_config error', e); }
+    } catch (e) { console.error('[L-Hub] cleanup: config error', e); }
 
     // 2. Remove Skill directory
     try {

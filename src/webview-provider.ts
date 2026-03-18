@@ -125,6 +125,17 @@ export class DashboardPanel {
                         this._onConfigChanged?.();
                         break;
                     }
+                    // ── Creative Writing Chain Settings ───────────────────────
+                    case 'getCreativeConfig': {
+                        const config = await this.settings.getCreativeChainConfig();
+                        this._panel.webview.postMessage({ command: 'loadCreativeConfig', data: config });
+                        break;
+                    }
+                    case 'saveCreativeConfig': {
+                        await this.settings.saveCreativeChainConfig(message.config);
+                        this._onConfigChanged?.();
+                        break;
+                    }
                     // ── Backend-proxied connection test (bypasses CORS) ───────
                     case 'testConnection': {
                         const { modelId, baseUrl, apiKey, requestId } = message;

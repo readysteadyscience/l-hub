@@ -176,7 +176,7 @@ jobs:
 
 ## 七、用户自动更新
 
-用户安装后，VS Code / Antigravity **每天自动检查 Marketplace 更新**，
+用户安装后，Antigravity **每天自动检查 Marketplace 更新**，
 有新版本时会在通知栏提示「Extension Update Available」，一键更新即可。
 **无需用户手动操作。**
 
@@ -193,8 +193,8 @@ jobs:
 • 修复 XXX 问题
 
 **安装/更新：**
-在 Antigravity (VS Code) 扩展商店搜索「L-Hub」即可自动更新
+在 Antigravity 扩展商店搜索「L-Hub」即可自动更新
 
-[📦 Marketplace 主页](https://marketplace.visualstudio.com/items?itemName=readysteadyscience.l-hub)
+[📦 Marketplace 主页](https://open-vsx.org/extension/readysteadyscience/l-hub)
 [📝 完整更新日志](https://github.com/readysteadyscience/l-hub/blob/main/CHANGELOG.md)
 ```

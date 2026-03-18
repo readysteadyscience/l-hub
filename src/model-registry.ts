@@ -69,15 +69,7 @@ export const MODEL_REGISTRY: Record<string, ModelDefinition> = {
         note_en: 'Coding Plan · complex multi-file engineering · 2x-3x quota',
         requiresApiKey: true,
     },
-    'glm-4.7': {
-        label: 'GLM-4.7 (Coding Plan 推荐)',
-        providerGroup: 'GLM (智谱)',
-        defaultBaseUrl: 'https://open.bigmodel.cn/api/coding/paas/v4',
-        defaultTasks: ['code_gen', 'code_review', 'agentic', 'tool_calling'],
-        note_zh: 'Coding Plan 日常用，1x 配额消耗，省额度首选',
-        note_en: 'Coding Plan daily use, 1x quota, most quota-efficient',
-        requiresApiKey: true,
-    },
+
     // ── Qwen (通义) ───────────────────────────────────────────
     'qwen-max': {
         label: 'Qwen-Max (推荐)',
@@ -127,22 +119,22 @@ export const MODEL_REGISTRY: Record<string, ModelDefinition> = {
         requiresApiKey: true,
     },
     // ── OpenAI ───────────────────────────────────────────────
-    'gpt-5.1': {
-        label: 'GPT-5.1 (推荐)',
+    'gpt-5.4': {
+        label: 'GPT-5.4 (推荐)',
         providerGroup: 'OpenAI',
         defaultBaseUrl: 'https://api.openai.com/v1',
         defaultTasks: ['code_gen', 'vision', 'architecture', 'long_context'],
-        note_zh: '最新旗舰，超长上下文，复杂推理与多模态',
-        note_en: 'Latest flagship, ultra long context, complex reasoning',
+        note_zh: '最新旗舰（2026-03-05），集成 Codex 编程能力，1M token 上下文，原生 computer-use',
+        note_en: 'Latest flagship, integrated Codex power, 1M context, native computer-use',
         requiresApiKey: true,
     },
-    'gpt-5.3-codex': {
-        label: 'GPT-5.3 Codex (编程)',
+    'gpt-5.4-pro': {
+        label: 'GPT-5.4 Pro (企业)',
         providerGroup: 'OpenAI',
         defaultBaseUrl: 'https://api.openai.com/v1',
-        defaultTasks: ['code_gen', 'code_review', 'agentic'],
-        note_zh: '代码生成首选 · Terminal-Bench #1 · 编码优化版',
-        note_en: 'Code generation primary · Terminal-Bench #1 · coding-optimized',
+        defaultTasks: ['code_gen', 'code_review', 'agentic', 'tool_calling'],
+        note_zh: '代码生成顶级 · Terminal-Bench #1 · 企业级推理',
+        note_en: 'Top code gen, Terminal-Bench #1, enterprise reasoning',
         requiresApiKey: true,
     },
     // ── Anthropic (Claude) ───────────────────────────────────
@@ -164,24 +156,7 @@ export const MODEL_REGISTRY: Record<string, ModelDefinition> = {
         note_en: 'Latest (2026-02), best performance/cost balance',
         requiresApiKey: true,
     },
-    'claude-opus-4-5': {
-        label: 'Claude Opus 4.5',
-        providerGroup: 'Anthropic (Claude)',
-        defaultBaseUrl: 'https://api.anthropic.com/v1',
-        defaultTasks: ['code_review', 'architecture', 'agentic'],
-        note_zh: 'SWE-bench 72.5% 编程顶尖（2025-05）',
-        note_en: 'SWE-bench 72.5%, top coding (2025-05)',
-        requiresApiKey: true,
-    },
-    'claude-sonnet-4-5': {
-        label: 'Claude Sonnet 4.5',
-        providerGroup: 'Anthropic (Claude)',
-        defaultBaseUrl: 'https://api.anthropic.com/v1',
-        defaultTasks: ['code_gen', 'creative', 'documentation'],
-        note_zh: '均衡旗舰（2025-05），代码与内容创作首选',
-        note_en: 'Balanced flagship (2025-05), code & content creation',
-        requiresApiKey: true,
-    },
+
     // ── Google Gemini ────────────────────────────────────────
     'gemini-3.1-flash': {
         label: 'Gemini 3.1 Flash (推荐)',

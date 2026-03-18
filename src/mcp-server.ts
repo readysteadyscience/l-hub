@@ -102,7 +102,7 @@ function readConfig(): LHubConfig {
 
 const LEGACY_PROVIDERS: Record<string, { url: string; model: string }> = {
     // Code quality tier (2026 SWE-bench ranking)
-    glm: { url: 'https://open.bigmodel.cn/api/coding/paas/v4', model: 'glm-4.7' },  // Agentic coding, matches Claude Sonnet 4.5
+    glm: { url: 'https://open.bigmodel.cn/api/paas/v4', model: 'glm-5' },  // Agentic coding, matches Claude Sonnet 4.6
     deepseek: { url: 'https://api.deepseek.com/v1', model: 'deepseek-chat' },        // Cost-efficient, still strong
     // Specialized
     qwen: { url: 'https://dashscope.aliyuncs.com/compatible-mode/v1', model: 'qwen-max' },

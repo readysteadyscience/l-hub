@@ -3,7 +3,44 @@ import { vscode } from '../vscode-api';
 import { colors, radius, s } from '../theme';
 import { Lang } from './Dashboard';
 
+
+interface ModelConfig {
+    id: string;
+    modelId: string;
+    label: string;
+    baseUrl: string;
+    tasks: string[];
+    enabled: boolean;
+    priority: number;
+}
+
+interface CreativeWritingConfig {
+    outlineModels: string[];
+    draftModels: string[];
+    polishModel: string;
+    evalModel: string;
+}
+
 const RoutingGuidePanel: React.FC<{ lang: Lang }> = ({ lang }) => {
+
+    const [models, setModels] = React.useState<ModelConfig[]>([]);
+    const [creativeConfig, setCreativeConfig] = React.useState<CreativeWritingConfig>({ outlineModels: [], draftModels: [], polishModel: '', evalModel: '' });
+
+    React.useEffect(() => {
+        const handler = (ev: MessageEvent) => {
+            if (ev.data.command === 'loadModelsV2') {
+                setModels(ev.data.models || []);
+            }
+            if (ev.data.command === 'loadCreativeConfig') {
+                setCreativeConfig(ev.data.data);
+            }
+        };
+        window.addEventListener('message', handler);
+        vscode.postMessage({ command: 'getModelsV2' });
+        vscode.postMessage({ command: 'getCreativeConfig' });
+        return () => window.removeEventListener('message', handler);
+    }, []);
+
     const T = {
         en: {
             title: 'Default Routing Recommendations',
@@ -96,6 +133,145 @@ const RoutingGuidePanel: React.FC<{ lang: Lang }> = ({ lang }) => {
                         ))}
                     </tbody>
                 </table>
+            </div>
+
+            {/* Creative Writing Chain Settings */}
+            <div style={{ marginTop: '24px', paddingTop: '18px', borderTop: '1px solid var(--vscode-panel-border)' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '14px' }}>
+                    <div>
+                        <h2 style={{ margin: '0 0 4px', fontSize: '15px' }}>
+                            {lang === 'zh' ? '🖋️ 创意写作链 (Creative Chain)' : '🖋️ Creative Writing Chain'}
+                        </h2>
+                        <p style={{ margin: 0, fontSize: '12px', color: 'var(--vscode-descriptionForeground)' }}>
+                            {lang === 'zh'
+                                ? '配置长文、小说写作时的多模型串流规则。主模型仅负责综合调度。'
+                                : 'Configure multi-model pipelines for long-form writing.'}
+                        </p>
+                    </div>
+                </div>
+                
+                <div style={{ ...s.card, padding: '16px' }}>
+                    <div style={{ marginBottom: '16px' }}>
+                        <label style={{ ...s.label, fontSize: '13px', fontWeight: 600, color: 'var(--vscode-editor-foreground)' }}>
+                            1. 大纲竞标 (Outline Bidding)
+                        </label>
+                        <p style={{ margin: '2px 0 8px', fontSize: '11px', color: 'var(--vscode-descriptionForeground)' }}>
+                            至少2个模型并行出大纲，主模型择优。
+                        </p>
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                            {models.filter(m => m.enabled).map(m => (
+                                <span
+                                    key={m.id}
+                                    onClick={() => {
+                                        const newModels = creativeConfig.outlineModels.includes(m.modelId)
+                                            ? creativeConfig.outlineModels.filter(id => id !== m.modelId)
+                                            : [...creativeConfig.outlineModels, m.modelId];
+                                        const next = { ...creativeConfig, outlineModels: newModels };
+                                        setCreativeConfig(next);
+                                        vscode.postMessage({ command: 'saveCreativeConfig', config: next });
+                                    }}
+                                    style={{
+                                        padding: '4px 10px', borderRadius: '4px', cursor: 'pointer', fontSize: '12px',
+                                        background: creativeConfig.outlineModels.includes(m.modelId) ? 'var(--vscode-button-background)' : 'var(--vscode-input-background)',
+                                        color: creativeConfig.outlineModels.includes(m.modelId) ? 'var(--vscode-button-foreground)' : 'var(--vscode-descriptionForeground)',
+                                        border: '1px solid var(--vscode-input-border)',
+                                        userSelect: 'none',
+                                    }}
+                                >
+                                    {m.label}
+                                </span>
+                            ))}
+                        </div>
+                    </div>
+
+                    <div style={{ marginBottom: '16px' }}>
+                        <label style={{ ...s.label, fontSize: '13px', fontWeight: 600, color: 'var(--vscode-editor-foreground)' }}>
+                            2. 初稿竞写 (Drafting)
+                        </label>
+                        <p style={{ margin: '2px 0 8px', fontSize: '11px', color: 'var(--vscode-descriptionForeground)' }}>
+                            多模型并行写初稿，产生丰富素材。
+                        </p>
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                            {models.filter(m => m.enabled).map(m => (
+                                <span
+                                    key={m.id}
+                                    onClick={() => {
+                                        const newModels = creativeConfig.draftModels.includes(m.modelId)
+                                            ? creativeConfig.draftModels.filter(id => id !== m.modelId)
+                                            : [...creativeConfig.draftModels, m.modelId];
+                                        const next = { ...creativeConfig, draftModels: newModels };
+                                        setCreativeConfig(next);
+                                        vscode.postMessage({ command: 'saveCreativeConfig', config: next });
+                                    }}
+                                    style={{
+                                        padding: '4px 10px', borderRadius: '4px', cursor: 'pointer', fontSize: '12px',
+                                        background: creativeConfig.draftModels.includes(m.modelId) ? 'var(--vscode-button-background)' : 'var(--vscode-input-background)',
+                                        color: creativeConfig.draftModels.includes(m.modelId) ? 'var(--vscode-button-foreground)' : 'var(--vscode-descriptionForeground)',
+                                        border: '1px solid var(--vscode-input-border)',
+                                        userSelect: 'none',
+                                    }}
+                                >
+                                    {m.label}
+                                </span>
+                            ))}
+                        </div>
+                    </div>
+
+                    <div style={{ marginBottom: '16px' }}>
+                        <label style={{ ...s.label, fontSize: '13px', fontWeight: 600, color: 'var(--vscode-editor-foreground)' }}>
+                            3. 文笔打磨 / 去 GPT 味 (Polishing)
+                        </label>
+                        <select 
+                            style={s.select}
+                            value={creativeConfig.polishModel}
+                            onChange={(e) => {
+                                const next = { ...creativeConfig, polishModel: e.target.value };
+                                setCreativeConfig(next);
+                                vscode.postMessage({ command: 'saveCreativeConfig', config: next });
+                            }}
+                        >
+                            <option value="">(跳过此环节)</option>
+                            {models.filter(m => m.enabled).map(m => (
+                                <option key={m.id} value={m.modelId}>{m.label}</option>
+                            ))}
+                        </select>
+                        <p style={s.hint}>推荐使用 MiniMax-M2.5 等中文文学表现优异的模型。</p>
+                    </div>
+
+                    <div>
+                        <label style={{ ...s.label, fontSize: '13px', fontWeight: 600, color: 'var(--vscode-editor-foreground)' }}>
+                            4. 逻辑审查 / 连贯性检查 (Evaluation)
+                        </label>
+                        <select 
+                            style={s.select}
+                            value={creativeConfig.evalModel}
+                            onChange={(e) => {
+                                const next = { ...creativeConfig, evalModel: e.target.value };
+                                setCreativeConfig(next);
+                                vscode.postMessage({ command: 'saveCreativeConfig', config: next });
+                            }}
+                        >
+                            <option value="">(跳过此环节)</option>
+                            {models.filter(m => m.enabled).map(m => (
+                                <option key={m.id} value={m.modelId}>{m.label}</option>
+                            ))}
+                        </select>
+                        <p style={s.hint}>推荐使用智谱 GLM-5 或 Claude 等长逻辑连贯性强的模型。</p>
+                    </div>
+                </div>
+            </div>
+
+            {/* Footer note */}
+            <div style={{
+                marginTop: '12px', padding: '10px 14px',
+                background: 'var(--vscode-textBlockQuote-background)',
+                borderLeft: '3px solid var(--vscode-activityBarBadge-background)',
+                borderRadius: '0 4px 4px 0',
+                fontSize: '11px', color: 'var(--vscode-descriptionForeground)', lineHeight: '1.6',
+            }}>
+                {lang === 'zh'
+                    ? '路由规则：按任务类型匹配已启用的模型，选优先级最高的（列表靠上）。可随时添加新模型、自定义任务分配。'
+                    : 'Routing: L-Hub matches the task type to enabled models and picks the highest-priority one (top of list). You can add any model and customize task assignments.'}
             </div>
         </div>
     );

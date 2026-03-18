@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>L-Hub Release Card Generator</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Inter:wght@400;600;800&display=swap');
+
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #0d0d0d;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            font-family: 'Inter', sans-serif;
+            color: #ffffff;
+        }
+
+        .card-container {
+            position: relative;
+            width: 1024px;
+            height: 1024px;
+            /* Update this path if you move the HTML file */
+            background-image: url('assets/lhub-release-bg.png'); 
+            background-size: cover;
+            background-position: center;
+            box-shadow: 0 20px 50px rgba(0, 255, 255, 0.2);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* The central glowing text block area */
+        .content-box {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 60%;
+            text-align: center;
+            z-index: 10;
+        }
+
+        .title {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 110px;
+            font-weight: 900;
+            margin: 0;
+            letter-spacing: 4px;
+            /* Cyan glowing effect */
+            color: #E0FFFF;
+            text-shadow: 
+                0 0 10px rgba(0, 255, 255, 0.8),
+                0 0 20px rgba(0, 255, 255, 0.6),
+                0 0 40px rgba(0, 255, 255, 0.4),
+                0 0 80px rgba(0, 150, 255, 0.6);
+            /* Make text editable right in the browser */
+            outline: none;
+        }
+
+        .subtitle {
+            font-family: 'Inter', sans-serif;
+            font-size: 32px;
+            font-weight: 800;
+            margin-top: 20px;
+            letter-spacing: 2px;
+            color: #A0E8AF;
+            text-transform: uppercase;
+            text-shadow: 0 0 15px rgba(160, 232, 175, 0.6);
+            outline: none;
+        }
+
+        .features {
+            margin-top: 40px;
+            font-size: 24px;
+            font-weight: 600;
+            color: #B0E0E6;
+            line-height: 1.6;
+            outline: none;
+            background: rgba(0, 20, 40, 0.6);
+            padding: 20px 40px;
+            border-radius: 12px;
+            border: 1px solid rgba(0, 255, 255, 0.3);
+            box-shadow: 0 0 30px rgba(0, 255, 255, 0.1) inset;
+            backdrop-filter: blur(4px);
+        }
+
+        .footer {
+            position: absolute;
+            bottom: 60px;
+            width: 100%;
+            text-align: center;
+            font-size: 20px;
+            font-weight: 600;
+            color: rgba(255, 255, 255, 0.5);
+            letter-spacing: 4px;
+            font-family: 'Orbitron', sans-serif;
+            outline: none;
+        }
+
+        /* Instructions overlay (hidden when taking screenshot) */
+        .instructions {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            background: rgba(255,255,255,0.1);
+            padding: 20px;
+            border-radius: 8px;
+            backdrop-filter: blur(10px);
+            max-width: 300px;
+            border: 1px solid rgba(255,255,255,0.2);
+            z-index: 100;
+        }
+        .instructions h3 { margin-top: 0; color: #0ff; }
+        .instructions p { font-size: 14px; opacity: 0.8; }
+        .hide-instructions .instructions { display: none; }
+    </style>
+</head>
+<body>
+
+    <div class="instructions" id="instructionsBox">
+        <h3>💡 如何使用这个模板</h3>
+        <p>1. 鼠标点击卡片上的任何文字都可以<strong>直接修改</strong>。</p>
+        <p>2. 修改完版本号和特性介绍后，按下键盘 <strong>H</strong> 键隐藏本提示框。</p>
+        <p>3. 按 <code>Cmd + Shift + 4</code> 截图卡片区域即可发版！</p>
+    </div>
+
+    <!-- 1024x1024 Card Area -->
+    <div class="card-container" id="cardArea">
+        
+        <div class="content-box">
+            <!-- Click to edit texts -->
+            <div class="title" contenteditable="true" spellcheck="false">L-Hub v0.3.1</div>
+            <div class="subtitle" contenteditable="true" spellcheck="false">Antigravity Exclusive | Ultimate AI Router</div>
+            
+            <div class="features" contenteditable="true" spellcheck="false">
+                ✨ 生态专注：移除跨 IDE 冗余，深度优化 Antigravity 原生体验<br>
+                📊 状态修复：修复 CLI 离线误算，状态栏与看板数据严格对齐<br>
+                🧹 极客进化：消除 TS 编译冲突，底层代码纯净运行
+            </div>
+        </div>
+
+        <div class="footer" contenteditable="true" spellcheck="false">
+            [ READY STEADY SCIENCE ]
+        </div>
+
+    </div>
+
+    <script>
+        // Press 'H' to toggle instructions for clean screenshot
+        document.addEventListener('keydown', function(event) {
+            if (event.key.toLowerCase() === 'h' && document.activeElement.tagName !== 'DIV') {
+                document.body.classList.toggle('hide-instructions');
+            }
+        });
+    </script>
+</body>
+</html>

@@ -2,7 +2,7 @@
 
 ## 产品背景
 
-L-Hub 是一款专为 **Antigravity**（Google 官方推出的下一代 AI IDE）设计的 **MCP（Model Context Protocol）扩展插件**。核心使命是打破单一模型依赖，通过创新的 **Skill 强制路由系统**，实现"**主模型智能调度 + 专家模型精准执行**"的协作范式。在 Antigravity 中，主模型（如 Claude、Gemini）扮演"指挥官"角色，分析用户意图后，通过 L-Hub 自动调用最适合的专家模型（或 CLI Agent）来执行具体任务。经测试，此模式可显著降低综合 token 消耗 **50% 以上**，同时提升任务完成质量与稳定性。L-Hub 完全免费开源，采用宽松的 **MIT 协议**，项目地址：[https://github.com/readysteadyscience/L-Hub](https://github.com/readysteadyscience/L-Hub)。
+L-Hub 是一款专为 **Antigravity**（Google 官方推出的下一代 AI IDE）设计的 **MCP（Model Context Protocol）扩展插件**。核心使命是打破单一模型依赖，通过创新的 **Skill 强制路由系统**，实现"**主模型智能调度 + 专家模型精准执行**"的协作范式。在 Antigravity 中，自带强大的主模型扮演"指挥官"角色，分析用户意图后，通过 L-Hub 自动调用最适合的外部专家模型（或 CLI Agent）来执行具体任务。经测试，此模式可显著降低综合 token 消耗 **50% 以上**，同时提升任务完成质量与稳定性。L-Hub 完全免费开源，采用宽松的 **MIT 协议**，项目地址：[https://github.com/readysteadyscience/L-Hub](https://github.com/readysteadyscience/L-Hub)。
 
 ---
 
@@ -13,8 +13,8 @@ L-Hub 是 Antigravity IDE 的"**模型调度中枢**"，让一个主模型能无
 
 #### 解决什么问题
 当前 AI IDE 用户面临两大核心痛点：
-1.  **成本高昂**：全程使用 Claude 或 GPT-4 等顶级模型处理所有任务（如简单翻译、代码格式化），Token 消耗巨大。
-2.  **质量波动**：单一模型并非全能，在特定领域（如代码生成、逻辑推理、创意写作）可能表现不稳定，用户需手动切换模型，体验割裂。
+1.  **成本高昂**：全程使用原生高级主模型处理所有任务（如简单翻译、代码格式化），Token 消耗巨大。
+2.  **质量波动**：单一模型并非全能，当需要特定专长（如高强度的代码生成）时，如果不支持接入如 Codex 等专属代码生成大模型，体验会受到局限。
 
 #### 核心价值
 -   **省钱**：将高价值模型用于核心思考，常规任务路由至性价比更高的模型，综合成本直降 50%+。

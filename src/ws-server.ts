@@ -8,7 +8,7 @@ import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { Transport } from '@modelcontextprotocol/sdk/shared/transport.js';
 import { JSONRPCMessage, CallToolRequestSchema, ListToolsRequestSchema } from '@modelcontextprotocol/sdk/types.js';
 import { HistoryStorage } from './storage';
-import { SettingsManager, Provider } from './settings';
+import { SettingsManager, Provider, ModelConfig } from './settings';
 
 class WsTransport implements Transport {
     public onclose?: () => void;
@@ -63,7 +63,6 @@ export class LinglanMcpServer {
                 }
             });
 
-            // Set up lists
             mcpServer.setRequestHandler(ListToolsRequestSchema, async () => {
                 return {
                     tools: [
@@ -75,12 +74,34 @@ export class LinglanMcpServer {
                                 properties: {
                                     provider: {
                                         type: "string",
-                                        enum: ["deepseek", "glm", "qwen", "minimax"],
-                                        description: "The AI provider to use. If omitted, the default route is used."
+                                        description: "The AI provider/group alias to use (e.g. 'deepseek', 'glm', 'qwen', 'minimax'). If omitted, defaults to deepseek."
                                     },
                                     message: {
                                         type: "string",
                                         description: "The question or prompt for the AI."
+                                    },
+                                    system_prompt: {
+                                        type: "string",
+                                        description: "Optional system instructions."
+                                    }
+                                },
+                                required: ["message"]
+                            }
+                        },
+                        {
+                            name: "ai_multi_ask",
+                            description: "Ask multiple AI models the same question in parallel and compare their responses. Best for getting diverse perspectives or Creative Writing chains.",
+                            inputSchema: {
+                                type: "object",
+                                properties: {
+                                    providers: {
+                                        type: "array",
+                                        items: { type: "string" },
+                                        description: "List of provider aliases to query (e.g. ['deepseek', 'glm', 'qwen', 'minimax']). Ohmit to query all available."
+                                    },
+                                    message: {
+                                        type: "string",
+                                        description: "The question or prompt."
                                     },
                                     system_prompt: {
                                         type: "string",
@@ -98,7 +119,6 @@ export class LinglanMcpServer {
                 const reqStr = JSON.stringify(request);
                 const startTime = Date.now();
                 let resultText = '';
-                let errorMsg = '';
                 let status: 'success' | 'error' = 'success';
                 let usedModel = 'unknown';
                 let inputTokens = 0;
@@ -107,36 +127,65 @@ export class LinglanMcpServer {
                 try {
                     if (request.params.name === "ai_ask") {
                         const args = request.params.arguments as { provider?: string, message: string, system_prompt?: string };
-                        let provider = args.provider as Provider || this.settings.getGeneralConfig().defaultModel as Provider;
-                        usedModel = provider;
-
-                        // Smart Routing Heuristics
-                        if (!args.provider) {
-                            const msg = args.message.toLowerCase();
-                            if (msg.includes('architecture') || msg.includes('架构') || msg.includes('design pattern')) {
-                                provider = 'glm';
-                                usedModel = 'glm (auto-routed)';
-                            } else if (msg.includes('translate') || msg.includes('翻译')) {
-                                provider = 'qwen';
-                                usedModel = 'qwen (auto-routed)';
-                            } else if (msg.includes('ui') || msg.includes('frontend') || msg.includes('前端')) {
-                                provider = 'minimax';
-                                usedModel = 'minimax (auto-routed)';
-                            } else {
-                                provider = 'deepseek';
-                                usedModel = 'deepseek (default)';
-                            }
+                        let targetRoute = args.provider || 'deepseek';
+                        
+                        const resolvedModel = await this.resolveModel(targetRoute);
+                        if (!resolvedModel) {
+                            throw new Error(`Could not find an enabled, configured model for route: ${targetRoute}`);
                         }
+                        usedModel = resolvedModel.model.label || resolvedModel.model.modelId;
 
-                        const apiKey = await this.settings.getApiKey(provider);
-                        if (!apiKey) {
-                            throw new Error(`API Key for ${provider} is not configured.`);
-                        }
-
-                        const apiResponse = await this.callAIProvider(provider, apiKey, args.message, args.system_prompt);
+                        const apiResponse = await this.callAIProvider(resolvedModel, args.message, args.system_prompt);
                         resultText = apiResponse.text;
                         inputTokens = apiResponse.inputTokens;
                         outputTokens = apiResponse.outputTokens;
+
+                        const response = {
+                            content: [{ type: "text", text: resultText }],
+                            isError: false
+                        };
+
+                        this.logTransaction(request.params.name, usedModel, startTime, reqStr, JSON.stringify(response), 'success', inputTokens, outputTokens);
+                        return response;
+                    } 
+                    else if (request.params.name === "ai_multi_ask") {
+                        const args = request.params.arguments as { providers?: string[], message: string, system_prompt?: string };
+                        const targets = args.providers && args.providers.length > 0 
+                            ? args.providers 
+                            : ['deepseek', 'glm', 'qwen']; // Defaults if none provided
+
+                        // Map targets to actual models concurrently
+                        const resolvedPromises = targets.map(t => this.resolveModel(t));
+                        const resolvedResults = await Promise.all(resolvedPromises);
+                        const validModels = resolvedResults.filter((r): r is { model: ModelConfig; apiKey: string; } => r !== null);
+                        
+                        if (validModels.length === 0) {
+                            throw new Error(`Could not find any enabled, configured models for the requested targets: ${targets.join(', ')}`);
+                        }
+
+                        usedModel = `Multi-Ask (${validModels.map(m => m.model.label).join(', ')})`;
+
+                        // Execute API calls concurrently
+                        const apiPromises = validModels.map(rm => this.callAIProvider(rm, args.message, args.system_prompt).then(res => ({
+                            label: rm.model.label,
+                            res
+                        })).catch(err => ({
+                            label: rm.model.label,
+                            error: err.message
+                        })));
+
+                        const results = await Promise.all(apiPromises);
+
+                        // Format output
+                        resultText = results.map(r => {
+                            if ('error' in r) {
+                                return `### ❌ [${r.label}] 失败\n${r.error}\n`;
+                            } else {
+                                inputTokens += r.res.inputTokens;
+                                outputTokens += r.res.outputTokens;
+                                return `### ✅ [${r.label}]\n${r.res.text}\n`;
+                            }
+                        }).join('\n---\n\n');
 
                         const response = {
                             content: [{ type: "text", text: resultText }],
@@ -149,9 +198,9 @@ export class LinglanMcpServer {
                     throw new Error(`Unknown tool: ${request.params.name}`);
                 } catch (e: any) {
                     status = 'error';
-                    errorMsg = e.message;
+                    const errorMsg = e.message;
                     resultText = `Error: ${e.message}`;
-                    this.logTransaction(request.params.name, usedModel, startTime, reqStr, resultText, 'error', 0, 0, e.message);
+                    this.logTransaction(request.params.name, usedModel, startTime, reqStr, resultText, 'error', 0, 0, errorMsg);
                     return {
                         content: [{ type: "text", text: resultText }],
                         isError: true
@@ -186,37 +235,58 @@ export class LinglanMcpServer {
         });
     }
 
-    private async callAIProvider(provider: Provider, apiKey: string, message: string, systemPrompt?: string) {
+    /** Resolves a routing target alias (e.g. 'deepseek', 'glm', 'miniMax') to the highest priority, configured ModelConfig. */
+    private async resolveModel(targetStr: string): Promise<{ model: ModelConfig, apiKey: string } | null> {
+        const models = await this.settings.getModels();
+        // Filter out disabled ones and CLI wrappers (we only proxy pure API models in L-Hub)
+        const candidates = models.filter(m => m.enabled !== false && !m.modelId.includes('CLI'));
+        
+        // Sort by priority -> descending priority
+        candidates.sort((a, b) => a.priority - b.priority);
+
+        const lowerTarget = targetStr.toLowerCase();
+        
+        for (const c of candidates) {
+            // Check if exact match by config ID, modelID, or label
+            if (c.id === targetStr || c.modelId === targetStr || c.label === targetStr) {
+                 const apiKey = await this.settings.getApiKey(`model.${c.id}`);
+                 if (apiKey) return { model: c, apiKey };
+            }
+        }
+        
+        // Strategy 2: Check by general provider grouping words 
+        // Example: target='glm', matches modelId='glm-5' or label='GLM-5'
+        for (const c of candidates) {
+             const mLower = c.modelId.toLowerCase();
+             const lLower = c.label.toLowerCase();
+             if (mLower.includes(lowerTarget) || lLower.includes(lowerTarget) ||
+                (targetStr === 'glm' && (mLower.includes('zhipu') || lLower.includes('智谱')))
+             ) {
+                 const apiKey = await this.settings.getApiKey(`model.${c.id}`);
+                 if (apiKey) return { model: c, apiKey };
+             }
+        }
+
+        return null; // None found or none had API keys configured
+    }
+
+    private async callAIProvider(resolved: { model: ModelConfig, apiKey: string }, message: string, systemPrompt?: string) {
         const messages = [];
         if (systemPrompt) {
             messages.push({ role: 'system', content: systemPrompt });
         }
         messages.push({ role: 'user', content: message });
 
-        let url = '';
-        let model = '';
+        // Build generic OpenAI style request
+        let url = resolved.model.baseUrl.replace(/\/$/, '') + '/chat/completions';
+        
         const headers: Record<string, string> = {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${apiKey}`
+            'Authorization': `Bearer ${resolved.apiKey}`
         };
 
-        if (provider === 'deepseek') {
-            url = 'https://api.deepseek.com/v1/chat/completions';
-            model = 'deepseek-chat';
-        } else if (provider === 'glm') {
-            url = 'https://open.bigmodel.cn/api/paas/v4/chat/completions';
-            model = 'glm-4';
-        } else if (provider === 'qwen') {
-            url = 'https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions';
-            model = 'qwen-max';
-        } else if (provider === 'minimax') {
-            // M3 fix: updated to current MiniMax API endpoint and model
-            url = 'https://api.minimax.io/v1/chat/completions';
-            model = 'MiniMax-M2.5';
-        }
-
         const body = JSON.stringify({
-            model,
+            model: resolved.model.modelId,
             messages,
             temperature: 0.7
         });
@@ -229,7 +299,7 @@ export class LinglanMcpServer {
 
         if (!res.ok) {
             const errStr = await res.text();
-            throw new Error(`API error from ${provider}: ${res.status} ${errStr}`);
+            throw new Error(`API error from ${resolved.model.label}: ${res.status} ${errStr}`);
         }
 
         const data = await res.json() as any;

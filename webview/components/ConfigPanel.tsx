@@ -14,7 +14,14 @@ interface ModelConfig {
     priority: number;
 }
 
-// ─── Task Types ───────────────────────────────────────────────────────────────
+// ─── Task Types & Config Types ────────────────────────────────────────────────
+
+interface CreativeWritingConfig {
+    outlineModels: string[];
+    draftModels: string[];
+    polishModel: string;
+    evalModel: string;
+}
 
 const TASK_TYPES = [
     { id: 'code_gen', zh: '代码生成', en: 'Code Generation' },
@@ -79,14 +86,7 @@ const MODEL_DEFS: Record<string, ModelDef> = {
         note: 'Coding Plan 包月专属端点 · 消耗 2x-3x 配额（Complex 任务）',
         pricing: undefined,
     },
-    'glm-4.7': {
-        label: 'GLM-4.7 编程版',
-        group: 'GLM (智谱)',
-        baseUrl: 'https://open.bigmodel.cn/api/coding/paas/v4',
-        defaultTasks: ['code_gen', 'code_review', 'agentic', 'tool_calling'],
-        note: 'Coding Plan 日常首选 · 1x 配额消耗 · 省额度',
-        pricing: undefined,
-    },
+
     // ─── Qwen (通义) ──────────────────────────────────────────────────────────
     'qwen-max': {
         label: 'Qwen3-Max',
@@ -164,22 +164,7 @@ const MODEL_DEFS: Record<string, ModelDef> = {
         note: '最新（2026-02），性能与成本最佳平衡，通用主力，官方直连',
         pricing: { input: 3.00, output: 15.00 },
     },
-    'claude-opus-4-5': {
-        label: 'Claude Opus 4.5',
-        group: 'Anthropic (Claude)',
-        baseUrl: 'https://api.anthropic.com/v1',
-        defaultTasks: ['code_review', 'architecture', 'agentic'],
-        note: 'SWE-bench 72.5% 编程顶尖（2025-05），官方直连',
-        pricing: { input: 15.00, output: 75.00 },
-    },
-    'claude-sonnet-4-5': {
-        label: 'Claude Sonnet 4.5',
-        group: 'Anthropic (Claude)',
-        baseUrl: 'https://api.anthropic.com/v1',
-        defaultTasks: ['code_gen', 'creative', 'documentation'],
-        note: '均衡旗舰（2025-05），代码与内容创作首选，官方直连',
-        pricing: { input: 3.00, output: 15.00 },
-    },
+
     // ─── Google Gemini ────────────────────────────────────────────────────────
     'gemini-3.1-flash': {
         label: 'Gemini 3.1 Flash (推荐)',
@@ -262,7 +247,7 @@ const MODEL_DEFS: Record<string, ModelDef> = {
 /** Example model IDs shown in the Model ID input per provider group */
 const GROUP_MODEL_EXAMPLES: Record<string, string> = {
     'DeepSeek': 'deepseek-chat / deepseek-reasoner',
-    'GLM (智谱)': 'glm-5 / glm-4.7',
+    'GLM (智谱)': 'glm-5',
     'Qwen (通义)': 'qwen-max / qwen-plus',
     'MiniMax': 'MiniMax-M2.5 / MiniMax-M2.5-highspeed',
     'Kimi K2': 'kimi-k2-0711-preview',
@@ -721,7 +706,7 @@ const AddEditModal: React.FC<{
 
                         {isEdit && (
                             <div style={{ marginBottom: '14px' }}>
-                                <label style={s.label}>Model ID <span style={{ fontWeight: 400, opacity: 0.7 }}>{`(可直接修改型号，如 ${GROUP_MODEL_EXAMPLES[selectedGroup] ?? 'glm-5 / glm-4.7'})`}</span></label>
+                                <label style={s.label}>Model ID <span style={{ fontWeight: 400, opacity: 0.7 }}>{`(可直接修改型号，如 ${GROUP_MODEL_EXAMPLES[selectedGroup] ?? 'glm-5'})`}</span></label>
                                 <input
                                     style={s.input}
                                     value={isCustomGroup ? customModelId : selectedModelId}
@@ -863,6 +848,7 @@ const ConfigPanel: React.FC<ConfigPanelProps> = ({ lang }) => {
     const [testResults, setTestResults] = useState<Record<string, { ok: boolean; msg: string }>>({});
     const [codexStatus, setCodexStatus] = useState<{ installed: boolean; version?: string; loggedIn?: boolean } | null>(null);
     const [geminiStatus, setGeminiStatus] = useState<{ installed: boolean; version?: string; loggedIn?: boolean } | null>(null);
+    const [creativeConfig, setCreativeConfig] = useState<CreativeWritingConfig>({ outlineModels: [], draftModels: [], polishModel: '', evalModel: '' });
     const hasAutoTested = React.useRef(false);
 
     useEffect(() => {
@@ -892,17 +878,18 @@ const ConfigPanel: React.FC<ConfigPanelProps> = ({ lang }) => {
                 const configId = parts.slice(1, -1).join('_');
                 setTestResults(prev => ({ ...prev, [configId]: { ok: ev.data.ok, msg: ev.data.ok ? '已连通' : (ev.data.msg || '失败') } }));
             }
-            if (ev.data.command === 'codexStatus') {
-                setCodexStatus({ installed: ev.data.installed, version: ev.data.version, loggedIn: ev.data.loggedIn });
-            }
             if (ev.data.command === 'geminiStatus') {
                 setGeminiStatus({ installed: ev.data.installed, version: ev.data.version, loggedIn: ev.data.loggedIn });
+            }
+            if (ev.data.command === 'loadCreativeConfig') {
+                setCreativeConfig(ev.data.data);
             }
         };
         window.addEventListener('message', handler);
         vscode.postMessage({ command: 'getModelsV2' });
         vscode.postMessage({ command: 'getCodexStatus' });
         vscode.postMessage({ command: 'getGeminiStatus' });
+        vscode.postMessage({ command: 'getCreativeConfig' });
         return () => window.removeEventListener('message', handler);
     }, []);
 
@@ -1204,18 +1191,6 @@ const ConfigPanel: React.FC<ConfigPanelProps> = ({ lang }) => {
                 )}
             </div>
 
-            {/* Footer note */}
-            <div style={{
-                marginTop: '12px', padding: '10px 14px',
-                background: 'var(--vscode-textBlockQuote-background)',
-                borderLeft: '3px solid var(--vscode-activityBarBadge-background)',
-                borderRadius: '0 4px 4px 0',
-                fontSize: '11px', color: 'var(--vscode-descriptionForeground)', lineHeight: '1.6',
-            }}>
-                {lang === 'zh'
-                    ? '路由规则：按任务类型匹配已启用的模型，选优先级最高的（列表靠上）。可随时添加新模型、自定义任务分配。'
-                    : 'Routing: L-Hub matches the task type to enabled models and picks the highest-priority one (top of list). You can add any model and customize task assignments.'}
-            </div>
 
             {showModal && (
                 <AddEditModal

@@ -21,6 +21,13 @@ export interface ModelConfig {
     priority: number;     // lower = higher priority among same-task models
 }
 
+export interface CreativeWritingConfig {
+    outlineModels: string[]; // Model IDs used for parallel outlining
+    draftModels: string[];   // Model IDs used for parallel drafting
+    polishModel: string;     // Model ID for final polish/merge
+    evalModel: string;       // Model ID for evaluation/fact-checking
+}
+
 export class SettingsManager {
     private secretStorage: vscode.SecretStorage;
     private static readonly MODELS_KEY = 'l-hub.models.v2';
@@ -104,6 +111,30 @@ export class SettingsManager {
     public async removeModel(id: string): Promise<void> {
         const models = await this.getModels();
         await this.saveModels(models.filter(m => m.id !== id));
+    }
+
+    // ── Creative Writing Chain Configuration ───────────────────────────────────
+    private static readonly CREATIVE_CHAIN_KEY = 'l-hub.creative_chain.v1';
+
+    public async getCreativeChainConfig(): Promise<CreativeWritingConfig> {
+        const raw = await this.secretStorage.get(SettingsManager.CREATIVE_CHAIN_KEY);
+        if (!raw) {
+            return {
+                outlineModels: [],
+                draftModels: [],
+                polishModel: '',
+                evalModel: ''
+            };
+        }
+        try {
+            return JSON.parse(raw) as CreativeWritingConfig;
+        } catch {
+            return { outlineModels: [], draftModels: [], polishModel: '', evalModel: '' };
+        }
+    }
+
+    public async saveCreativeChainConfig(config: CreativeWritingConfig): Promise<void> {
+        await this.secretStorage.store(SettingsManager.CREATIVE_CHAIN_KEY, JSON.stringify(config));
     }
 
     // ── Default starter models ──────────────────────────────────────────────
