@@ -3,7 +3,7 @@
  * L-Hub Standalone MCP Server
  *
  * Runs as an independent Node.js process via stdio (no vscode dependency).
- * Reads API keys + model config from ~/.l-hub-keys.json (written by VS Code Extension).
+ * Reads API keys + model config from ~/.l-hub-keys.json (written by Antigravity Extension).
  * Supports both v1 (legacy flat key map) and v2 (models array with tasks).
  */
 
@@ -106,11 +106,11 @@ const LEGACY_PROVIDERS: Record<string, { url: string; model: string }> = {
     deepseek: { url: 'https://api.deepseek.com/v1', model: 'deepseek-chat' },        // Cost-efficient, still strong
     // Specialized
     qwen: { url: 'https://dashscope.aliyuncs.com/compatible-mode/v1', model: 'qwen-max' },
-    minimax: { url: 'https://api.minimax.io/v1', model: 'MiniMax-M2.5-highspeed' },
+    minimax: { url: 'https://api.minimax.io/v1', model: 'MiniMax-M2.7' },
     kimi: { url: 'https://api.moonshot.cn/v1', model: 'moonshot-v1-auto' }, // k2-instruct 并非全用户开放，使用 v1-auto 兜底
     gpt: { url: 'https://api.openai.com/v1', model: 'gpt-5.4' },     // GPT-5.4 (2026-03-05): integrates Codex coding capabilities, 1M context
     gemini: { url: 'https://generativelanguage.googleapis.com/v1beta/openai', model: 'gemini-3.1-pro-preview' },
-    mistral: { url: 'https://api.mistral.ai/v1', model: 'mistral-large-latest' },
+
     // NOTE: 'claude' intentionally omitted — Antigravity IS Claude. Routing tasks
     // back to Claude via L-Hub wastes tokens and adds latency with no benefit.
 };
@@ -136,18 +136,29 @@ function detectTaskType(message: string): string {
 
     // ── Length-aware routing (takes priority over keywords) ───────────────
     if (message.length > 3000) {
-        return 'long_context'; // GLM handles long text best
+        return 'long_context';
     }
     if (message.length < 100 && (msg.includes('code') || msg.includes('代码') || msg.includes('function') || msg.includes('函数'))) {
-        return 'code_gen'; // DeepSeek for quick short code tasks
+        return 'code_gen';
     }
 
+    // ── Weighted keyword matching (multi-word phrases score higher) ───────
+    let bestTask = 'code_gen';
+    let bestScore = 0;
     for (const [taskId, keywords] of Object.entries(TASK_KEYWORDS)) {
-        if (keywords.some(k => msg.includes(k))) {
-            return taskId;
+        let score = 0;
+        for (const k of keywords) {
+            if (msg.includes(k)) {
+                // Multi-word keywords are more specific → higher weight
+                score += k.includes(' ') ? 2 : 1;
+            }
+        }
+        if (score > bestScore) {
+            bestScore = score;
+            bestTask = taskId;
         }
     }
-    return 'code_gen'; // safe default
+    return bestTask;
 }
 
 interface RouteResult {
@@ -535,7 +546,7 @@ function callGemini(prompt: string, model?: string, workingDir?: string): string
 
 async function main() {
     const server = new Server(
-        { name: 'lhub', version: '0.2.1' },
+        { name: 'lhub', version: '0.3.2' },
         { capabilities: { tools: {} } }
     );
 
@@ -583,7 +594,7 @@ async function main() {
                     type: 'object',
                     properties: {
                         prompt: { type: 'string', description: 'The prompt / task to send to Gemini.' },
-                        model: { type: 'string', description: 'Optional Gemini model to use (e.g. "gemini-2.5-pro"). Defaults to CLI default.' },
+                        model: { type: 'string', description: 'Optional Gemini model to use (e.g. "gemini-3.1-pro"). Defaults to CLI default.' },
                         working_dir: { type: 'string', description: 'Working directory for Gemini CLI. Defaults to current directory.' },
                     },
                     required: ['prompt'],

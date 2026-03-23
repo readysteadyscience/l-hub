@@ -47,7 +47,7 @@ CREATE INDEX IF NOT EXISTS idx_model ON request_history(model);`;
  * Supports two modes:
  * 1. Native mode (better-sqlite3) — fast, synchronous, preferred
  * 2. CLI fallback mode (sqlite3 CLI) — works when native module ABI doesn't match
- *    the host Electron version (common in VS Code / Antigravity extensions)
+ *    the host Electron version (common in Antigravity extensions)
  *
  * The MCP server process (pure Node.js) writes records via its own better-sqlite3.
  * The extension host (Electron) reads via whichever mode works.

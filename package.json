@@ -15,8 +15,29 @@
     "vscode": "^1.85.0"
   },
   "categories": [
-    "Other",
-    "Machine Learning"
+    "Machine Learning",
+    "Programming Languages",
+    "Other"
+  ],
+  "keywords": [
+    "AI",
+    "MCP",
+    "multi-model",
+    "routing",
+    "DeepSeek",
+    "GLM",
+    "Qwen",
+    "MiniMax",
+    "Gemini",
+    "GPT",
+    "Codex",
+    "LLM",
+    "API",
+    "bridge",
+    "Antigravity",
+    "code generation",
+    "cost optimization",
+    "智能路由"
   ],
   "main": "./dist/extension.js",
   "activationEvents": [
@@ -47,17 +68,55 @@
             "glm",
             "qwen",
             "minimax",
-            "kimi",
-            "mistral"
+            "kimi"
           ],
-          "description": "默认路由大模型（当用户的指令未触发其他垂直分支时，作为兜底模型使用）。",
           "order": 2
+        },
+        "l-hub.routing.routine": {
+          "type": "string",
+          "default": "auto",
+          "description": "Default model for routine tasks (Translation, Documentation, etc.). Use 'auto' for L-Hub dynamic routing."
+        },
+        "l-hub.routing.code": {
+          "type": "string",
+          "default": "auto",
+          "description": "Default model for coding tasks (Code Generation, Code Review, etc.). Use 'auto' for L-Hub dynamic routing."
+        },
+        "l-hub.routing.reasoning": {
+          "type": "string",
+          "default": "auto",
+          "description": "Default model for complex reasoning and algorithms. Use 'auto' for L-Hub dynamic routing."
+        },
+        "l-hub.routing.creative": {
+          "type": "string",
+          "default": "auto",
+          "description": "Preferred setup for Creative Writing Chain. Use 'auto' for L-Hub dynamic multi-model routing."
         },
         "l-hub.retentionDays": {
           "type": "number",
           "default": 30,
           "description": "自动清理历史记录的天数 (History Retention Days)。",
           "order": 3
+        },
+        "lhub.routing.routine": {
+          "type": "string",
+          "default": "deepseek",
+          "description": "Default provider for routine tasks (e.g. translation, docs, summaries)."
+        },
+        "lhub.routing.code": {
+          "type": "string",
+          "default": "codex-cli",
+          "description": "Default provider for code engineering tasks (Codex CLI preferred)."
+        },
+        "lhub.routing.reasoning": {
+          "type": "string",
+          "default": "gemini-cli",
+          "description": "Default provider for complex reasoning and frontend tasks."
+        },
+        "lhub.routing.creative": {
+          "type": "string",
+          "default": "minimax",
+          "description": "Default model(s) for creative writing tasks."
         }
       }
     }

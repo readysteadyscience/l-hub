@@ -69,6 +69,15 @@ export const MODEL_REGISTRY: Record<string, ModelDefinition> = {
         note_en: 'Coding Plan · complex multi-file engineering · 2x-3x quota',
         requiresApiKey: true,
     },
+    'glm-5-turbo': {
+        label: 'GLM-5-Turbo (Agent)',
+        providerGroup: 'GLM (智谱)',
+        defaultBaseUrl: 'https://open.bigmodel.cn/api/paas/v4',
+        defaultTasks: ['agentic', 'tool_calling', 'code_gen', 'long_context'],
+        note_zh: '最新（2026-03-16）OpenClaw Agent 专用 · 200K 上下文 · 128K 输出',
+        note_en: 'Latest (2026-03-16) OpenClaw Agent specialized · 200K ctx · 128K output',
+        requiresApiKey: true,
+    },
 
     // ── Qwen (通义) ───────────────────────────────────────────
     'qwen-max': {
@@ -108,10 +117,19 @@ export const MODEL_REGISTRY: Record<string, ModelDefinition> = {
         note_en: 'M2.5 high-speed, writing polish, high-frequency calls',
         requiresApiKey: true,
     },
-    // ── Kimi K2 ──────────────────────────────────────────────
-    'kimi-k2-instruct': {
-        label: 'Kimi K2.5 (推荐)',
-        providerGroup: 'Kimi K2',
+    'MiniMax-M2.7': {
+        label: 'MiniMax-M2.7 旗舰 (推荐)',
+        providerGroup: 'MiniMax',
+        defaultBaseUrl: 'https://api.minimax.io/v1',
+        defaultTasks: ['agentic', 'code_gen', 'architecture', 'tool_calling'],
+        note_zh: '最新（2026-03-18）自我进化架构 · 软件工程与专业任务大幅提升',
+        note_en: 'Latest (2026-03-18) Self-evolving architecture · Major SWE gains',
+        requiresApiKey: true,
+    },
+    // ── Moonshot (Kimi) ──────────────────────────────────────────────
+    'moonshot-v1-8k': {
+        label: 'Kimi (moonshot-v1-8k)',
+        providerGroup: 'Moonshot (Kimi)',
         defaultBaseUrl: 'https://api.moonshot.cn/v1',
         defaultTasks: ['agentic', 'code_gen', 'tool_calling', 'long_context'],
         note_zh: '最新 K2.5（2026-01），1T MoE，256K 上下文，Agentic 顶尖',
@@ -137,54 +155,7 @@ export const MODEL_REGISTRY: Record<string, ModelDefinition> = {
         note_en: 'Top code gen, Terminal-Bench #1, enterprise reasoning',
         requiresApiKey: true,
     },
-    // ── Anthropic (Claude) ───────────────────────────────────
-    'claude-opus-4-6': {
-        label: 'Claude Opus 4.6 (推荐)',
-        providerGroup: 'Anthropic (Claude)',
-        defaultBaseUrl: 'https://api.anthropic.com/v1',
-        defaultTasks: ['architecture', 'agentic', 'code_review', 'long_context'],
-        note_zh: '综合质量顶级梯队，架构与 Agentic 优选',
-        note_en: 'Top-tier overall quality, architecture & Agentic strong contender',
-        requiresApiKey: true,
-    },
-    'claude-sonnet-4-6': {
-        label: 'Claude Sonnet 4.6',
-        providerGroup: 'Anthropic (Claude)',
-        defaultBaseUrl: 'https://api.anthropic.com/v1',
-        defaultTasks: ['code_gen', 'creative', 'architecture', 'documentation'],
-        note_zh: '最新（2026-02），性能与成本最佳平衡，通用主力',
-        note_en: 'Latest (2026-02), best performance/cost balance',
-        requiresApiKey: true,
-    },
-
-    // ── Google Gemini ────────────────────────────────────────
-    'gemini-3.1-flash': {
-        label: 'Gemini 3.1 Flash (推荐)',
-        providerGroup: 'Google (Gemini)',
-        defaultBaseUrl: 'https://generativelanguage.googleapis.com/v1beta/openai',
-        defaultTasks: ['vision', 'code_gen', 'tool_calling', 'long_context'],
-        note_zh: '最新 Flash（2026），速度快成本低，多模态全能',
-        note_en: 'Latest Flash (2026), fast & cheap, multimodal',
-        requiresApiKey: true,
-    },
-    'gemini-3.1-pro-preview': {
-        label: 'Gemini 3.1 Pro Preview',
-        providerGroup: 'Google (Gemini)',
-        defaultBaseUrl: 'https://generativelanguage.googleapis.com/v1beta/openai',
-        defaultTasks: ['math_reasoning', 'ui_design', 'long_context', 'vision'],
-        note_zh: 'ARC-AGI-2 #1（77.1%）· 推理/算法/前端UI 顶级梯队',
-        note_en: 'ARC-AGI-2 #1 (77.1%), top-tier reasoning/algo/frontend UI',
-        requiresApiKey: true,
-    },
-    'gemini-3-image': {
-        label: 'Gemini Image Gen (生图)',
-        providerGroup: 'Google (Gemini)',
-        defaultBaseUrl: 'https://generativelanguage.googleapis.com/v1beta/openai',
-        defaultTasks: ['vision', 'creative', 'ui_design'],
-        note_zh: '专用图像生成与编辑（Imagen 3 驱动）',
-        note_en: 'Image generation & editing (Imagen 3)',
-        requiresApiKey: true,
-    },
+    // Removed Anthropic (Claude) and Google (Gemini) per instruction
 };
 
 // Grouped list for UI dropdowns
@@ -193,10 +164,7 @@ export const PROVIDER_GROUPS = [
     'GLM (智谱)',
     'Qwen (通义)',
     'MiniMax',
-    'Kimi K2',
-    'OpenAI',
-    'Anthropic (Claude)',
-    'Google (Gemini)',
+    'Moonshot (Kimi)'
 ];
 
 export function getModelsInGroup(group: string): Array<[string, ModelDefinition]> {

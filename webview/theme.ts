@@ -31,11 +31,11 @@ export const providerColors: Record<string, string> = {
     'GLM (智谱)': '#6B5CE7',
     'Qwen (通义)': '#E8740C',
     'MiniMax': '#D94B86',
-    'Kimi K2': '#2AB5A0',
+    'Moonshot (Kimi)': '#2AB5A0',
     'OpenAI': '#10A37F',
     'Anthropic (Claude)': '#CC785C',
     'Google (Gemini)': '#4285F4',
-    'Mistral': '#FF6F00',
+
     'cli': '#38BDF8',
 };
 

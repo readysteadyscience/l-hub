@@ -1,10 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import OverviewPanel from './OverviewPanel';
 import ConfigPanel from './ConfigPanel';
 import HistoryConsole from './HistoryConsole';
 import RoutingGuidePanel from './RoutingGuidePanel';
 import SkillPanel from './SkillPanel';
 import TestPanel from './TestPanel';
+import FeedbackPanel from './FeedbackPanel';
 import { colors, radius, s } from '../theme';
 import { vscode } from '../vscode-api';
 
@@ -12,34 +13,49 @@ export type Lang = 'en' | 'zh';
 
 const t = {
     en: {
-        overview: '📊 Overview',
-        settings: '⚙️ Models & Keys',
-        history: '📡 History',
-        guide: '🧭 AI Schedule',
-        skill: '🤖 AI Skill',
-        test: '🧪 Test',
+        overview: 'Overview',
+        settings: 'Models & Keys',
+        history: 'History',
+        guide: 'AI Schedule',
+        skill: 'Skill',
+        test: 'Test',
         subtitle: 'AI Model Bridge — Smart routing for every task',
-        github: '⭐ GitHub',
-        docs: '📖 Docs',
-        feedback: '📝 Feedback',
+        github: 'GitHub',
+        docs: 'Docs',
+        feedback: 'Feedback',
     },
     zh: {
-        overview: '📊 概览',
-        settings: '⚙️ 模型管理',
-        history: '📡 调用历史',
-        guide: '🧭 AI 调度',
-        skill: '🤖 AI Skill',
-        test: '🧪 测试',
+        overview: '概览',
+        settings: '模型管理',
+        history: '调用历史',
+        guide: 'AI 调度',
+        skill: 'Skill',
+        test: '测试',
         subtitle: 'AI 模型网关 — 智能路由，按需分配',
-        github: '⭐ GitHub',
-        docs: '📖 文档',
-        feedback: '📝 反馈',
+        github: 'GitHub',
+        docs: '文档',
+        feedback: '反馈',
     }
 };
 
 const Dashboard: React.FC = () => {
-    const [activeTab, setActiveTab] = useState<'overview' | 'config' | 'history' | 'guide' | 'skill' | 'test'>('overview');
+    const [activeTab, setActiveTab] = useState<'overview' | 'config' | 'history' | 'guide' | 'skill' | 'test' | 'feedback'>('overview');
     const [lang, setLang] = useState<Lang>('zh');
+    const [routingPrefs, setRoutingPrefs] = useState<any>(null);
+    const [models, setModels] = useState<any[]>([]);
+
+    useEffect(() => {
+        const handleMessage = (event: MessageEvent) => {
+            const message = event.data;
+            if (message.command === 'overviewStats') {
+                setModels(message.stats?.models || []);
+                setRoutingPrefs(message.stats?.routing || null);
+            }
+        };
+        window.addEventListener('message', handleMessage);
+        vscode.postMessage({ command: 'requestStats' });
+        return () => window.removeEventListener('message', handleMessage);
+    }, []);
 
     // Read logo URI passed from extension host via data attribute
     const logoUri = document.getElementById('root')?.getAttribute('data-logo-uri') || '';
@@ -130,6 +146,9 @@ const Dashboard: React.FC = () => {
                     <span onClick={() => setActiveTab('test')} style={s.pillTab(activeTab === 'test')}>
                         {t[lang].test}
                     </span>
+                    <span onClick={() => setActiveTab('feedback')} style={s.pillTab(activeTab === 'feedback')}>
+                        {t[lang].feedback}
+                    </span>
                 </div>
             </div>
 
@@ -139,38 +158,28 @@ const Dashboard: React.FC = () => {
                 {activeTab === 'config' && <ConfigPanel lang={lang} />}
                 {activeTab === 'history' && <HistoryConsole lang={lang} />}
                 {activeTab === 'guide' && <RoutingGuidePanel lang={lang} />}
-                {activeTab === 'skill' && <SkillPanel lang={lang} />}
+                {activeTab === 'skill' && <SkillPanel lang={lang} routingPrefs={routingPrefs} models={models} />}
                 {activeTab === 'test' && <TestPanel lang={lang} />}
+                {activeTab === 'feedback' && <FeedbackPanel lang={lang} />}
             </div>
 
             {/* ── Footer ───────────────────────────────────────────────────── */}
             <div style={{
-                padding: '10px 24px',
+                padding: '12px 24px',
                 borderTop: '1px solid var(--vscode-panel-border)',
-                display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '10px',
+                display: 'flex', justifyContent: 'center', alignItems: 'center',
                 background: 'var(--vscode-sideBar-background)',
             }}>
-                <span style={{ fontSize: '12px', color: 'var(--vscode-descriptionForeground)', marginRight: '4px' }}>
-                    {lang === 'zh' ? '觉得好用？' : 'Like it?'}
-                </span>
-                <button
-                    style={{ ...footerBtnStyle, background: colors.brand, color: '#fff', border: 'none' }}
-                    onClick={() => vscode.postMessage({ command: 'openUrl', url: 'https://github.com/readysteadyscience/L-Hub' })}
-                >
-                    {t[lang].github}
-                </button>
-                <button
-                    style={footerBtnStyle}
-                    onClick={() => vscode.postMessage({ command: 'openUrl', url: 'https://github.com/readysteadyscience/L-Hub/issues' })}
-                >
-                    {t[lang].feedback}
-                </button>
-                <button
-                    style={footerBtnStyle}
-                    onClick={() => vscode.postMessage({ command: 'openUrl', url: 'https://github.com/readysteadyscience/L-Hub#readme' })}
-                >
-                    {t[lang].docs}
-                </button>
+                {/* GitHub Star Embed */}
+                <iframe 
+                    src="https://ghbtns.com/github-btn.html?user=readysteadyscience&repo=L-Hub&type=star&count=true&size=large" 
+                    frameBorder="0" 
+                    scrolling="0" 
+                    width="170" 
+                    height="30" 
+                    title="GitHub"
+                    style={{ overflow: 'hidden', border: 'none' }}
+                ></iframe>
             </div>
         </div>
     );

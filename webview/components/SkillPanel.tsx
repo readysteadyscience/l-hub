@@ -1,110 +1,212 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { colors, radius, s } from '../theme';
 import { Lang } from './Dashboard';
+import { vscode } from '../vscode-api';
 
-const SkillPanel: React.FC<{ lang: Lang }> = ({ lang }) => {
+interface SkillPanelProps {
+    lang: Lang;
+    routingPrefs?: any;
+    models?: any[];
+}
+
+const SkillPanel: React.FC<SkillPanelProps> = ({ lang, routingPrefs, models }) => {
     const isEN = lang === 'en';
+    
+    // Ensure we start with defaults 'auto'
+    const defaultPrefs = routingPrefs || {
+        routine: 'auto',
+        code: 'auto',
+        reasoning: 'auto',
+        creative: 'auto'
+    };
 
-    const title = isEN ? 'Built-in AI Routing Skill' : '内置 AI 调度 Skill';
-    const desc = isEN
-        ? 'L-Hub auto-installs an Antigravity Skill that teaches the host model to delegate tasks intelligently, maximizing quota savings.'
-        : 'L-Hub 安装后自动向 Antigravity 注入调度 Skill，教会主模型智能委派任务，最大化节省额度。';
+    const [isEditing, setIsEditing] = useState(false);
+    const [localPrefs, setLocalPrefs] = useState(defaultPrefs);
 
-    const sections = [
-        {
-            icon: '💰',
-            title: isEN ? 'Routine Tasks (Low-cost Tier)' : '体力活（低成本梯队）',
-            items: isEN
-                ? ['Translation / Docs / Annotations → DeepSeek', 'Summaries / READMEs → DeepSeek']
-                : ['翻译 / 文档 / 注释 → DeepSeek', '信息整理 / 总结 → DeepSeek']
-        },
-        {
-            icon: '🔧',
-            title: isEN ? 'Code (Quality First)' : '代码（质量优先）',
-            items: isEN
-                ? ['Code Review / Bug Check → Codex CLI (GPT-5.4)', 'Code Generation → Host Model (primary), Codex CLI (backup)', 'Complex Debugging → GLM-5']
-                : ['代码审查 / Bug检查 → Codex CLI（GPT-5.4）', '代码生成 → 主模型首选，Codex CLI 备选', '复杂调试 / 跨文件工程 → GLM-5']
-        },
-        {
-            icon: '🎯',
-            title: isEN ? 'Specialized Domains' : '专业领域',
-            items: isEN
-                ? ['Reasoning / Algorithms → Gemini CLI', 'Frontend UI / UX → Gemini CLI', 'Multilingual / Structured → Qwen', 'High-speed Generation → MiniMax']
-                : ['推理 / 算法 / 数学 → Gemini CLI', '前端 UI / UX → Gemini CLI', '多语言 / 结构化写作 → Qwen', '大量高速生成 → MiniMax']
-        },
-        {
-            icon: '✍️',
-            title: isEN ? 'Creative Writing Chain' : '创意写作协作链',
-            items: isEN
-                ? ['Outline Bidding (multi-model parallel) → Fusion → Draft Competition → Best Selection → Polish (MiniMax) → Logic Check (GLM) → Deliver']
-                : ['大纲竞标（多模型并行）→ 融合 → 初稿竞写 → 择优 → 文笔打磨（MiniMax）→ 逻辑检查（GLM）→ 交付']
+    useEffect(() => {
+        if (routingPrefs && !isEditing) {
+            setLocalPrefs(routingPrefs);
         }
-    ];
+    }, [routingPrefs, isEditing]);
+
+    const title = isEN ? 'Built-in Routing Skill' : '内置调度 Skill';
+    const desc = isEN
+        ? 'L-Hub auto-installs an Antigravity Skill that teaches the host model to delegate tasks intelligently. The default selections below represent our official optimal configuration across the supported models. If you lack certain API keys, click "Edit Config" to assign tasks to the models you currently have.'
+        : 'L-Hub 随同安装的内置 Skill 能教会主模型智能委派任务，以最大化节省额度。下方展示的默认选项为 L-Hub 官方设定的最优配置（基于支持的几款顶级模型）。若您没有对应的 API Key，请点击右上角「编辑配置」，根据您现有的可用模型进行自定义分配。';
+
+    const handleSave = () => {
+        vscode.postMessage({ command: 'saveRoutingPrefs', prefs: localPrefs });
+        setIsEditing(false);
+        vscode.postMessage({ command: 'triggerRender' }); 
+        // We might need a small toast, but saveRoutingPrefs automatically rebuilds SKILL.md
+    };
+
+    // Helper to render dropdown or static text
+    const renderOption = (key: string, defaultVal: string, labelEN: string, labelZH: string) => {
+        const titleText = isEN ? labelEN : labelZH;
+        let currentVal = localPrefs[key] || defaultVal;
+        
+        // Normalize legacy provider names to exact model IDs for dropdown matching
+        if (currentVal === 'deepseek') currentVal = 'deepseek-chat';
+        if (currentVal === 'qwen') currentVal = 'qwen-max';
+        if (currentVal === 'glm') currentVal = 'glm-5';
+        
+        // Find the model object by exact id, modelId, or fuzzy matching the provider group/prefix
+        const selectedModel = models?.find(m => m.id === currentVal || m.modelId === currentVal || m.id.startsWith(currentVal + '-') || m.modelId?.startsWith(currentVal + '-'));
+        let statusText = '';
+        if (selectedModel) {
+            if (selectedModel.group === 'cli') {
+                statusText = selectedModel.status === 'online' ? '( [OK] ENABLED )' : '( [ERR] OFFLINE )';
+            } else {
+                statusText = selectedModel.status === 'online' ? '( [OK] KEY_FOUND )' : '( [ERR] NO_KEY )';
+            }
+        } else if (currentVal === 'auto') {
+            statusText = '( L-HUB_ROUTING_DYNAMIC )';
+        } else {
+            statusText = '( [ERR] DISABLED_OR_MISSING )';
+        }
+
+        const displayLabel = currentVal === 'auto' ? 'AUTO / DYNAMIC_RESOLVE' : (selectedModel?.label || currentVal);
+
+        if (!isEditing) {
+            return (
+                <div style={{ marginBottom: '12px' }}>
+                    <div style={{ fontSize: '11px', fontWeight: 700, fontFamily: 'monospace', textTransform: 'uppercase', color: 'var(--vscode-editor-foreground)', marginBottom: '4px' }}>
+                        [ {titleText} ]
+                    </div>
+                    <div style={{ fontSize: '11px', fontFamily: 'monospace', color: 'var(--vscode-descriptionForeground)' }}>
+                        <span style={{ color: selectedModel?.status === 'online' || currentVal === 'auto' ? '#10B981' : '#EF4444', fontWeight: 600 }}>
+                            &gt; {displayLabel}
+                        </span>
+                        <span style={{ opacity: 0.7, marginLeft: '6px' }}>{statusText}</span>
+                    </div>
+                </div>
+            );
+        }
+
+        return (
+            <div style={{ marginBottom: '12px' }}>
+                <div style={{ fontSize: '11px', fontWeight: 700, fontFamily: 'monospace', textTransform: 'uppercase', color: 'var(--vscode-editor-foreground)', marginBottom: '6px' }}>
+                    [ {titleText} ]
+                </div>
+                <select 
+                    value={localPrefs[key] || defaultVal}
+                    onChange={(e) => setLocalPrefs({ ...localPrefs, [key]: e.target.value })}
+                    style={{
+                        width: '100%',
+                        padding: '6px',
+                        background: 'var(--vscode-input-background)',
+                        color: 'var(--vscode-input-foreground)',
+                        border: '1px solid var(--vscode-input-border)',
+                        borderRadius: '4px',
+                        fontSize: '12px'
+                    }}
+                >
+                    <option value="auto">Auto (L-Hub 动态推荐)</option>
+                    <optgroup label="CLIs & Tools">
+                        {models?.filter(m => m.group === 'cli').map(m => (
+                            <option key={m.id} value={m.id}>
+                                {m.label} {m.status === 'online' ? '[OK]' : '[ERR]'}
+                            </option>
+                        ))}
+                    </optgroup>
+                    <optgroup label="Cloud Models">
+                        {models?.filter(m => m.group !== 'cli').map(m => (
+                            <option key={m.id} value={m.id}>
+                                {m.label} {m.status === 'online' ? '[OK]' : '[ERR]'}
+                            </option>
+                        ))}
+                    </optgroup>
+                </select>
+            </div>
+        );
+    };
+
+    const isCustom = localPrefs.routine !== 'deepseek' || localPrefs.code !== 'codex-cli' || localPrefs.reasoning !== 'gemini-cli' || localPrefs.creative !== 'minimax';
+    const configTitle = isCustom ? (isEN ? 'CUSTOM_ROUTING_CONFIG' : '自定义路由调度树') : (isEN ? 'OFFICIAL_OPTIMAL_CONFIG' : 'SYS_BUILTIN_OPTIMAL_ROUTING');
 
     const tip = isEN
-        ? '🛡️ Host Model Exclusive (never delegated): Architecture Design · Final Decisions · User Conversations'
-        : '🛡️ 主模型专属（绝不委派）：架构设计 · 最终决策 · 与用户对话';
+        ? '> HOST_NODE_EXCLUSIVE (never delegated): Architecture Design · Final Decisions · Conversational Context'
+        : '> 主节点专属进程（绝对独占）：核心架构设计 · 最终方案裁决 · 直接对话接管';
 
     const philosophy = isEN
-        ? 'Design philosophy: top-tier models each excel at different tasks. Multi-model parallel + host model arbitration = best results + lowest cost.'
-        : '设计哲学：顶级梯队互有胜负，不押宝单一模型。多模型并行 + 主模型裁决 = 最优结果 + 最低成本。';
+        ? '> DYNAMIC_EXECUTION: Generated SKILL.md adheres to selections. Switch to active keys if missing defaults.'
+        : '> DYNAMIC_EXECUTION: 系统将根据您的选择硬核注入 SKILL.md。如缺省对应节点 Key，请手动切换至存活节点。';
 
     return (
         <div className="animate-in" style={{ maxWidth: '860px', paddingBottom: '20px' }}>
-            <div style={{ marginBottom: '16px' }}>
-                <h2 style={{ margin: '0 0 6px 0', fontSize: '18px', fontWeight: 700, letterSpacing: '-0.3px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginBottom: '24px', borderBottom: '1px solid var(--vscode-panel-border)', paddingBottom: '12px' }}>
+                <div style={{
+                    fontSize: '13px', fontWeight: 700, letterSpacing: '1px', textTransform: 'uppercase',
+                    color: 'var(--vscode-editor-foreground)', fontFamily: 'monospace'
+                }}>
                     {title}
-                </h2>
-                <div style={{ fontSize: '12px', color: 'var(--vscode-descriptionForeground)', lineHeight: 1.5 }}>
-                    {desc}
+                </div>
+                <div style={{ fontSize: '11px', color: 'var(--vscode-descriptionForeground)', fontFamily: 'monospace' }}>
+                    &gt; {desc}
+                </div>
+            </div>
+
+            {/* Routing Config Box */}
+            <div style={{
+                background: 'var(--vscode-editor-background)',
+                border: '1px solid var(--vscode-panel-border)',
+                borderRadius: radius.sm,
+                padding: '16px',
+                marginBottom: '16px'
+            }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+                    <div style={{ fontSize: '13px', fontWeight: 700, fontFamily: 'monospace', color: 'var(--vscode-editor-foreground)', letterSpacing: '0.5px' }}>
+                        &gt; {configTitle}
+                    </div>
+                    <div>
+                        {!isEditing ? (
+                            <button 
+                                onClick={() => setIsEditing(true)}
+                                style={{
+                                    padding: '4px 10px', background: 'transparent', color: 'var(--vscode-editor-foreground)', border: '1px solid var(--vscode-panel-border)', borderRadius: radius.sm, fontSize: '11px', fontFamily: 'monospace', fontWeight: 600, cursor: 'pointer'
+                                }}
+                            >
+                                [ {isEN ? 'EDIT' : '配置覆盖'} ]
+                            </button>
+                        ) : (
+                            <div style={{ display: 'flex', gap: '8px' }}>
+                                <button 
+                                    onClick={() => { setIsEditing(false); setLocalPrefs(routingPrefs); }}
+                                    style={{
+                                        padding: '4px 10px', background: 'transparent', color: 'var(--vscode-descriptionForeground)', border: '1px solid var(--vscode-panel-border)', borderRadius: radius.sm, fontSize: '11px', fontFamily: 'monospace', fontWeight: 600, cursor: 'pointer'
+                                    }}
+                                >
+                                    [ {isEN ? 'CANCEL' : '取消'} ]
+                                </button>
+                                <button 
+                                    onClick={handleSave}
+                                    style={{
+                                        padding: '4px 10px', background: 'var(--vscode-button-background)', color: 'var(--vscode-button-foreground)', border: '1px solid var(--vscode-button-border, transparent)', borderRadius: radius.sm, fontSize: '11px', fontFamily: 'monospace', fontWeight: 600, cursor: 'pointer'
+                                    }}
+                                >
+                                    [ {isEN ? 'SAVE_AND_DEPLOY' : '编译并注入'} ]
+                                </button>
+                            </div>
+                        )}
+                    </div>
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '16px' }}>
+                    {renderOption('routine', 'deepseek', 'Routine Tasks / Translation (Low-cost Tier)', '体力活 / 翻译 / 总结 (低成本梯队)')}
+                    {renderOption('code', 'codex-cli', 'Code Engineering / Debugging (Quality First)', '代码生成 / 审查 / Bug检查 (纯净工程)')}
+                    {renderOption('reasoning', 'gemini-cli', 'Complex Reasoning / UI / Math', '深度推理 / 前端 UI / 数学算法')}
+                    {renderOption('creative', 'minimax', 'Creative Writing / Outlines / Stories', '创意写作 / 大纲设定 / 中文文笔')}
                 </div>
             </div>
 
             <div style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fit, minmax(380px, 1fr))',
-                gap: '12px',
-                marginBottom: '16px'
-            }}>
-                {sections.map((section, i) => (
-                    <div key={i} style={{
-                        background: 'rgba(255,255,255,0.02)',
-                        border: '1px solid rgba(255,255,255,0.06)',
-                        borderRadius: radius.md,
-                        padding: '14px 16px',
-                    }}>
-                        <div style={{
-                            fontSize: '13px',
-                            fontWeight: 600,
-                            color: 'var(--vscode-editor-foreground)',
-                            marginBottom: '8px'
-                        }}>
-                            {section.icon} {section.title}
-                        </div>
-                        <ul style={{ margin: 0, paddingLeft: '18px' }}>
-                            {section.items.map((item, j) => (
-                                <li key={j} style={{
-                                    fontSize: '12px',
-                                    color: 'var(--vscode-descriptionForeground)',
-                                    lineHeight: 1.7,
-                                    marginBottom: '2px'
-                                }}>
-                                    {item}
-                                </li>
-                            ))}
-                        </ul>
-                    </div>
-                ))}
-            </div>
-
-            <div style={{
-                background: 'rgba(255,255,255,0.03)',
-                border: '1px solid rgba(255,255,255,0.06)',
-                borderRadius: radius.md,
+                borderLeft: '3px solid var(--vscode-editor-foreground)',
                 padding: '12px 16px',
                 marginBottom: '10px',
-                fontSize: '12px',
-                color: 'var(--vscode-descriptionForeground)',
+                fontSize: '11px',
+                fontFamily: 'monospace',
+                color: 'var(--vscode-editor-foreground)',
             }}>
                 {tip}
             </div>
@@ -112,9 +214,8 @@ const SkillPanel: React.FC<{ lang: Lang }> = ({ lang }) => {
             <div style={{
                 fontSize: '11px',
                 color: 'var(--vscode-descriptionForeground)',
-                opacity: 0.7,
-                fontStyle: 'italic',
-                textAlign: 'center',
+                fontFamily: 'monospace',
+                textAlign: 'left',
             }}>
                 {philosophy}
             </div>
@@ -123,3 +224,4 @@ const SkillPanel: React.FC<{ lang: Lang }> = ({ lang }) => {
 };
 
 export default SkillPanel;
+

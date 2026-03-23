@@ -10,6 +10,7 @@ interface ModelStatus {
     label: string;
     modelId: string;
     group: string;
+    providerGroup?: string;
     enabled: boolean;
     status: 'online' | 'offline' | 'unknown';
     testMsg?: string;
@@ -32,180 +33,166 @@ interface OverviewStats {
     }[];
 }
 
-// ─── Gradient Stat Cards ──────────────────────────────────────────────────────
+// ─── Monochrome HUD Stat Component ──────────────────────────────────────────
 
-const CARD_GRADIENTS = [
-    'linear-gradient(135deg, #0d9488 0%, #065f46 100%)',   // teal
-    'linear-gradient(135deg, #6366f1 0%, #4338ca 100%)',   // indigo
-    'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',   // amber
-    'linear-gradient(135deg, #ec4899 0%, #be185d 100%)',   // pink
-];
-
-const StatCard: React.FC<{
-    icon: string;
+const HUDStat: React.FC<{
     label: string;
     value: string | number;
     sub?: string;
-    gradient: string;
-    delay: number;
-}> = ({ icon, label, value, sub, gradient, delay }) => (
-    <div
-        className={`animate-in animate-in-${delay}`}
-        style={{
-            flex: '1 1 0',
-            minWidth: '130px',
-            padding: '20px 16px',
-            borderRadius: radius.lg,
-            background: gradient,
-            position: 'relative',
-            overflow: 'hidden',
-            boxShadow: '0 4px 20px rgba(0,0,0,0.25)',
-            cursor: 'default',
-            transition: 'transform 0.2s, box-shadow 0.2s',
-        }}
-        onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-3px)'; e.currentTarget.style.boxShadow = '0 8px 30px rgba(0,0,0,0.35)'; }}
-        onMouseLeave={e => { e.currentTarget.style.transform = ''; e.currentTarget.style.boxShadow = '0 4px 20px rgba(0,0,0,0.25)'; }}
-    >
-        {/* Shimmer overlay */}
-        <div className="shimmer-bar" style={{
-            position: 'absolute', inset: 0,
-            borderRadius: radius.lg,
-            pointerEvents: 'none',
-        }} />
-        <div style={{ position: 'relative', zIndex: 1 }}>
-            <div style={{ fontSize: '15px', marginBottom: '8px', opacity: 0.9 }}>{icon}</div>
-            <div style={{
-                fontSize: '28px', fontWeight: 800,
-                fontFamily: "'JetBrains Mono', 'Cascadia Code', 'SF Mono', monospace",
-                color: '#fff',
-                lineHeight: 1.1, marginBottom: '4px',
-                textShadow: '0 2px 8px rgba(0,0,0,0.3)',
-                letterSpacing: '-1px',
-            }}>
-                {value}
-            </div>
-            <div style={{ fontSize: '12px', fontWeight: 600, color: 'rgba(255,255,255,0.9)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{label}</div>
-            {sub && <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.6)', marginTop: '3px' }}>{sub}</div>}
+    accent?: string;
+}> = ({ label, value, sub, accent }) => (
+    <div style={{
+        background: 'var(--vscode-editor-background)',
+        padding: '20px',
+        display: 'flex', flexDirection: 'column',
+        justifyContent: 'center',
+    }}>
+        <div style={{ fontSize: '11px', color: 'var(--vscode-descriptionForeground)', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '8px', fontWeight: 600 }}>
+            {label}
         </div>
+        <div style={{
+            fontFamily: "'JetBrains Mono', 'Cascadia Code', 'SF Mono', monospace",
+            fontSize: '32px',
+            fontWeight: 800,
+            color: accent || 'var(--vscode-editor-foreground)',
+            lineHeight: 1,
+            letterSpacing: '-1px',
+            marginBottom: '6px'
+        }}>
+            {value}
+        </div>
+        {sub && (
+            <div style={{ fontSize: '11px', color: 'var(--vscode-descriptionForeground)', opacity: 0.6, fontFamily: 'monospace' }}>
+                {sub}
+            </div>
+        )}
     </div>
 );
 
-// ─── Glowing Status Dot ───────────────────────────────────────────────────────
+// ─── Minimalist Status Dot ──────────────────────────────────────────────────
 
 const statusInfo = (s: string) => {
-    if (s === 'online') return { color: '#34D399', glow: '0 0 8px #34D399, 0 0 20px rgba(52,211,153,0.3)', label: '✓' };
-    if (s === 'offline') return { color: '#F87171', glow: '0 0 6px rgba(248,113,113,0.4)', label: '✗' };
-    return { color: '#6B7280', glow: 'none', label: '?' };
+    if (s === 'online') return { color: '#10B981', label: 'ON' }; // Sleek green
+    if (s === 'offline') return { color: '#EF4444', label: 'OFF' }; // Sleek red
+    return { color: '#6B7280', label: 'N/A' };
 };
 
 const ModelStatusChip: React.FC<{ m: ModelStatus }> = ({ m }) => {
     const info = statusInfo(m.status);
     return (
         <div style={{
-            display: 'flex', alignItems: 'center', gap: '8px',
-            padding: '8px 14px',
-            borderRadius: radius.md,
-            background: 'rgba(255,255,255,0.04)',
-            backdropFilter: 'blur(8px)',
-            border: '1px solid rgba(255,255,255,0.06)',
+            display: 'flex', alignItems: 'center', gap: '10px',
+            padding: '10px 14px',
+            borderRadius: radius.sm,
+            background: 'var(--vscode-editor-background)',
+            border: `1px solid ${m.status === 'online' ? 'rgba(16, 185, 129, 0.2)' : 'var(--vscode-panel-border)'}`,
             fontSize: '12px',
-            opacity: m.enabled ? 1 : 0.35,
-            transition: 'all 0.2s',
+            opacity: m.enabled ? 1 : 0.4,
+            transition: 'all 0.15s',
             cursor: 'default',
         }}
-            onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.08)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.12)'; }}
-            onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.04)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.06)'; }}
+            onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--vscode-focusBorder)'; }}
+            onMouseLeave={e => { e.currentTarget.style.borderColor = m.status === 'online' ? 'rgba(16, 185, 129, 0.2)' : 'var(--vscode-panel-border)'; }}
             title={m.testMsg || (m.status === 'online' ? '在线' : m.status === 'offline' ? '离线' : '未测试')}
         >
-            <span
-                className={m.status === 'online' ? 'dot-online' : undefined}
-                style={{
-                    display: 'inline-block', width: '8px', height: '8px', borderRadius: '50%',
-                    background: info.color,
-                    boxShadow: info.glow,
-                    flexShrink: 0,
-                }}
-            />
             <span style={{
-                fontWeight: 600, fontSize: '12px',
-                color: providerColors[m.group] || 'var(--vscode-editor-foreground)',
-            }}>
-                {m.group === 'cli' ? m.label : (m.group?.split(' ')[0] || m.modelId)}
-            </span>
-            <span style={{ color: 'var(--vscode-descriptionForeground)', fontSize: '11px', opacity: 0.7 }}>
-                {m.group === 'cli' ? (m.testMsg || '') : m.label?.split(' ').slice(0, 2).join(' ')}
+                display: 'inline-block', width: '6px', height: '6px', borderRadius: '50%',
+                background: info.color,
+                boxShadow: m.status === 'online' ? `0 0 8px ${info.color}` : 'none',
+                flexShrink: 0,
+            }} />
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', flex: 1 }}>
+                <span style={{
+                    fontWeight: 600, fontSize: '12px', fontFamily: 'monospace',
+                    color: 'var(--vscode-editor-foreground)',
+                }}>
+                    {m.group === 'cli' ? m.label : (m.group?.split(' ')[0] || m.modelId).toUpperCase()}
+                </span>
+                <span style={{ color: 'var(--vscode-descriptionForeground)', fontSize: '10px', fontFamily: 'monospace' }}>
+                    {m.group === 'cli' ? (m.testMsg || '') : m.label?.split(' ').slice(0, 2).join(' ')}
+                </span>
+            </div>
+            <span style={{ fontSize: '10px', fontWeight: 700, fontFamily: 'monospace', color: info.color, opacity: 0.8 }}>
+                {info.label}
             </span>
         </div>
     );
 };
 
-// ─── Activity Row ─────────────────────────────────────────────────────────────
+// ─── Minimalist Brand Card ──────────────────────────────────────────────────
 
-const ActivityRow: React.FC<{ r: any; lang: Lang }> = ({ r, lang }) => (
-    <div style={{
-        display: 'flex', alignItems: 'center', gap: '10px',
-        padding: '8px 12px',
-        borderRadius: radius.sm,
-        background: 'rgba(255,255,255,0.02)',
-        borderLeft: `3px solid ${r.status === 'success' ? '#34D399' : '#F87171'}`,
-        fontSize: '12px',
-        transition: 'background 0.15s',
-    }}
-        onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.05)'}
-        onMouseLeave={e => e.currentTarget.style.background = 'rgba(255,255,255,0.02)'}
-    >
-        <span style={{ color: 'var(--vscode-descriptionForeground)', fontSize: '11px', minWidth: '44px', fontFamily: 'monospace' }}>
-            {new Date(r.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-        </span>
-        <span style={{
-            display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-            width: '20px', height: '20px', borderRadius: '50%',
-            background: r.status === 'success' ? 'rgba(52,211,153,0.15)' : 'rgba(248,113,113,0.15)',
-            color: r.status === 'success' ? '#34D399' : '#F87171',
-            fontSize: '10px', fontWeight: 700, flexShrink: 0,
-        }}>
-            {r.status === 'success' ? '✓' : '✗'}
-        </span>
-        <span style={{
-            fontWeight: 600, minWidth: '70px', fontSize: '12px',
-            color: 'var(--vscode-editor-foreground)',
-        }}>
-            {r.model || 'unknown'}
-        </span>
-        <span style={{ flex: 1, color: 'var(--vscode-descriptionForeground)', fontSize: '11px', fontFamily: 'monospace', opacity: 0.7 }}>
-            {r.method}
-        </span>
-        <span style={{
-            padding: '2px 8px', borderRadius: radius.pill, fontSize: '10px', fontFamily: 'monospace', fontWeight: 600,
-            background: r.duration < 3000 ? 'rgba(52,211,153,0.12)' : r.duration < 8000 ? 'rgba(251,191,36,0.12)' : 'rgba(248,113,113,0.12)',
-            color: r.duration < 3000 ? '#34D399' : r.duration < 8000 ? '#FBBF24' : '#F87171',
-        }}>
-            {r.duration < 1000 ? `${r.duration}ms` : `${(r.duration / 1000).toFixed(1)}s`}
-        </span>
-        {r.totalTokens > 0 && (
-            <span style={{
-                padding: '2px 8px', borderRadius: radius.pill, fontSize: '10px', fontFamily: 'monospace',
-                background: 'rgba(139,92,246,0.12)', color: '#A78BFA',
-            }}>
-                {r.totalTokens > 1000 ? `${(r.totalTokens / 1000).toFixed(1)}K` : r.totalTokens}
-            </span>
-        )}
-    </div>
-);
+const BrandStatusCard: React.FC<{ brand: string; models: ModelStatus[] }> = ({ brand, models }) => {
+    const activeModels = models.filter(m => m.enabled);
+    const isOnline = activeModels.some(m => m.status === 'online');
+    const isEnabled = activeModels.length > 0;
+    const info = statusInfo(isOnline ? 'online' : (isEnabled ? 'offline' : 'unknown'));
+
+    return (
+        <div style={{
+            display: 'flex', flexDirection: 'column',
+            padding: '12px 14px',
+            borderRadius: radius.sm,
+            background: 'var(--vscode-editor-background)',
+            border: `1px solid ${isOnline ? 'rgba(16, 185, 129, 0.2)' : 'var(--vscode-panel-border)'}`,
+            opacity: isEnabled ? 1 : 0.4,
+            transition: 'all 0.15s',
+            cursor: 'default',
+        }}
+            onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--vscode-focusBorder)'; }}
+            onMouseLeave={e => { e.currentTarget.style.borderColor = isOnline ? 'rgba(16, 185, 129, 0.2)' : 'var(--vscode-panel-border)'; }}
+        >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <span style={{
+                        display: 'inline-block', width: '6px', height: '6px', borderRadius: '50%',
+                        background: info.color,
+                        boxShadow: isOnline ? `0 0 8px ${info.color}` : 'none',
+                    }} />
+                    <span style={{
+                        fontWeight: 600, fontSize: '12px', fontFamily: 'monospace',
+                        color: 'var(--vscode-editor-foreground)',
+                    }}>
+                        {brand.toUpperCase()}
+                    </span>
+                </div>
+                <span style={{ fontSize: '10px', fontWeight: 700, fontFamily: 'monospace', color: info.color, opacity: 0.8 }}>
+                    {info.label}
+                </span>
+            </div>
+            {activeModels.length > 0 ? (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                    {activeModels.map(m => (
+                        <div key={m.id} style={{ fontSize: '10px', color: 'var(--vscode-descriptionForeground)', fontFamily: 'monospace' }}>
+                            • {m.label}
+                        </div>
+                    ))}
+                </div>
+            ) : (
+                <div style={{ fontSize: '10px', color: 'var(--vscode-descriptionForeground)', fontFamily: 'monospace', opacity: 0.6 }}>
+                    未配置 / Not Configured
+                </div>
+            )}
+        </div>
+    );
+};
 
 // ─── Section Header ───────────────────────────────────────────────────────────
 
-const SectionHeader: React.FC<{ icon: string; title: string; right?: React.ReactNode }> = ({ icon, title, right }) => (
+const SectionHeader: React.FC<{ title: string; subtitle?: string; right?: React.ReactNode }> = ({ title, subtitle, right }) => (
     <div style={{
-        display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-        marginBottom: '14px',
+        display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end',
+        paddingBottom: '12px',
+        borderBottom: '1px solid var(--vscode-panel-border)',
+        marginBottom: '16px',
     }}>
-        <div style={{
-            fontSize: '14px', fontWeight: 700, letterSpacing: '-0.2px',
-            display: 'flex', alignItems: 'center', gap: '8px',
-        }}>
-            <span style={{ fontSize: '16px' }}>{icon}</span>
-            {title}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+            <div style={{
+                fontSize: '13px', fontWeight: 700, letterSpacing: '1px', textTransform: 'uppercase',
+                color: 'var(--vscode-editor-foreground)'
+            }}>
+                {title}
+            </div>
+            {subtitle && <div style={{ fontSize: '11px', color: 'var(--vscode-descriptionForeground)', fontFamily: 'monospace' }}>{subtitle}</div>}
         </div>
         {right && <div style={{ fontSize: '12px', color: 'var(--vscode-descriptionForeground)' }}>{right}</div>}
     </div>
@@ -273,7 +260,7 @@ const OverviewPanel: React.FC<{ lang: Lang; onSwitchTab: (tab: string) => void }
             models: 'MODELS', requests: 'REQUESTS', latency: 'LATENCY', tokens: 'TOKENS',
             online: 'online', today: 'today', modelStatus: 'System Status',
             recentActivity: 'Live Activity', quickActions: 'Quick Actions',
-            testAll: '🔄 Test All Connections', addModel: '+ Add Model', viewHistory: '📊 View History',
+            testAll: 'Test All Connections', addModel: '+ Add Model', viewHistory: 'View History',
             noModels: 'No models configured yet. Add your first model to get started.',
             noActivity: 'No recent activity. Make an API call to see it here.',
             success: 'success',
@@ -282,7 +269,7 @@ const OverviewPanel: React.FC<{ lang: Lang; onSwitchTab: (tab: string) => void }
             models: '模型', requests: '请求', latency: '延迟', tokens: 'TOKEN',
             online: '在线', today: '今日', modelStatus: '系统状态',
             recentActivity: '实时动态', quickActions: '快速操作',
-            testAll: '🔄 一键全部测试', addModel: '+ 添加模型', viewHistory: '📊 查看历史',
+            testAll: '一键全部测试', addModel: '+ 添加模型', viewHistory: '查看历史',
             noModels: '尚未配置任何模型，点击下方按钮开始添加。',
             noActivity: '暂无近期调用，发起一次 API 请求后将显示。',
             success: '成功',
@@ -303,168 +290,114 @@ const OverviewPanel: React.FC<{ lang: Lang; onSwitchTab: (tab: string) => void }
     }
 
     const onlineCount = stats.models.filter(m => m.status === 'online').length;
-    const totalEnabled = stats.models.filter(m => m.enabled).length;
+    const totalModels = stats.models.length;
+    const apiModels = stats.models.filter(m => m.group !== 'cli');
+    const cliModels = stats.models.filter(m => m.group === 'cli');
+
+    // Group API models by providerGroup
+    const apiModelsByBrand = apiModels.reduce((acc, m) => {
+        const brand = m.providerGroup || 'Unknown';
+        if (!acc[brand]) acc[brand] = [];
+        acc[brand].push(m);
+        return acc;
+    }, {} as Record<string, ModelStatus[]>);
 
     return (
-        <div style={{ maxWidth: '860px' }}>
-            {/* ── Gradient Stat Cards ─────────────────────────────── */}
-            <div style={{ display: 'flex', gap: '12px', marginBottom: '24px', flexWrap: 'wrap' }}>
-                <StatCard
-                    icon="🟢" label={T.models}
-                    value={`${onlineCount}/${totalEnabled}`}
-                    sub={T.online}
-                    gradient={CARD_GRADIENTS[0]} delay={1}
+        <div style={{ maxWidth: '860px', padding: '10px 0' }}>
+            {/* ── Monochrome HUD ────────────────────────────────────────────── */}
+            <div className="animate-in" style={{
+                display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '1px',
+                background: 'var(--vscode-panel-border)', border: '1px solid var(--vscode-panel-border)',
+                borderRadius: radius.md, overflow: 'hidden',
+                marginBottom: '32px'
+            }}>
+                <HUDStat 
+                    label="NETWORK CORE" 
+                    value={`${onlineCount}/${totalModels}`} 
+                    sub="ONLINE / TOTAL" 
+                    accent="#10B981" 
                 />
-                <StatCard
-                    icon="📡" label={T.requests}
-                    value={stats.todayRequests || '0'}
-                    sub={`${T.today} · ${stats.successRate}% ${T.success}`}
-                    gradient={CARD_GRADIENTS[1]} delay={2}
+                <HUDStat 
+                    label="TX VOL (24H)" 
+                    value={stats.todayRequests || '0'} 
+                    sub={`SR: ${stats.successRate}%`} 
                 />
-                <StatCard
-                    icon="⚡" label={T.latency}
-                    value={stats.avgLatency > 0 ? `${(stats.avgLatency / 1000).toFixed(1)}s` : '—'}
-                    sub={T.today}
-                    gradient={CARD_GRADIENTS[2]} delay={3}
+                <HUDStat 
+                    label="AVG LATENCY" 
+                    value={stats.avgLatency > 0 ? `${(stats.avgLatency / 1000).toFixed(1)}s` : '—'} 
+                    sub="MS/REQ" 
                 />
-                <StatCard
-                    icon="💎" label={T.tokens}
-                    value={stats.totalTokens > 1000 ? `${(stats.totalTokens / 1000).toFixed(1)}K` : (stats.totalTokens || '—')}
-                    sub={T.today}
-                    gradient={CARD_GRADIENTS[3]} delay={4}
+                <HUDStat 
+                    label="TOKEN YIELD" 
+                    value={stats.totalTokens > 1000 ? `${(stats.totalTokens / 1000).toFixed(1)}K` : (stats.totalTokens || '—')} 
+                    sub="COMPUTED" 
                 />
             </div>
 
-            {/* ── Model Status Matrix ────────────────────────────── */}
-            <div className="animate-in" style={{
-                padding: '20px',
-                borderRadius: radius.lg,
-                background: 'rgba(255,255,255,0.02)',
-                border: '1px solid rgba(255,255,255,0.06)',
-                marginBottom: '16px',
-                backdropFilter: 'blur(12px)',
-            }}>
-                <SectionHeader
-                    icon="🔮"
-                    title={T.modelStatus}
-                    right={<span>{onlineCount}/{totalEnabled} {T.online}</span>}
+            {/* ── API Brand Matrix ──────────────────────────────────────────── */}
+            <div className="animate-in animate-in-1" style={{ marginBottom: '32px' }}>
+                <SectionHeader 
+                    title="API Routing Matrix" 
+                    subtitle="CLOUD EXPERT BRANDS" 
                 />
-                {stats.models.length > 0 ? (
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-                        {stats.models.filter(m => m.enabled).map(m => (
-                            <ModelStatusChip key={m.id} m={m} />
-                        ))}
-                        {stats.models.filter(m => !m.enabled).length > 0 && (
-                            <div style={{
-                                fontSize: '11px', color: 'var(--vscode-descriptionForeground)',
-                                padding: '8px 14px', alignSelf: 'center', opacity: 0.5,
-                            }}>
-                                +{stats.models.filter(m => !m.enabled).length} {lang === 'zh' ? '已禁用' : 'disabled'}
-                            </div>
-                        )}
-                    </div>
-                ) : (
-                    <div style={{
-                        textAlign: 'center', padding: '30px',
-                        color: 'var(--vscode-descriptionForeground)', fontSize: '13px',
-                    }}>
-                        <span style={{ fontSize: '36px', display: 'block', marginBottom: '10px', opacity: 0.3 }}>🔌</span>
-                        {T.noModels}
-                    </div>
-                )}
-            </div>
-
-            {/* ── Recent Activity ─────────────────────────────────── */}
-            <div className="animate-in" style={{
-                padding: '20px',
-                borderRadius: radius.lg,
-                background: 'rgba(255,255,255,0.02)',
-                border: '1px solid rgba(255,255,255,0.06)',
-                marginBottom: '20px',
-                backdropFilter: 'blur(12px)',
-            }}>
-                <SectionHeader icon="⚡" title={T.recentActivity} />
-                {stats.recentRequests.length > 0 ? (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                        {stats.recentRequests.slice(0, 8).map(r => (
-                            <ActivityRow key={r.id} r={r} lang={lang} />
+                {Object.keys(apiModelsByBrand).length > 0 ? (
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '8px' }}>
+                        {Object.entries(apiModelsByBrand).map(([brand, _models]) => (
+                            <BrandStatusCard key={brand} brand={brand} models={_models} />
                         ))}
                     </div>
                 ) : (
-                    <div style={{
-                        textAlign: 'center', padding: '24px',
-                        color: 'var(--vscode-descriptionForeground)', fontSize: '12px',
-                    }}>
-                        <span style={{ fontSize: '28px', display: 'block', marginBottom: '8px', opacity: 0.3 }}>📭</span>
-                        {T.noActivity}
-                    </div>
+                    <div style={{ color: 'var(--vscode-descriptionForeground)', fontSize: '12px', fontFamily: 'monospace' }}>No API models supported.</div>
                 )}
             </div>
 
-            {/* ── Quick Actions ────────────────────────────────────── */}
-            <div className="animate-in" style={{
-                display: 'flex', gap: '10px', justifyContent: 'center',
-                flexWrap: 'wrap', padding: '8px 0',
+            {/* ── CLI Agents Matrix ─────────────────────────────────────────── */}
+            <div className="animate-in animate-in-2" style={{ marginBottom: '32px' }}>
+                <SectionHeader 
+                    title="Local CLI Sandboxes" 
+                    subtitle="ZERO-CONFIG SUBSCRIPTION AGENTS" 
+                />
+                {cliModels.length > 0 ? (
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: '8px' }}>
+                        {cliModels.map(m => <ModelStatusChip key={m.id} m={m} />)}
+                    </div>
+                ) : (
+                    <div style={{ color: 'var(--vscode-descriptionForeground)', fontSize: '12px', fontFamily: 'monospace' }}>No CLI models supported.</div>
+                )}
+            </div>
+
+            {/* ── Quick Actions / Footer Command Line ──────────────────────── */}
+            <div className="animate-in animate-in-3" style={{
+                display: 'flex', gap: '12px', alignItems: 'center',
+                padding: '16px 20px',
+                background: 'var(--vscode-editor-background)',
+                border: '1px solid var(--vscode-panel-border)',
+                borderRadius: radius.md,
             }}>
+                <span style={{ color: 'var(--vscode-descriptionForeground)', fontSize: '13px', fontWeight: 600, fontFamily: 'monospace' }}>
+                    &gt; _SYS_READY
+                </span>
+                
+                <div style={{ flex: 1 }} />
+
                 <button
                     style={{
-                        padding: '10px 24px',
-                        background: testingAll ? 'rgba(255,255,255,0.06)' : 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)',
-                        color: '#fff',
-                        border: 'none',
-                        borderRadius: radius.pill,
-                        cursor: testingAll ? 'wait' : 'pointer',
-                        fontSize: '13px',
-                        fontWeight: 600,
-                        boxShadow: testingAll ? 'none' : '0 4px 16px rgba(99,102,241,0.35)',
-                        transition: 'all 0.2s',
-                        opacity: testingAll ? 0.5 : 1,
+                        padding: '6px 14px', background: 'transparent',
+                        color: 'var(--vscode-editor-foreground)',
+                        border: '1px solid var(--vscode-panel-border)',
+                        borderRadius: radius.sm, cursor: testingAll ? 'wait' : 'pointer',
+                        fontSize: '11px', fontFamily: 'monospace', fontWeight: 600,
+                        opacity: testingAll ? 0.5 : 1, transition: 'all 0.15s'
                     }}
                     disabled={testingAll}
                     onClick={() => {
                         setTestingAll(true);
                         vscode.postMessage({ command: 'testAllModels' });
                     }}
-                    onMouseEnter={e => { if (!testingAll) e.currentTarget.style.transform = 'translateY(-2px)'; }}
-                    onMouseLeave={e => { e.currentTarget.style.transform = ''; }}
+                    onMouseEnter={e => { if (!testingAll) e.currentTarget.style.borderColor = 'var(--vscode-focusBorder)'; }}
+                    onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--vscode-panel-border)'; }}
                 >
-                    {testingAll ? (lang === 'zh' ? '⏳ 正在测试…' : '⏳ Testing…') : T.testAll}
-                </button>
-                <button
-                    style={{
-                        padding: '10px 20px',
-                        background: 'rgba(255,255,255,0.04)',
-                        color: 'var(--vscode-editor-foreground)',
-                        border: '1px solid rgba(255,255,255,0.1)',
-                        borderRadius: radius.pill,
-                        cursor: 'pointer',
-                        fontSize: '13px',
-                        transition: 'all 0.2s',
-                        backdropFilter: 'blur(8px)',
-                    }}
-                    onClick={() => onSwitchTab('config')}
-                    onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.08)'; e.currentTarget.style.transform = 'translateY(-2px)'; }}
-                    onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.04)'; e.currentTarget.style.transform = ''; }}
-                >
-                    {T.addModel}
-                </button>
-                <button
-                    style={{
-                        padding: '10px 20px',
-                        background: 'rgba(255,255,255,0.04)',
-                        color: 'var(--vscode-editor-foreground)',
-                        border: '1px solid rgba(255,255,255,0.1)',
-                        borderRadius: radius.pill,
-                        cursor: 'pointer',
-                        fontSize: '13px',
-                        transition: 'all 0.2s',
-                        backdropFilter: 'blur(8px)',
-                    }}
-                    onClick={() => onSwitchTab('history')}
-                    onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.08)'; e.currentTarget.style.transform = 'translateY(-2px)'; }}
-                    onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.04)'; e.currentTarget.style.transform = ''; }}
-                >
-                    {T.viewHistory}
+                    {testingAll ? '[ TESTING... ]' : '[ ping_all ]'}
                 </button>
             </div>
         </div>

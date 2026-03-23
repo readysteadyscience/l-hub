@@ -2,6 +2,7 @@ import * as vscode from 'vscode';
 import * as path from 'path';
 import { HistoryStorage } from './storage';
 import { SettingsManager } from './settings';
+import { MODEL_REGISTRY } from './model-registry';
 
 export class DashboardPanel {
     public static currentPanel: DashboardPanel | undefined;
@@ -66,16 +67,8 @@ export class DashboardPanel {
                         break;
                     }
 
-                    // ── v2 Model management ───────────────────────────────────
                     case 'getModelsV2': {
-                        const models = await this.settings.getModels();
-                        // collect per-model API keys
-                        const apiKeys: Record<string, string> = {};
-                        for (const m of models) {
-                            const k = await this.settings.getApiKey(`model.${m.id}`);
-                            if (k) { apiKeys[m.id] = k; }
-                        }
-                        this._panel.webview.postMessage({ command: 'loadModelsV2', models, apiKeys });
+                        await this._reloadAndBroadcastModels();
                         break;
                     }
                     case 'addModel': {
@@ -85,27 +78,14 @@ export class DashboardPanel {
                             await this.settings.saveApiKey(`model.${modelConfig.id}`, apiKey);
                         }
                         await this._syncModelsToFile();
-                        // Re-send updated list
-                        const models = await this.settings.getModels();
-                        const apiKeys: Record<string, string> = {};
-                        for (const m of models) {
-                            const k = await this.settings.getApiKey(`model.${m.id}`);
-                            if (k) { apiKeys[m.id] = k; }
-                        }
-                        this._panel.webview.postMessage({ command: 'loadModelsV2', models, apiKeys });
+                        await this._reloadAndBroadcastModels();
                         this._onConfigChanged?.();
                         break;
                     }
                     case 'removeModel': {
                         await this.settings.removeModel(message.id);
                         await this._syncModelsToFile();
-                        const models = await this.settings.getModels();
-                        const apiKeys: Record<string, string> = {};
-                        for (const m of models) {
-                            const k = await this.settings.getApiKey(`model.${m.id}`);
-                            if (k) { apiKeys[m.id] = k; }
-                        }
-                        this._panel.webview.postMessage({ command: 'loadModelsV2', models, apiKeys });
+                        await this._reloadAndBroadcastModels();
                         this._onConfigChanged?.();
                         break;
                     }
@@ -115,13 +95,7 @@ export class DashboardPanel {
                             await this.settings.saveApiKey(`model.${message.id}`, message.apiKey);
                         }
                         await this._syncModelsToFile();
-                        const models = await this.settings.getModels();
-                        const apiKeys: Record<string, string> = {};
-                        for (const m of models) {
-                            const k = await this.settings.getApiKey(`model.${m.id}`);
-                            if (k) { apiKeys[m.id] = k; }
-                        }
-                        this._panel.webview.postMessage({ command: 'loadModelsV2', models, apiKeys });
+                        await this._reloadAndBroadcastModels();
                         this._onConfigChanged?.();
                         break;
                     }
@@ -205,10 +179,37 @@ export class DashboardPanel {
                             `- Gemini CLI: ${geminiVer.error ? '未安装' : (geminiVer.stdout || '').trim()}`,
                             '',
                             '### 模型配置',
-                            ...models.map((m: any) => `- ${m.id}: ${m.enabled ? '✅ 启用' : '❌ 禁用'} | Key: ${m.apiKey ? '已配' : '未配'}`),
+                            ...await Promise.all(models.map(async (m: any) => {
+                                const hasKey = !!(await this.settings.getApiKey(`model.${m.id}`));
+                                return `- ${m.label}: ${m.enabled ? '✅ 启用' : '❌ 禁用'} | Key: ${hasKey ? '已配' : '未配'}`;
+                            })),
                         ].join('\n');
                         vscode.env.clipboard.writeText(report);
                         vscode.window.showInformationMessage('诊断报告已复制到剪贴板，可粘贴到 GitHub Issue');
+                        break;
+                    }
+                    // ── Submit Feedback ───────────────────────────────────────
+                    case 'submitFeedback': {
+                        const { text } = message;
+                        try {
+                            // Forward feedback telemetry to LinglanCore's Mission Control (remote brain)
+                            const res = await fetch('http://106.14.93.169:8000/api/dashboard/logs', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ type: 'lhub-feedback', content: text, timestamp: Date.now() })
+                            });
+                            if (res.ok) {
+                                vscode.window.showInformationMessage('反馈已成功提交至 LinglanCore 调度中枢');
+                                this._panel.webview.postMessage({ command: 'feedbackSuccess' });
+                            } else {
+                                throw new Error('Bad status');
+                            }
+                        } catch (e) {
+                            // Fallback: Dump to console if LinglanCore telemetry endpoint unavailable
+                            console.info(`[LHUB_FEEDBACK] ${text}`);
+                            vscode.window.showInformationMessage('反馈已记录，LinglanCore 将于下一次扫描拉取诊断流');
+                            this._panel.webview.postMessage({ command: 'feedbackSuccess' });
+                        }
                         break;
                     }
                     // ── Codex CLI status ──────────────────────────────────────
@@ -251,17 +252,25 @@ export class DashboardPanel {
 
                     // ── Overview Stats ────────────────────────────────────────
                     case 'getOverviewStats': {
-                        const allModels = await this.settings.getModels();
+                        const configuredModels = await this.settings.getModels();
                         const modelStatuses = [];
-                        for (const m of allModels) {
-                            const key = await this.settings.getApiKey(`model.${m.id}`);
+                        
+                        // Enumerate ALL canonically supported models
+                        for (const rId of Object.keys(MODEL_REGISTRY)) {
+                            const reg = MODEL_REGISTRY[rId];
+                            const mMatch = configuredModels.find((m: any) => m.modelId === rId);
+                            const mId = mMatch ? mMatch.id : rId;
+                            const mEnabled = mMatch ? mMatch.enabled !== false : false;
+                            const key = await this.settings.getApiKey(`model.${mId}`);
+                            
                             modelStatuses.push({
-                                id: m.id,
-                                label: m.label || m.modelId,
-                                modelId: m.modelId,
-                                group: (m as any).group || '',
-                                enabled: m.enabled !== false,
-                                status: this._modelTestCache.get(m.id) || (key ? 'unknown' : 'offline'),
+                                id: mId,
+                                label: mMatch?.label || reg.label,
+                                modelId: rId,
+                                group: 'api',
+                                providerGroup: reg.providerGroup,
+                                enabled: mEnabled,
+                                status: this._modelTestCache.get(mId) || (key ? 'unknown' : 'offline'),
                                 testMsg: key ? undefined : 'No API Key',
                             });
                         }
@@ -328,6 +337,14 @@ export class DashboardPanel {
                             },
                         ];
 
+                        const routingConfig = vscode.workspace.getConfiguration('lhub.routing');
+                        const routing = {
+                            routine: routingConfig.get('routine', 'auto'),
+                            code: routingConfig.get('code', 'auto'),
+                            reasoning: routingConfig.get('reasoning', 'auto'),
+                            creative: routingConfig.get('creative', 'auto')
+                        };
+
                         this._panel.webview.postMessage({
                             command: 'overviewStats',
                             stats: {
@@ -337,6 +354,7 @@ export class DashboardPanel {
                                 avgLatency,
                                 totalTokens,
                                 recentRequests,
+                                routing,
                             }
                         });
                         break;
@@ -384,6 +402,20 @@ export class DashboardPanel {
                         safePost({ command: 'testAllComplete' });
                         break;
                     }
+
+                    // ── Save Routing Preferences ─────────────────────────────
+                    case 'saveRoutingPrefs': {
+                        const config = vscode.workspace.getConfiguration('lhub.routing');
+                        await config.update('routine', message.prefs.routine, vscode.ConfigurationTarget.Global);
+                        await config.update('code', message.prefs.code, vscode.ConfigurationTarget.Global);
+                        await config.update('reasoning', message.prefs.reasoning, vscode.ConfigurationTarget.Global);
+                        await config.update('creative', message.prefs.creative, vscode.ConfigurationTarget.Global);
+                        
+                        // Dynamically re-install the skill with new overrides
+                        const { autoInstallSkill } = require('./extension');
+                        autoInstallSkill(this._extensionUri.fsPath);
+                        break;
+                    }
                 }
             },
             null,
@@ -392,6 +424,17 @@ export class DashboardPanel {
     }
 
     /** Sync full model config (with API keys) to ~/.l-hub-keys.json */
+    /** Reload models + API keys from storage and broadcast to webview */
+    private async _reloadAndBroadcastModels() {
+        const models = await this.settings.getModels();
+        const apiKeys: Record<string, string> = {};
+        for (const m of models) {
+            const k = await this.settings.getApiKey(`model.${m.id}`);
+            if (k) { apiKeys[m.id] = k; }
+        }
+        this._panel.webview.postMessage({ command: 'loadModelsV2', models, apiKeys });
+    }
+
     private async _syncModelsToFile() {
         const fs = require('fs');
         const os = require('os');

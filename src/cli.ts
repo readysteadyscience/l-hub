@@ -6,7 +6,7 @@ import * as os from 'os';
 
 const portFile = path.join(os.homedir(), '.l-hub.port');
 if (!fs.existsSync(portFile)) {
-    console.error('L-Hub Extension is not running in VS Code.');
+    console.error('L-Hub Extension is not running in Antigravity.');
     process.exit(1);
 }
 

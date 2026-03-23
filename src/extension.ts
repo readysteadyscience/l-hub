@@ -10,13 +10,18 @@ import { DashboardPanel } from './webview-provider';
 
 let mcpServer: LinglanMcpServer;
 let statusBarItem: vscode.StatusBarItem;
+let storage: HistoryStorage | null = null;
 let statusRefreshTimer: ReturnType<typeof setInterval> | undefined;
+
+// Fix #5: Cache CLI status to avoid blocking spawnSync on every 60s refresh
+let cliStatusCache: { codex: boolean; gemini: boolean; ts: number } | null = null;
+const CLI_CACHE_TTL = 300_000; // 5 minutes
 let currentExtensionPath: string | undefined;  // stored for cleanup on uninstall
 
 const KEYS_FILE = path.join(os.homedir(), '.l-hub-keys.json');
 
 /**
- * Export API keys from VS Code SecretStorage to ~/.l-hub-keys.json
+ * Export API keys from Antigravity SecretStorage to ~/.l-hub-keys.json
  * so the standalone mcp-server.js can read them without vscode dependency.
  */
 async function syncKeysToFile(settings: SettingsManager, dbPath?: string) {
@@ -89,7 +94,7 @@ function autoRegisterMcpConfig(extensionPath: string) {
  * Copies skills/lhub-ai-routing/SKILL.md → ~/.gemini/antigravity/skills/lhub-ai-routing/SKILL.md
  * Idempotent — overwrites on every activation to keep the Skill up to date.
  */
-function autoInstallSkill(extensionPath: string) {
+export function autoInstallSkill(extensionPath: string) {
     const srcSkillDir = path.join(extensionPath, 'skills', 'lhub-ai-routing');
     const srcSkillFile = path.join(srcSkillDir, 'SKILL.md');
 
@@ -102,13 +107,42 @@ function autoInstallSkill(extensionPath: string) {
     const destSkillFile = path.join(destSkillDir, 'SKILL.md');
 
     try {
-        // Create destination directory if needed
         if (!fs.existsSync(destSkillDir)) {
             fs.mkdirSync(destSkillDir, { recursive: true });
         }
 
-        // Always overwrite to ensure latest version
-        fs.copyFileSync(srcSkillFile, destSkillFile);
+        let skillContent = fs.readFileSync(srcSkillFile, 'utf8');
+
+        // Apply user routing preferences overrides if any
+        const config = vscode.workspace.getConfiguration('lhub.routing');
+        const rRoutine = config.get<string>('routine', 'deepseek');
+        const rCode = config.get<string>('code', 'codex-cli');
+        const rReasoning = config.get<string>('reasoning', 'gemini-cli');
+        const rCreative = config.get<string>('creative', 'minimax');
+
+        let overrides = [];
+        const formatProviderCall = (val: string) => {
+            if (val === 'codex-cli') return '必须调用 `mcp_lhub_ai_codex_task()`';
+            if (val === 'gemini-cli') return '必须调用 `mcp_lhub_ai_gemini_task()`';
+            return `必须调用 \`mcp_lhub_ai_ask(provider="${val}")\``;
+        };
+
+        if (rRoutine !== 'auto') overrides.push(`- **体力活/翻译/总结**：${formatProviderCall(rRoutine)}`);
+        if (rCode !== 'auto') overrides.push(`- **代码工程/审查**：${formatProviderCall(rCode)}`);
+        if (rReasoning !== 'auto') overrides.push(`- **深度推理/大前端**：${formatProviderCall(rReasoning)}`);
+        if (rCreative !== 'auto') overrides.push(`- **创意写作/大纲**：必须包含或交由 \`${rCreative}\` 执行`);
+
+        if (overrides.length > 0) {
+            const overrideBlock = `> [!IMPORTANT]\n> 🎯 **用户强制设定的专属路由（最高优先级）**\n> 检测到用户在 L-Hub 控制台手动指定了专属模型，请在执行下述默认规则前**无条件优先遵循以下分配**：\n${overrides.join('\n')}\n\n`;
+            const yamlEnd = skillContent.indexOf('---', 4);
+            if (yamlEnd !== -1) {
+                skillContent = skillContent.slice(0, yamlEnd + 3) + '\n\n' + overrideBlock + skillContent.slice(yamlEnd + 3);
+            } else {
+                skillContent = overrideBlock + skillContent;
+            }
+        }
+
+        fs.writeFileSync(destSkillFile, skillContent.trim() + '\n', 'utf8');
         console.log('[L-Hub] Installed AI routing Skill to Antigravity skills directory ✅');
     } catch (err) {
         console.error('[L-Hub] Failed to install Skill:', err);
@@ -120,28 +154,6 @@ function autoInstallSkill(extensionPath: string) {
 const GEMINI_MD_MARKER_START = '<!-- L-Hub Mandatory Delegation Rules v0.2 -->';
 const GEMINI_MD_MARKER_OLD = '⛔ 强制委派规则';  // older marker without version
 
-const GEMINI_MD_RULES_BLOCK = `
-${GEMINI_MD_MARKER_START}
-
-## ⛔ 强制委派规则（不可违反）
-
-以下任务**主模型绝对禁止自己直接输出**，必须先通过 L-Hub MCP 委派：
-
-| 任务类型 | 禁止行为 | 必须执行 |
-|---------|---------|--------|
-| 文案 / 版本说明 / 公告 / 介绍 | ❌ 主模型直接写 | ✅ \`mcp_lhub_ai_ask(provider="deepseek")\` |
-| 翻译（任意语言互译） | ❌ 主模型直接译 | ✅ \`mcp_lhub_ai_ask(provider="deepseek")\` |
-| 总结 / 整理 / 归纳 | ❌ 主模型直接写 | ✅ \`mcp_lhub_ai_ask(provider="deepseek")\` |
-| 创意写作 / 中文文学内容 | ❌ 主模型直接写 | ✅ \`mcp_lhub_ai_ask(provider="minimax")\` |
-| 代码生成（Codex CLI 已连通时） | ❌ 主模型直接写代码 | ✅ \`mcp_lhub_ai_codex_task()\` |
-
-**唯一例外：用户明确说"你来写"/"用 Claude 写"/"不用 MCP"时，按用户指示执行。**
-
-主模型直接输出上述类型内容（未先调 MCP）= 违规，事后必须道歉并补充委派。
-
-<!-- L-Hub Mandatory Delegation Rules End -->
-`;
-
 /**
  * Auto-inject mandatory delegation rules into ~/.gemini/GEMINI.md.
  * Idempotent: skips if current version marker already present.
@@ -152,32 +164,57 @@ function autoInjectGeminiMd() {
     const geminiMdPath = path.join(geminiDir, 'GEMINI.md');
 
     try {
-        // Ensure ~/.gemini exists
         if (!fs.existsSync(geminiDir)) {
             fs.mkdirSync(geminiDir, { recursive: true });
         }
 
-        let content = fs.existsSync(geminiMdPath)
-            ? fs.readFileSync(geminiMdPath, 'utf8')
-            : '';
+        let content = fs.existsSync(geminiMdPath) ? fs.readFileSync(geminiMdPath, 'utf8') : '';
 
-        // Already on latest version — skip
-        if (content.includes(GEMINI_MD_MARKER_START)) {
+        const config = vscode.workspace.getConfiguration('lhub.routing');
+        const rRoutine = config.get<string>('routine', 'deepseek');
+        const rCreative = config.get<string>('creative', 'minimax');
+        const rCode = config.get<string>('code', 'codex-cli');
+
+        const routineProvider = rRoutine === 'auto' ? 'deepseek' : rRoutine;
+        const creativeProvider = rCreative === 'auto' ? 'minimax' : rCreative;
+        
+        let codeCall = '\`mcp_lhub_ai_codex_task()\`';
+        if (rCode !== 'auto' && rCode !== 'codex-cli') {
+            if (rCode === 'gemini-cli') codeCall = '\`mcp_lhub_ai_gemini_task()\`';
+            else codeCall = '\`mcp_lhub_ai_ask(provider="' + rCode + '")\`';
+        }
+
+        const GEMINI_MD_RULES_BLOCK = `
+${GEMINI_MD_MARKER_START}
+
+## ⛔ 强制委派规则（不可违反）
+
+以下任务**主模型绝对禁止自己直接输出**，必须先通过 L-Hub MCP 委派：
+
+| 任务类型 | 禁止行为 | 必须执行 |
+|---------|---------|--------|
+| 文案 / 版本说明 / 公告 / 介绍 | ❌ 主模型直接写 | ✅ \`mcp_lhub_ai_ask(provider="${routineProvider}")\` |
+| 翻译（任意语言互译） | ❌ 主模型直接译 | ✅ \`mcp_lhub_ai_ask(provider="${routineProvider}")\` |
+| 总结 / 整理 / 归纳 | ❌ 主模型直接写 | ✅ \`mcp_lhub_ai_ask(provider="${routineProvider}")\` |
+| 创意写作 / 中文文学内容 | ❌ 主模型直接写 | ✅ \`mcp_lhub_ai_ask(provider="${creativeProvider}")\` |
+| 代码生成 / 跨文件实现 | ❌ 主模型直接写代码 | ✅ ${codeCall} |
+
+**唯一例外：用户明确说"你来写"/"用 Claude 写"/"不用 MCP"时，按用户指示执行。**
+
+主模型直接输出上述类型内容（未先调 MCP）= 违规，事后必须道歉并补充委派。
+
+<!-- L-Hub Mandatory Delegation Rules End -->
+`;
+
+        if (content.includes(GEMINI_MD_MARKER_START) && content.includes(`provider="${routineProvider}"`) && content.includes(`provider="${creativeProvider}"`) && content.includes(codeCall)) {
             console.log('[L-Hub] GEMINI.md delegation rules already up-to-date, skipping');
             return;
         }
 
-        // Remove old version block if present (between old marker and "End" comment)
-        if (content.includes(GEMINI_MD_MARKER_OLD)) {
-            content = content.replace(
-                /\n?<!-- L-Hub Mandatory.*?End -->\n?/s, ''
-            ).replace(
-                /\n?## ⛔ 强制委派规则[\s\S]*?主模型直接输出上述类型内容.*?\n/,
-                ''
-            );
+        if (content.includes(GEMINI_MD_MARKER_OLD) || content.includes(GEMINI_MD_MARKER_START)) {
+            content = content.replace(/\n?<!-- L-Hub Mandatory.*?End -->\n?/s, '').replace(/\n?## ⛔ 强制委派规则[\s\S]*?主模型直接输出上述类型内容.*?\n/s, '');
         }
 
-        // Append new block
         const updated = content.trimEnd() + '\n' + GEMINI_MD_RULES_BLOCK;
         fs.writeFileSync(geminiMdPath, updated, 'utf8');
         console.log('[L-Hub] Auto-injected mandatory delegation rules into GEMINI.md ✅');
@@ -361,12 +398,15 @@ async function updateStatusBar(settings: SettingsManager) {
             modelStatuses.push({ label: m.label, enabled: m.enabled, hasKey: !!key });
         }
 
-        // ── CLI status ──
-        const codexCheck = spawnSync('codex', ['--version'], { encoding: 'utf8', timeout: 3000, shell: true });
-        const codexOk = !codexCheck.error;
-        
-        const geminiCheck = spawnSync('gemini', ['--version'], { encoding: 'utf8', timeout: 3000, shell: true });
-        const geminiOk = !geminiCheck.error;
+        // ── CLI status (cached for 5 min to avoid blocking main thread) ──
+        const now = Date.now();
+        if (!cliStatusCache || (now - cliStatusCache.ts) > CLI_CACHE_TTL) {
+            const codexCheck = spawnSync('codex', ['--version'], { encoding: 'utf8', timeout: 3000, shell: true });
+            const geminiCheck = spawnSync('gemini', ['--version'], { encoding: 'utf8', timeout: 3000, shell: true });
+            cliStatusCache = { codex: !codexCheck.error, gemini: !geminiCheck.error, ts: now };
+        }
+        const codexOk = cliStatusCache.codex;
+        const geminiOk = cliStatusCache.gemini;
 
         // Add CLIs to statuses
         modelStatuses.push({ label: 'Codex CLI', enabled: true, hasKey: codexOk });
@@ -405,25 +445,78 @@ async function updateStatusBar(settings: SettingsManager) {
         tooltip.isTrusted = true;
         tooltip.supportHtml = true;
 
-        tooltip.appendMarkdown('### 🔌 L-Hub 模型状态\n\n');
+        tooltip.appendMarkdown('### 🚀 L-HUB 核心中枢 (Mission Control)\n\n');
 
-        if (modelStatuses.length === 0) {
-            tooltip.appendMarkdown('_未配置任何模型。请打开 Dashboard 添加。_\n\n');
+        // ==== CLOUD MODELS TABLE ====
+        tooltip.appendMarkdown('| 🌐 **CLOUD EXPERT BRANDS** | 📡 **STATUS** | 🔐 **ACCESS KEY** |\n');
+        tooltip.appendMarkdown('| :--- | :---: | :---: |\n');
+
+        const apiModels = modelStatuses.filter(m => !m.label.includes('CLI'));
+        if (apiModels.length === 0) {
+            tooltip.appendMarkdown('| `未配置 / Not Configured` | - | - |\n');
         } else {
-            for (const m of modelStatuses) {
-                if (m.label.includes('CLI')) continue; // Skip CLIs in the API models list
-                const status = (m.enabled && m.hasKey) ? '✅' : '❌';
-                const note = !m.hasKey ? ' — 未配置 Key' : (!m.enabled ? ' — 已禁用' : '');
-                tooltip.appendMarkdown(`${status} **${m.label}**${note}  \n`);
+            for (const m of apiModels) {
+                const isReady = m.enabled && m.hasKey;
+                const icon = isReady ? '🟢' : (m.enabled ? '🔴' : '⚪');
+                const statusState = isReady ? '`ONLINE`' : (!m.enabled ? '`DISABLED`' : '`STANDBY`');
+                const keyState = m.hasKey ? '`SECURE`' : '`MISSING`';
+                tooltip.appendMarkdown(`| ${icon} **${m.label.toUpperCase()}** | ${statusState} | ${keyState} |\n`);
             }
-            tooltip.appendMarkdown('\n---\n\n');
         }
+        tooltip.appendMarkdown('\n');
 
-        // ── CLI status tooltip ──
-        tooltip.appendMarkdown(`🤖 Codex CLI: ${codexOk ? '✅ 已安装' : '❌ 未安装'}  \n`);
-        tooltip.appendMarkdown(`🔷 Gemini CLI: ${geminiOk ? '✅ 已安装 (使用 Google 本地凭据)' : '❌ 未安装'}  \n`);
+        // ==== CLI SANDBOXES TABLE ====
+        tooltip.appendMarkdown('| 💻 **LOCAL CLI SANDBOXES** | 🔌 **DAEMON** | 📦 **RUNTIME** |\n');
+        tooltip.appendMarkdown('| :--- | :---: | :---: |\n');
+        
+        const codexIcon = codexOk ? '🟢' : '🔴';
+        const codexDaemon = codexOk ? '`ACTIVE`' : '`OFFLINE`';
+        const codexRuntime = codexOk ? '`ATTACHED`' : '`MISSING`';
+        tooltip.appendMarkdown(`| ${codexIcon} **CODEX CLI** | ${codexDaemon} | ${codexRuntime} |\n`);
 
-        tooltip.appendMarkdown('\n---\n\n_点击打开 Dashboard_');
+        const geminiIcon = geminiOk ? '🟢' : '🔴';
+        const geminiDaemon = geminiOk ? '`ACTIVE`' : '`OFFLINE`';
+        const geminiRuntime = geminiOk ? '`ATTACHED`' : '`MISSING`';
+        tooltip.appendMarkdown(`| ${geminiIcon} **GEMINI CLI** | ${geminiDaemon} | ${geminiRuntime} |\n\n`);
+
+        // ==== ROUTING PREFS TABLE ====
+        const routingConfig = vscode.workspace.getConfiguration('lhub.routing');
+        const formatRoute = (r: string) => r === 'auto' ? '`L-Hub Auto`' : `\`${r}\``;
+        tooltip.appendMarkdown('| 🧠 **DYNAMIC ROUTING MAP** | 🎯 **ASSIGNED EXECUTOR** |\n');
+        tooltip.appendMarkdown('| :--- | :--- |\n');
+        tooltip.appendMarkdown(`| ⚡ **Routine (日常通识)** | ${formatRoute(routingConfig.get<string>('routine', 'auto'))} |\n`);
+        tooltip.appendMarkdown(`| 💻 **Coding (代码工程)** | ${formatRoute(routingConfig.get<string>('code', 'auto'))} |\n`);
+        tooltip.appendMarkdown(`| 🔬 **Reasoning (深度推理)**| ${formatRoute(routingConfig.get<string>('reasoning', 'auto'))} |\n`);
+        tooltip.appendMarkdown(`| 🎨 **Creative (创意写作)**| ${formatRoute(routingConfig.get<string>('creative', 'auto'))} |\n\n`);
+
+        // ==== TELEMETRY MATRIX ====
+        let todayReq = 0; let sucCount = 0; let tLat = 0; let tTok = 0;
+        if (storage) {
+            try {
+                const records = storage.queryHistory(1, 100)?.records || [];
+                const tsToday = new Date().setHours(0, 0, 0, 0);
+                for (const r of records) {
+                    if (r.timestamp >= tsToday) {
+                        todayReq++;
+                        if (r.status === 'success') sucCount++;
+                        tLat += r.duration || 0;
+                        tTok += r.totalTokens || 0;
+                    }
+                }
+            } catch(e) {}
+        }
+        const sr = todayReq > 0 ? Math.round((sucCount / todayReq)*100) : 100;
+        const avgLat = todayReq > 0 ? (tLat / todayReq / 1000).toFixed(1)+'s' : '-';
+        const tokDisp = tTok > 1000 ? (tTok / 1000).toFixed(1)+'K' : (tTok || '-');
+
+        tooltip.appendMarkdown('| 📊 **NETWORK TELEMETRY (24H)** | 📉 **METRICS** |\n');
+        tooltip.appendMarkdown('| :--- | :---: |\n');
+        tooltip.appendMarkdown(`| 📡 **Total Request Vol** | \`${todayReq}\` |\n`);
+        tooltip.appendMarkdown(`| ✅ **Success Rate** | \`${sr}%\` |\n`);
+        tooltip.appendMarkdown(`| ⏱️ **Avg Latency** | \`${avgLat}\` |\n`);
+        tooltip.appendMarkdown(`| 🪙 **Token Yield** | \`${tokDisp}\` |\n\n`);
+
+        tooltip.appendMarkdown('---\n\n_$(server-environment) 点击打开全局仪表盘 (Open Global Dashboard)_');
 
         statusBarItem.tooltip = tooltip;
         statusBarItem.show();
@@ -444,7 +537,6 @@ export async function activate(context: vscode.ExtensionContext) {
     const settings = new SettingsManager(context);
 
     // ── STEP 1: Register commands immediately — BEFORE anything that could throw ──
-    let storage: HistoryStorage | null = null;
 
     const openPanelCommand = vscode.commands.registerCommand('l-hub.openPanel', () => {
         // storage may be null if SQLite failed — DashboardPanel handles null gracefully
@@ -568,6 +660,8 @@ export async function deactivate() {
         mcpServer.stop();
     }
 
-    // M1 fix: await cleanupLHub so config.update() Promise completes before exit
-    await cleanupLHub();
+    // Fix #4: Skip cleanup on normal IDE close — only clean on uninstall.
+    // The cleanup removes MCP config, GEMINI.md injections, and routing rules,
+    // but on next IDE launch activate() re-injects everything anyway.
+    // Actual uninstall cleanup is handled by the extension uninstall hook.
 }

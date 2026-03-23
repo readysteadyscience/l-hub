@@ -219,7 +219,7 @@ export class LinglanMcpServer {
             // L1 fix: add random suffix to avoid millisecond ID collision
             id: `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
             timestamp: startTime,
-            clientName: 'VS Code Client',
+            clientName: 'Antigravity Client',
             clientVersion: '1.0',
             method: 'tools/call',
             toolName: toolName,

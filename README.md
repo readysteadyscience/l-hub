@@ -1,216 +1,175 @@
 <div align="center">
 
-# L-Hub
+![L-Hub Demo](./images/demo.gif)
 
-**MCP AI Bridge — 智能多模型路由中枢**
+**让 Antigravity 的主模型专注推理，辅助任务自动路由到专家模型 — 节省 60%+ Token**
 
-*The Smart Multi-Model Router for Antigravity IDE*
-
-&nbsp;
-
-![L-Hub Demo](./docs/demo-placeholder.gif)
-
-*解决开发者多模型 API 切换繁琐问题，智能切分的路由中枢*
-*Stop juggling AI APIs. Let L-Hub intelligently route tasks to the right model — save tokens, cut costs, boost productivity.*
+*Stop burning tokens on auxiliary tasks. L-Hub routes them to expert models automatically.*
 
 &nbsp;
 
-[![Version](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fopen-vsx.org%2Fapi%2Freadysteadyscience%2Fl-hub&query=%24.version&label=Version&color=blue&style=flat-square&logo=visualstudiocode)](https://open-vsx.org/extension/readysteadyscience/l-hub)
-[![Downloads](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fopen-vsx.org%2Fapi%2Freadysteadyscience%2Fl-hub&query=%24.downloadCount&label=Downloads&color=orange&style=flat-square&logo=openvscode)](https://open-vsx.org/extension/readysteadyscience/l-hub)
-[![License](https://img.shields.io/badge/license-MIT-green?style=flat-square)](https://github.com/readysteadyscience/L-Hub/blob/main/LICENSE)
-[![Discord](https://img.shields.io/badge/Discord-Community-5865F2?style=flat-square&logo=discord&logoColor=white)](https://discord.gg/gurEPMnn52)
-
-[![GitHub Stars](https://img.shields.io/github/stars/readysteadyscience/L-Hub?style=flat-square&logo=github&label=Stars&color=yellow)](https://github.com/readysteadyscience/L-Hub/stargazers)
-[![Antigravity](https://img.shields.io/badge/Antigravity-IDE%20Ready-7B68EE?style=flat-square&logo=visualstudiocode)](https://www.antigravityide.com/)
-
-
-**走起智造 · Ready Steady Science** — Linglan Realm
+[![Version](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fopen-vsx.org%2Fapi%2Freadysteadyscience%2Fl-hub&query=%24.version&label=Version&color=blue&style=flat-square)](https://open-vsx.org/extension/readysteadyscience/l-hub)
+[![Downloads](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fopen-vsx.org%2Fapi%2Freadysteadyscience%2Fl-hub&query=%24.downloadCount&label=Downloads&color=orange&style=flat-square)](https://open-vsx.org/extension/readysteadyscience/l-hub)
+[![License](https://img.shields.io/badge/license-MIT-green?style=flat-square)](LICENSE)
+[![Antigravity](https://img.shields.io/badge/Antigravity-IDE%20Ready-7B68EE?style=flat-square)](https://www.antigravityide.com/)
 
 </div>
 
-&nbsp;
+---
+
+## 核心痛点与解决方案
+**Without L-Hub vs With L-Hub**
+
+| 场景<br>Scenario | 没有 L-Hub (Without) | 使用 L-Hub (With) |
+|----------|-----------|-------------|
+| **代码审查**<br>Code Review | 主模型承担全量代码（极贵且慢）<br>Host writes all code (Expensive) | Codex CLI 初审 &rarr; 主模型把关<br>Codex CLI draft &rarr; Host verify |
+| **翻译与文档**<br>Translation | Claude 翻译整篇大文档<br>Full docs by Claude | DeepSeek/Qwen 翻译 &rarr; 主模型润色<br>DeepSeek/Qwen translate &rarr; Host Polish |
+| **Bug 修复**<br>Bug Fix | 仅单一主模型视角<br>Single-model perspective | 多模型并行投票 &rarr; 最佳方案胜出<br>Multi-model voting &rarr; Best wins |
+| **模型调度**<br>API Routing | 手动去浏览器切网页<br>Manual browser tab switching | 统一 Dashboard，无感智能路由<br>Unified Dashboard, seamless |
+| **Token 消耗**<br>Token Usage | 100% 主模型额度<br>100% Host Quota | **≤40% 主模型（省 60%+）**<br>**≤40% Host Quota (Save 60%+)** |
 
 ---
 
-&nbsp;
+## 五大核心能力
+**5 Core Superpowers**
 
-## ✨ 为什么选择 L-Hub？ (Why L-Hub?)
+### 自适应任务路由
+***Smart 11-Task Routing***
 
-**痛点 (The Pain):** Antigravity IDE 原生的 AI 面板仅支持少数特定模型（如 Gemini、Claude）。当你需要接入 **DeepSeek V3、Qwen、GLM** 等高性价比模型，或想使用其他自定义 API 厂商时，IDE 本身无能为力。
+自动识别 11 种任务类型（代码生成、检查、翻译、数学等），并无缝路由到您配置的最优专家模型。告别繁琐的手动切模型。
 
-*Antigravity's native AI panel only supports a few specific models (e.g., Gemini, Claude). You're locked out when you need **high-value models like DeepSeek V3, Qwen, GLM**, or want to use other custom API providers.*
+Auto-detects task type (code gen, review, translation, math...) and routes to the optimal model. Zero manual switching.
 
-**解决方案 (The Solution):** L-Hub 是你的 **外部大模型扩展中枢**。当 Antigravity 自带的主模型（如 Claude 4.6 / Gemini 3.1 Pro）处理核心推理与充当"总指挥"时，L-Hub 能够**为你解锁并接入外部所有的优质大模型**，将代码生成、审查等任务自动委派、路由给高性价比的特定专家（如 Codex CLI / GPT-5.4），从而在不损失能力的前提下，**大幅节省你原生主模型的 Token 配额消耗，同时提升干活效率**。
+### 多模型投票引擎
+***Multi-Model Consensus***
 
-*L-Hub is your **external LLM expansion hub**. While Antigravity's native models (like Claude 4.6 / Gemini 3.1 Pro) serve as commanders focusing on core reasoning, L-Hub **seamlessly weaves external expert models into your workflow**. By routing auxiliary tasks like code generation and review to highly cost-effective models (e.g., Codex CLI / GPT-5.4), it **drastically cuts your native token consumption and boosts efficiency** without sacrificing quality.*
+只需在对话框输入“投票择优”，后台将呼叫多个可用模型并行作答，最终由裁判模型融合成最佳答案。将算力转化为智力。（需手动触发）
 
-&nbsp;
+Say "投票择优" in chat → multiple models answer in parallel → judge picks the best. Full control, manual trigger only.
 
-## 🚀 核心特性 (Core Features)
+### 内置免配置 CLI 代理
+***Built-in CLI Agents***
 
-### 🤖 **内置智能调度 (Built-in Intelligent Routing)**
-安装即用。自动为 Antigravity 注入路由 Skill，基于四层规则（简单问答、代码审查、专业任务、创意协作链）智能分发任务，最大化你的 API 额度价值。
+原生集成 **Codex CLI** (ChatGPT) 与 **Gemini CLI**。直接调用您的官方订阅额度沙盒跑任务，无需再申请任何 API Key。
 
-*Works out-of-the-box. Auto-injects a routing Skill into Antigravity. Uses a 4-tier rule system to intelligently dispatch tasks, maximizing your API quota.*
+**Codex CLI** (ChatGPT OAuth) + **Gemini CLI** (Google OAuth) — use your subscription quota directly. No API key needed.
 
-### 🏆 **多模型投票引擎 (Multi-Model Voting Engine)**
-`ai_consensus` — 在对话中简单说“**投票择优**”，即可启动并行推理。多个模型同时回答，由裁判模型评分，返回最佳结果。**按需手动触发，完全可控。**
+### 可视化中枢面板
+***Visual Dashboard***
 
-*Simply say **"vote for the best"** in chat to activate parallel reasoning. Multiple models answer, a judge scores, returns the best. **Manual trigger only, full control.***
+一站式可视化网关控制台。囊括模型品牌聚合管理、密钥安全存储、一键重置环境清理，以及自下而上的底层连接健康侦测。
 
-### 🔀 **13 类任务自动寻优 (13-Task-Type Auto-Routing)**
-代码生成、调试、翻译、总结、创意写作等 13 大类任务，自动匹配至性价比最优的模型。告别选择困难症。
+One-stop config for all models grouped by Brands, 1-click environment cleanup, secure API keys, and comprehensive diagnostics.
 
-*Code gen, debug, translation, summarization, creative writing — 13 task types auto-matched to the most cost-effective model. No more decision fatigue.*
+### 状态栏全景雷达 (Mission Control HUD)
+***Mission Control Status Bar***
 
-### 🌐 **8+ 厂商 & 平台支持 (8+ Providers & Platforms)**
-原生支持 **DeepSeek, GLM, Qwen, MiniMax, Kimi, OpenAI, Claude, Gemini**。同时支持 **OpenRouter, DMXAPI** 等聚合平台。自定义 Base URL 轻松接入任何兼容 API。
+原生融合编辑器底部状态栏的 4 联装网格监控台。无需打开 Dashboard，悬停状态栏即可实时总览云端专家阵列、本地机器沙盒状态、动态路由归属以及精准的 24H 专属网络遥测数据。
 
-*Native support for 8 major providers. Plus relay platforms. Custom Base URL for any compatible API endpoint.*
-
-### 🔌 **内置 CLI 代理 (Built-in CLI Agents)**
-直接使用 **Codex CLI (ChatGPT OAuth)** 和 **Gemini CLI (Google OAuth)**，享受你的订阅账户额度，无需额外配置 API Key。
-
-*Use **Codex CLI (ChatGPT OAuth)** and **Gemini CLI (Google OAuth)** directly. Leverages your subscription quota.*
-
-### 🧪 **一键诊断测试 (One-Click Diagnostics)**
-Dashboard 内置完整测试 Prompt，一键复制粘贴到聊天框，自动验证全部 **8 项功能**（7个 MCP 工具 + 1个 Skill），确保一切就绪。
-
-*Built-in test prompt in the Dashboard. One click copies it to chat, auto-verifies all **8 features**, ensuring everything works.*
-
-&nbsp;
+Hover the status bar for a 4-column Widescreen grid HUD. Instantly monitor cloud experts, local sandboxes, dynamic routing maps, and zero-baseline 24H 1st-party network telemetry.
 
 ---
 
-&nbsp;
+## 已支持的专家模型库
+**Supported Models Registry**
 
-## ⚡ 快速开始 (Quick Start)
+| 厂商<br>Provider | 代表模型<br>Models | 擅长领域<br>Best For Tasks |
+|----------|--------|----------|
+| **DeepSeek** | V3 / Reasoner | 高性价比代码生成、翻译与润色 ($0.028/M) |
+| **智谱 GLM** | GLM-5 / GLM-5-Turbo | 多步骤复杂 Agent 拆解, 200K 长上下文 |
+| **通义 Qwen** | Qwen-Max (3.5) / Plus | 中文语境、文档结构化整理 |
+| **MiniMax** | M2.5 / M2.7 | 创意写作、大纲生成、发散性脑暴 |
+| **Moonshot (Kimi)** | K2.5 | 深度数学证明与逻辑推理 |
+| **OpenAI GPT**| GPT-5.4 (via Codex CLI) | 系统级终端提权、超大规模工程、1M 极长上下文 |
+| **Google Gemini** | 3.1 Pro (via Gemini CLI)| 大前端全家桶、UI 设计演进、前瞻视觉分析 |
+| **聚合分发** | OpenRouter / DMXAPI | 无限中继扩展与自动兜底路由机制 |
 
-> ⚠️ **L-Hub 专为 Antigravity IDE 打造并完美适配。**
-> *L-Hub is designed exclusively for Antigravity IDE.*
+> **注意：** 列表中未包含 Claude。因为 Antigravity 主模型原生即由 Claude 驱动，再通过 L-Hub 套娃调用纯属浪费额度。
+>
+> **Note:** Claude is deliberately excluded. Antigravity's host model logic is already driven by Claude, routing to it via L-Hub is redundant.
 
-&nbsp;
+---
 
-### **方法一：Antigravity 内安装 (Install from IDE)**
-1.  打开扩展面板 (`Ctrl+Shift+X` / `Cmd+Shift+X`)。
-2.  搜索 **`L-Hub`**。
-3.  点击 **安装**。扩展将自动配置 MCP 并安装路由 Skill。
+## 快速开始
+**Quick Start Guide**
 
-*Open Extensions view, search for `L-Hub`, click Install. MCP config and Routing Skill are auto-setup.*
+> **L-Hub 专为 Antigravity IDE 量身定制**
+> 
+> L-Hub is exclusively designed for Antigravity IDE.
 
-&nbsp;
+**1. 一键安装**
+在 Antigravity 扩展商店中搜索 "L-Hub" 并点击安装。
 
-### **命令行安装 (Install via CLI)**
+**1. Install** — Search for "L-Hub" in the Antigravity Extension Marketplace.
+
+**2. 激活沙盒**
+执行 `Cmd/Ctrl + R` 重载窗口，L-Hub 会在后台自动完成 MCP 挂载与原生指令 Skill 的原子注入。
+
+**2. Reload** — Press `Cmd/Ctrl + R` to reload window. L-Hub auto-registers MCP config and injects the routing skill.
+
+**3. 填装弹药**
+按下 `Cmd/Ctrl + Shift + P` 呼出面板输入 `L-Hub: Dash` 打开控制台，在"系统设置"中按需填入 API Key。
+
+**3. Configure** — Run command `L-Hub: Open Dashboard` to securely add your preferred API keys.
+
+**4. 沉浸探索**
+像往常一样和主模型对话即可，遇到重复劳作，主模型会自动将脏活累活丢给 L-Hub 的临时工处理。
+
+**4. Go** — Chat as usual. The Host model will automatically delegate heavy-lifting tasks to L-Hub's expert models.
+
+```text
+安装完毕后，确保以下内置原子工具已就绪：
+After installation, verify these atomic tools appear via /list:
+
+lhub / ai_ask           → 智能单模型路由
+lhub / ai_multi_ask     → 多模型并行发散
+lhub / ai_consensus     → 多模型共识投票
+lhub / ai_codex_task    → 唤起 Codex 沙盒
+lhub / ai_gemini_task   → 唤起 Gemini 沙盒
+lhub / ai_list_providers→ 可视化检测已配模型栈
+```
+
+### 可选补充：解锁零配置 CLI 代理
+***Optional: Unlock Config-Free CLI Agents***
 ```bash
-# Using Antigravity IDE Extension CLI
-/Applications/Antigravity.app/Contents/Resources/app/bin/antigravity --install-extension readysteadyscience.l-hub
+# 解锁 ChatGPT PLUS 订阅户无感额度调用
+npm install -g @openai/codex && codex login
+
+# 解锁 Google Advanced 订阅户无感额度调用
+npm install -g @google/gemini-cli && gemini
 ```
-
-&nbsp;
-
-### **配置 API 密钥 (Configure API Keys)**
-1.  按 `Cmd/Ctrl + Shift + P` 打开命令面板。
-2.  输入并选择 **`L-Hub: Open Dashboard`**。
-3.  在 Dashboard 中，为你需要的模型添加并填入 API Key。
-
-*Open Command Palette, run `L-Hub: Open Dashboard`, add your API keys.*
-
-&nbsp;
-
-### **(可选) 设置 CLI 代理 (Optional: Setup CLI Agents)**
-```bash
-# For ChatGPT subscription quota
-npm install -g @openai/codex
-codex login
-# Follow the OAuth flow in your browser
-
-# For Gemini subscription quota
-npm install -g @google/gemini-cli
-gemini
-# Follow the OAuth flow
-```
-
-&nbsp;
-
-### **验证安装 (Verify Installation)**
-安装后，你的工具面板应出现以下 L-Hub 工具：
-
-*After installation, you should see these L-Hub tools in your tool panel:*
-```
-lhub / ai_ask          # 通用问答路由
-lhub / ai_consensus    # 多模型投票
-lhub / ai_codex_task   # Codex CLI 任务
-lhub / ai_gemini_task  # Gemini CLI 任务
-```
-
-&nbsp;
-
-### **运行测试 (Run the Test)**
-在 Dashboard 中点击 **🧪 测试** 按钮，复制生成的 Prompt，粘贴到 Antigravity 聊天框并发送。等待完整的诊断报告。
-
-*Click the **🧪 Test** button in Dashboard, copy the prompt, paste into chat, and send. Await the full diagnostic report.*
-
-&nbsp;
 
 ---
 
-&nbsp;
+## 常见问题
+**FAQ**
 
-## 📖 工作原理 (How It Works)
+**Q: L-Hub 支持 VS Code 吗？**
+A: **绝不支持。** L-Hub 是 Antigravity IDE 生态的专属基础设施，重度依赖于其底层的 Agentic 控制机制。
 
-L-Hub 充当 **MCP (Model Context Protocol) 服务器**，在您的 IDE 和多个 AI 模型之间建立智能桥梁。
+**Q: Does L-Hub support VS Code?**
+A: **No.** L-Hub is an exclusive infrastructure built strictly for the Antigravity IDE ecosystem.
 
-1.  **拦截与分析 (Intercept & Analyze):** 当您在 Antigravity 中提出复杂请求时，L-Hub 的调度 Skill 会介入，将请求分解为逻辑子任务。
-2.  **智能路由 (Smart Routing):** 基于任务类型、复杂度和预设的成本规则，每个子任务被路由到最合适的模型（例如：代码审查 -> Codex CLI (GPT-5.4)，辅助信息整理 -> DeepSeek V3，而主控逻辑留给原生 Claude 4.6/Gemini 3.1 Pro）。
-3.  **聚合返回 (Aggregate & Return):** 所有子任务的结果被收集、整合，并作为一个连贯的响应返回给主模型，再由主模型呈现给您。
-4.  **透明可控 (Transparent & Controllable):** 整个过程在后台进行，但您可以在需要时通过特定工具（如 `ai_consensus`）进行手动干预。
+**Q: 我必须把 8 个平台的 API Key 都凑齐才能用吗？**
+A: **完全不需要。** 只要有任何 1 个可用的 Key 就能跑通基础路由。填的 Key 越多，能帮你省下的钱和触发的专家领域就越精准。
 
-&nbsp;
+**Q: Do I need all 8 API keys?**
+A: **Not at all.** A single API key is enough. But the more keys you have, the better the fallback routing precision.
 
----
+**Q: 你们窃取我的 API Key 吗？安全吗？**
+A: **绝对安全。** 所有密钥均由 Antigravity 官方原生的加密离线保管库（SecretStorage）锁死，没有任何数据会离开你的这台电脑。
 
-&nbsp;
-
-## 🛠️ 为开发者打造 (Built for Developers)
-
-| 场景 (Scenario) | L-Hub 如何帮助 (How L-Hub Helps) |
-| :--- | :--- |
-| **辅助生成 (Auxiliary Gen)** | 前端样式问题路由给 Gemini 3.1 Flash，大规模文档翻译或注释路由给 DeepSeek V3，架构推演留给原生 Claude 4.6。 |
-| **代码审查 (Code Review)** | 自动将审查任务发给本地文件读取专精的**Codex CLI (GPT-5.4)**，节省主模型额度同时避免漏改文件。 |
-| **技术写作 (Tech Writing)** | 研究摘要用 MiniMax，初稿用 Qwen 3.5，最后由您的主模型 (原生 Claude 4.6/Gemini 3.1 Pro) 综合吸收输出最终结果。 |
-| **学习新框架 (Learning New Frameworks)** | 基础概念问答用低成本模型，复杂示例和最佳实践用高级模型。 |
-
-&nbsp;
+**Q: Is my API key safe?**
+A: **100% safe.** Keys are securely stored locally inside Antigravity's offline SecretStorage wrapper.
 
 ---
-
-&nbsp;
-
-## 🤝 社区与支持 (Community & Support)
-
-L-Hub 是 **走起智造 (Ready Steady Science)** — Linglan Realm 旗下的免费开源项目。我们相信工具应该提升效率，而非增加复杂度。
-
-**有问题或建议？**
-*Questions or suggestions?*
-
--   **[GitHub Issues](https://github.com/readysteadyscience/L-Hub/issues/new):** 报告 Bug 或请求新功能。
--   **[Discord](https://discord.gg/gurEPMnn52):** 加入我们的社区，与其他开发者交流。
--   **给项目点个 Star ⭐:** 这是对我们最大的支持，也帮助更多开发者发现这个工具。
-
-&nbsp;
-
----
-
-&nbsp;
 
 <div align="center">
 
-## 🚀 立即安装，开启智能路由之旅！
+**走起智造 · Ready Steady Science** — Linglan Realm
 
-**🚀 Like L-Hub? Support our open-source journey with a ⭐ on GitHub!**
+&nbsp;
 
-[![Star Us on GitHub](https://img.shields.io/badge/Give%20us%20a%20Star-%E2%AD%90%20Star%20L--Hub-yellow?style=for-the-badge&logo=github)](https://github.com/readysteadyscience/L-Hub/stargazers)
-
-**走起智造 · Ready Steady Science** — Building Tools for Smarter Creation.
+[![Install L-Hub](https://img.shields.io/badge/Install_L--Hub-Antigravity_IDE-7B68EE?style=for-the-badge)](https://open-vsx.org/extension/readysteadyscience/l-hub)
 
 </div>

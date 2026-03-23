@@ -6,7 +6,7 @@ export interface BridgeConfig {
 }
 
 // Legacy fixed providers (for backward compat)
-export const SUPPORTED_PROVIDERS = ['deepseek', 'glm', 'qwen', 'minimax', 'kimi', 'gpt', 'gemini', 'mistral'] as const;
+export const SUPPORTED_PROVIDERS = ['deepseek', 'glm', 'qwen', 'minimax', 'kimi', 'gpt', 'gemini'] as const;
 export type Provider = typeof SUPPORTED_PROVIDERS[number];
 
 // ─── v2: Dynamic ModelConfig ─────────────────────────────────────────────────

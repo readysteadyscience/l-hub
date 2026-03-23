@@ -25,8 +25,8 @@ const HistoryConsole: React.FC<{ lang: Lang }> = ({ lang }) => {
     const [search, setSearch] = useState('');
 
     const T = {
-        en: { title: '📡 Request History', clear: 'Clear', empty: 'No requests yet. Make an ai_ask call to see history.', search: '🔍 Search method, model, prompt…', model: 'Model', tokens: 'Tokens', duration: 'Duration', status: 'Status', request: 'Request', response: 'Response' },
-        zh: { title: '📡 调用历史', clear: '清空', empty: '暂无记录，调用 ai_ask 后将显示在这里。', search: '🔍 搜索 method / 模型 / prompt…', model: '模型', tokens: 'Token', duration: '耗时', status: '状态', request: '请求内容', response: '响应内容' },
+        en: { title: 'Request History', clear: 'Clear', empty: 'No requests yet. Make an ai_ask call to see history.', search: 'Search method, model, prompt…', model: 'Model', tokens: 'Tokens', duration: 'Duration', status: 'Status', request: 'Request', response: 'Response' },
+        zh: { title: '调用历史', clear: '清空', empty: '暂无记录，调用 ai_ask 后将显示在这里。', search: '搜索 method / 模型 / prompt…', model: '模型', tokens: 'Token', duration: '耗时', status: '状态', request: '请求内容', response: '响应内容' },
     }[lang];
 
     const filtered = search.trim()
@@ -59,7 +59,7 @@ const HistoryConsole: React.FC<{ lang: Lang }> = ({ lang }) => {
     const selectedRecord = records.find(r => r.id === selectedId);
 
     return (
-        <div style={{ display: 'flex', height: '100%', gap: '0', borderRadius: radius.md, overflow: 'hidden', boxShadow: shadow.card, border: '1px solid var(--vscode-panel-border)' }}>
+        <div style={{ display: 'flex', height: '100%', gap: '0', borderRadius: radius.sm, overflow: 'hidden', border: '1px solid var(--vscode-panel-border)', background: 'var(--vscode-editor-background)' }}>
             {/* ── Sidebar ──────────────────────────────────────────────── */}
             <div style={{
                 width: '300px',
@@ -94,20 +94,20 @@ const HistoryConsole: React.FC<{ lang: Lang }> = ({ lang }) => {
                                 backgroundColor: selectedId === record.id ? 'var(--vscode-list-activeSelectionBackground)' : 'transparent',
                                 color: selectedId === record.id ? 'var(--vscode-list-activeSelectionForeground)' : 'inherit',
                                 transition: 'background 0.15s',
-                                borderLeft: `3px solid ${record.status === 'success' ? colors.success : colors.error}`,
+                                borderLeft: `3px solid ${record.status === 'success' ? '#10B981' : '#EF4444'}`,
                             }}
                         >
-                            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: 'var(--vscode-descriptionForeground)', marginBottom: '4px' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', fontFamily: 'monospace', color: 'var(--vscode-descriptionForeground)', marginBottom: '4px' }}>
                                 <span>{new Date(record.timestamp).toLocaleTimeString()}</span>
-                                <span style={{ color: record.status === 'success' ? colors.success : colors.error, fontWeight: 500 }}>
+                                <span style={{ color: record.status === 'success' ? '#10B981' : '#EF4444', fontWeight: 600 }}>
                                     {record.duration}ms
                                 </span>
                             </div>
-                            <div style={{ fontWeight: '600', fontSize: '13px', fontFamily: 'monospace', marginBottom: '4px' }}>{record.method}</div>
-                            {record.model && <div style={{ fontSize: '11px', color: 'var(--vscode-descriptionForeground)', marginBottom: '2px' }}>{record.model}</div>}
+                            <div style={{ fontWeight: '700', fontSize: '12px', fontFamily: 'monospace', letterSpacing: '0.5px', marginBottom: '4px' }}>&gt; {record.method}</div>
+                            {record.model && <div style={{ fontSize: '11px', fontFamily: 'monospace', color: 'var(--vscode-descriptionForeground)', marginBottom: '4px' }}>[{record.model}]</div>}
                             {(record.inputTokens || record.outputTokens) ? (
-                                <div style={{ fontSize: '11px', color: 'var(--vscode-textPreformat-foreground)', opacity: 0.8 }}>
-                                    Tokens: {record.totalTokens || ((record.inputTokens || 0) + (record.outputTokens || 0))}
+                                <div style={{ fontSize: '11px', fontFamily: 'monospace', color: 'var(--vscode-descriptionForeground)', opacity: 0.8 }}>
+                                    TOKENS: {record.totalTokens || ((record.inputTokens || 0) + (record.outputTokens || 0))}
                                 </div>
                             ) : null}
                         </div>
@@ -128,67 +128,74 @@ const HistoryConsole: React.FC<{ lang: Lang }> = ({ lang }) => {
             <div style={{ flex: 1, padding: '20px', overflowY: 'auto' }}>
                 {selectedRecord ? (
                     <div style={{ maxWidth: '800px' }}>
-                        <h2 style={{ marginTop: 0, marginBottom: '12px', fontFamily: 'monospace', fontSize: '16px' }}>{selectedRecord.method}</h2>
-                        <div style={{ marginBottom: '16px', display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
+                        <h2 style={{ marginTop: 0, marginBottom: '12px', fontFamily: 'monospace', fontSize: '14px', fontWeight: 700, letterSpacing: '0.5px' }}>
+                            &gt; {selectedRecord.method}
+                        </h2>
+                        <div style={{ marginBottom: '16px', display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap', fontFamily: 'monospace', fontSize: '11px' }}>
                             <span style={{
-                                display: 'inline-block', padding: '2px 10px', borderRadius: radius.pill,
-                                fontSize: '11px', fontWeight: 600,
-                                background: selectedRecord.status === 'success' ? colors.success : colors.error,
-                                color: '#fff',
+                                display: 'inline-block', padding: '4px 8px', borderRadius: radius.sm, fontWeight: 600,
+                                background: selectedRecord.status === 'success' ? 'rgba(16, 185, 129, 0.15)' : 'rgba(239, 68, 68, 0.15)',
+                                color: selectedRecord.status === 'success' ? '#10B981' : '#EF4444',
+                                border: `1px solid ${selectedRecord.status === 'success' ? 'rgba(16, 185, 129, 0.3)' : 'rgba(239, 68, 68, 0.3)'}`,
                             }}>
-                                {selectedRecord.status.toUpperCase()}
+                                [ {selectedRecord.status.toUpperCase()} ]
                             </span>
 
                             {selectedRecord.model && selectedRecord.model !== 'unknown' && (
                                 <span style={{
-                                    display: 'inline-block', padding: '2px 10px', borderRadius: radius.pill,
-                                    fontSize: '11px', background: 'var(--vscode-badge-background)', color: 'var(--vscode-badge-foreground)',
+                                    display: 'inline-block', padding: '4px 8px', borderRadius: radius.sm,
+                                    background: 'transparent', color: 'var(--vscode-editor-foreground)',
+                                    border: '1px solid var(--vscode-panel-border)',
                                 }}>
-                                    {selectedRecord.model}
+                                    [ MODEL: {selectedRecord.model} ]
                                 </span>
                             )}
 
                             <span style={{
-                                display: 'inline-block', padding: '2px 10px', borderRadius: radius.pill,
-                                fontSize: '11px', border: '1px solid var(--vscode-input-border)',
-                                color: 'var(--vscode-foreground)',
+                                display: 'inline-block', padding: '4px 8px', borderRadius: radius.sm,
+                                border: '1px solid var(--vscode-panel-border)',
+                                color: 'var(--vscode-editor-foreground)',
                             }}>
-                                ⏱ {selectedRecord.duration}ms
+                                [ {selectedRecord.duration}ms ]
                             </span>
 
                             {(selectedRecord.inputTokens || selectedRecord.outputTokens) ? (
                                 <span style={{
-                                    display: 'inline-block', padding: '2px 10px', borderRadius: radius.pill,
-                                    fontSize: '11px', border: '1px solid var(--vscode-input-border)',
-                                    color: 'var(--vscode-foreground)',
+                                    display: 'inline-block', padding: '4px 8px', borderRadius: radius.sm,
+                                    border: '1px solid var(--vscode-panel-border)',
+                                    color: 'var(--vscode-editor-foreground)',
                                 }}>
-                                    ⬆ {selectedRecord.inputTokens || 0} / ⬇ {selectedRecord.outputTokens || 0}
+                                    [ I:{selectedRecord.inputTokens || 0} | O:{selectedRecord.outputTokens || 0} ]
                                 </span>
                             ) : null}
                         </div>
 
-                        <div style={{ height: '1px', background: 'var(--vscode-panel-border)', margin: '16px 0' }} />
+                        <div style={{ height: '1px', background: 'var(--vscode-panel-border)', margin: '20px 0' }} />
 
-                        <h3 style={{ marginTop: '16px', color: 'var(--vscode-editor-foreground)', fontSize: '13px', fontWeight: 'bold' }}>📤 Request</h3>
+                        <div style={{ marginTop: '16px', color: 'var(--vscode-editor-foreground)', fontSize: '12px', fontFamily: 'monospace', fontWeight: 700, letterSpacing: '1px', marginBottom: '8px' }}>
+                            --- REQUEST_PAYLOAD ---
+                        </div>
                         <pre style={{
-                            background: 'var(--vscode-textCodeBlock-background)',
-                            padding: '14px', borderRadius: radius.md,
+                            background: 'var(--vscode-editor-inactiveSelectionBackground)',
+                            padding: '16px', borderRadius: radius.sm,
                             overflowX: 'auto', fontSize: '12px', whiteSpace: 'pre-wrap',
-                            fontFamily: 'var(--vscode-editor-font-family)',
-                            border: '1px solid var(--vscode-panel-border)',
-                            boxShadow: shadow.card,
+                            fontFamily: 'monospace',
+                            border: '1px dashed var(--vscode-panel-border)',
+                            color: 'var(--vscode-editor-foreground)',
                         }}>
                             {selectedRecord.requestPreview}
                         </pre>
 
-                        <h3 style={{ marginTop: '24px', color: 'var(--vscode-editor-foreground)', fontSize: '13px', fontWeight: 'bold' }}>📥 Response</h3>
+                        <div style={{ marginTop: '24px', color: 'var(--vscode-editor-foreground)', fontSize: '12px', fontFamily: 'monospace', fontWeight: 700, letterSpacing: '1px', marginBottom: '8px' }}>
+                            --- RESPONSE_PAYLOAD ---
+                        </div>
                         <pre style={{
-                            background: 'var(--vscode-textCodeBlock-background)',
-                            padding: '14px', borderRadius: radius.md,
+                            background: 'var(--vscode-editor-inactiveSelectionBackground)',
+                            padding: '16px', borderRadius: radius.sm,
                             overflowX: 'auto', fontSize: '12px', whiteSpace: 'pre-wrap',
-                            fontFamily: 'var(--vscode-editor-font-family)',
-                            border: '1px solid var(--vscode-panel-border)',
-                            boxShadow: shadow.card,
+                            fontFamily: 'monospace',
+                            border: '1px dashed var(--vscode-panel-border)',
+                            color: 'var(--vscode-editor-foreground)',
                         }}>
                             {selectedRecord.responsePreview}
                         </pre>
@@ -198,9 +205,11 @@ const HistoryConsole: React.FC<{ lang: Lang }> = ({ lang }) => {
                         display: 'flex', height: '100%', alignItems: 'center', justifyContent: 'center',
                         flexDirection: 'column', gap: '8px',
                         color: 'var(--vscode-descriptionForeground)',
+                        fontFamily: 'monospace',
                     }}>
-                        <span style={{ fontSize: '36px', opacity: 0.4 }}>📋</span>
-                        <span style={{ fontSize: '13px' }}>{lang === 'zh' ? '选择左侧请求查看详情' : 'Select a request from the sidebar'}</span>
+                        <span style={{ fontSize: '11px', fontWeight: 600, letterSpacing: '0.5px' }}>
+                            [ SELECT_NODE_TO_INSPECT_TRAFFIC ]
+                        </span>
                     </div>
                 )}
             </div>

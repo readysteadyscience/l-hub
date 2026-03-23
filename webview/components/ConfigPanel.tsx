@@ -16,12 +16,6 @@ interface ModelConfig {
 
 // ─── Task Types & Config Types ────────────────────────────────────────────────
 
-interface CreativeWritingConfig {
-    outlineModels: string[];
-    draftModels: string[];
-    polishModel: string;
-    evalModel: string;
-}
 
 const TASK_TYPES = [
     { id: 'code_gen', zh: '代码生成', en: 'Code Generation' },
@@ -86,6 +80,14 @@ const MODEL_DEFS: Record<string, ModelDef> = {
         note: 'Coding Plan 包月专属端点 · 消耗 2x-3x 配额（Complex 任务）',
         pricing: undefined,
     },
+    'glm-5-turbo': {
+        label: 'GLM-5-Turbo (Agent)',
+        group: 'GLM (智谱)',
+        baseUrl: 'https://open.bigmodel.cn/api/paas/v4',
+        defaultTasks: ['agentic', 'tool_calling', 'code_gen', 'long_context'],
+        note: '最新（2026-03-16）OpenClaw Agent 专用 · 200K 上下文 · 128K 输出',
+        pricing: { input: 1.20, output: 4.00 },
+    },
 
     // ─── Qwen (通义) ──────────────────────────────────────────────────────────
     'qwen-max': {
@@ -121,10 +123,18 @@ const MODEL_DEFS: Record<string, ModelDef> = {
         note: 'Coding Plan 包月专用，填 sk-cp-... Key · Plus 高速套餐 · 已验证可连通',
         pricing: undefined,
     },
-    // ─── Kimi K2 ──────────────────────────────────────────────────────────────
-    'kimi-k2-instruct': {
-        label: 'Kimi K2.5 (推荐)',
-        group: 'Kimi K2',
+    'MiniMax-M2.7': {
+        label: 'M2.7 旗舰 (推荐)',
+        group: 'MiniMax',
+        baseUrl: 'https://api.minimax.io/v1',
+        defaultTasks: ['agentic', 'code_gen', 'architecture', 'tool_calling'],
+        note: '最新（2026-03-18）自我进化架构 · 软件工程与专业任务大幅提升',
+        pricing: { input: 0.60, output: 1.80 },
+    },
+    // ─── Moonshot (Kimi) ──────────────────────────────────────────────────────
+    'moonshot-v1-8k': {
+        label: 'Kimi (moonshot-v1-8k)',
+        group: 'Moonshot (Kimi)',
         baseUrl: 'https://api.moonshot.cn/v1',
         defaultTasks: ['agentic', 'code_gen', 'tool_calling', 'long_context'],
         note: '最新 K2.5（2026-01），1T MoE，256K 上下文，Agentic 顶尖',
@@ -146,58 +156,6 @@ const MODEL_DEFS: Record<string, ModelDef> = {
         defaultTasks: ['code_gen', 'agentic', 'architecture', 'tool_calling'],
         note: '企业级 Pro 版，极限推理 & production 编码，需 Pro/Enterprise 计划，官方直连',
         pricing: { input: 30.00, output: 180.00 },
-    },
-    // ─── Anthropic (Claude) ───────────────────────────────────────────────────
-    'claude-opus-4-6': {
-        label: 'Claude Opus 4.6 (推荐)',
-        group: 'Anthropic (Claude)',
-        baseUrl: 'https://api.anthropic.com/v1',
-        defaultTasks: ['architecture', 'agentic', 'code_review', 'long_context'],
-        note: '最新旗舰（2026-02），全球编程最强，企业级 Agentic，官方直连',
-        pricing: { input: 15.00, output: 75.00 },
-    },
-    'claude-sonnet-4-6': {
-        label: 'Claude Sonnet 4.6',
-        group: 'Anthropic (Claude)',
-        baseUrl: 'https://api.anthropic.com/v1',
-        defaultTasks: ['code_gen', 'creative', 'architecture', 'documentation'],
-        note: '最新（2026-02），性能与成本最佳平衡，通用主力，官方直连',
-        pricing: { input: 3.00, output: 15.00 },
-    },
-
-    // ─── Google Gemini ────────────────────────────────────────────────────────
-    'gemini-3.1-flash': {
-        label: 'Gemini 3.1 Flash (推荐)',
-        group: 'Google (Gemini)',
-        baseUrl: 'https://generativelanguage.googleapis.com/v1beta/openai',
-        defaultTasks: ['vision', 'code_gen', 'tool_calling', 'long_context'],
-        note: '最新 Flash（2026），速度快成本低，多模态全能，官方直连',
-        pricing: { input: 0.25, output: 1.00 },
-    },
-    'gemini-3.1-pro-preview': {
-        label: 'Gemini 3.1 Pro Preview',
-        group: 'Google (Gemini)',
-        baseUrl: 'https://generativelanguage.googleapis.com/v1beta/openai',
-        defaultTasks: ['math_reasoning', 'architecture', 'long_context', 'vision'],
-        note: '顶级推理，百万 token 上下文，官方直连',
-        pricing: { input: 1.25, output: 5.00 },
-    },
-    'gemini-3-image': {
-        label: 'Gemini Image Gen (生图)',
-        group: 'Google (Gemini)',
-        baseUrl: 'https://generativelanguage.googleapis.com/v1beta/openai',
-        defaultTasks: ['vision', 'creative', 'ui_design'],
-        note: '专用图像生成与编辑（Imagen 3 驱动），官方直连',
-        pricing: { input: 0.25, output: 1.50 },
-    },
-    // ─── Mistral ──────────────────────────────────────────────────────────────
-    'mistral-large-latest': {
-        label: 'Mistral Large 3 (推荐)',
-        group: 'Mistral',
-        baseUrl: 'https://api.mistral.ai/v1',
-        defaultTasks: ['translation', 'tool_calling', 'code_gen'],
-        note: '欧洲隐私合规，多语言优秀，官方直连',
-        pricing: { input: 2.00, output: 6.00 },
     },
     // ─── Meta Llama (中转) ────────────────────────────────────────────────────
     'meta-llama/llama-3.3-70b-instruct': {
@@ -246,15 +204,12 @@ const MODEL_DEFS: Record<string, ModelDef> = {
 
 /** Example model IDs shown in the Model ID input per provider group */
 const GROUP_MODEL_EXAMPLES: Record<string, string> = {
-    'DeepSeek': 'deepseek-chat / deepseek-reasoner',
+    'DeepSeek': 'deepseek-chat',
     'GLM (智谱)': 'glm-5',
-    'Qwen (通义)': 'qwen-max / qwen-plus',
-    'MiniMax': 'MiniMax-M2.5 / MiniMax-M2.5-highspeed',
-    'Kimi K2': 'kimi-k2-0711-preview',
-    'Anthropic (Claude)': 'claude-opus-4-5 / claude-sonnet-4-5',
-    'OpenAI': 'gpt-5.4 / gpt-5.4-pro',
-    'Google (Gemini)': 'gemini-2.0-flash / gemini-1.5-pro',
-    'Mistral': 'mistral-large / mistral-small',
+    'Qwen (通义)': 'qwen-max',
+    'MiniMax': 'MiniMax-M2.5',
+    'Moonshot (Kimi)': 'moonshot-v1-8k',
+    'OpenAI': 'gpt-5.4',
 };
 
 const GROUPS = [
@@ -263,12 +218,10 @@ const GROUPS = [
     'GLM (智谱)',
     'Qwen (通义)',
     'MiniMax',
-    'Kimi K2',
+    'Moonshot (Kimi)',
     // 官方直连（国际）
     'OpenAI',
-    'Anthropic (Claude)',
-    'Google (Gemini)',
-    'Mistral',
+
     // 第三方中转
     '第三方中转',
     // 自定义
@@ -283,8 +236,6 @@ const RELAY_PRESETS = [
     { name: 'CloseAI', url: 'https://api.closeai-asia.com/v1', site: 'https://closeai-asia.com', note: '亚洲企业级中转' },
     { name: '硅基流动 SiliconFlow', url: 'https://api.siliconflow.cn/v1', site: 'https://cloud.siliconflow.cn', note: '国内正规大平台' },
 ];
-
-// Provider colors imported from theme.ts
 
 /** All models with known pricing, for the reference table */
 const PRICE_TABLE = Object.entries(MODEL_DEFS)
@@ -303,186 +254,6 @@ const formatPrice = (usd: number, lang: string) => {
 };
 
 // ─── Shared Styles ────────────────────────────────────────────────────────────
-
-// Styles imported from '../theme' — s, colors, radius, shadow, providerColors
-
-// ─── TaskBadge ────────────────────────────────────────────────────────────────
-
-const TaskBadge: React.FC<{ id: string; lang: string }> = ({ id, lang }) => {
-    const t = TASK_TYPES.find(t => t.id === id);
-    if (!t) { return null; }
-    return (
-        <span style={{
-            display: 'inline-block',
-            margin: '2px 3px 2px 0',
-            padding: '1px 7px',
-            borderRadius: '3px',
-            fontSize: '11px',
-            background: 'var(--vscode-badge-background)',
-            color: 'var(--vscode-badge-foreground)',
-            whiteSpace: 'nowrap',
-        }}>
-            {lang === 'zh' ? t.zh : t.en}
-        </span>
-    );
-};
-
-// ─── ModelCard ────────────────────────────────────────────────────────────────
-
-const ModelCard: React.FC<{
-    model: ModelConfig;
-    apiKey: string;
-    lang: string;
-    initialTestResult?: { ok: boolean; msg: string };
-    onEdit: (m: ModelConfig, key: string) => void;
-    onRemove: (id: string) => void;
-    onToggle: (id: string, enabled: boolean) => void;
-}> = ({ model, apiKey, lang, initialTestResult, onEdit, onRemove, onToggle }) => {
-    const def = MODEL_DEFS[model.modelId];
-    const [testState, setTestState] = React.useState<'idle' | 'testing' | 'ok' | 'fail'>(
-        initialTestResult ? (initialTestResult.ok ? 'ok' : 'fail') : 'idle'
-    );
-    const [testMsg, setTestMsg] = React.useState(initialTestResult?.msg || '');
-    const [confirmDelete, setConfirmDelete] = React.useState(false);
-
-    // Update when auto-test result arrives from parent
-    React.useEffect(() => {
-        if (initialTestResult) {
-            setTestState(initialTestResult.ok ? 'ok' : 'fail');
-            setTestMsg(initialTestResult.msg);
-        }
-    }, [initialTestResult?.ok, initialTestResult?.msg]);
-
-    const handleTest = async () => {
-        if (!apiKey) { setTestState('fail'); setTestMsg(lang === 'zh' ? '未配置 API Key' : 'API Key not set'); return; }
-        if (!model.baseUrl) { setTestState('fail'); setTestMsg('Base URL 未设置'); return; }
-        setTestState('testing'); setTestMsg('');
-        // Route through extension host (Node.js) to bypass CORS restrictions
-        const requestId = `test_${Date.now()}`;
-        vscode.postMessage({ command: 'testConnection', modelId: model.modelId, baseUrl: model.baseUrl, apiKey, requestId });
-        // Listen for the response
-        const handler = (event: MessageEvent) => {
-            const msg = event.data;
-            if (msg.command === 'testResult' && msg.requestId === requestId) {
-                window.removeEventListener('message', handler);
-                setTestState(msg.ok ? 'ok' : 'fail');
-                setTestMsg(msg.msg || (msg.ok ? '已连通' : '失败'));
-            }
-        };
-        window.addEventListener('message', handler);
-        // Fallback cleanup after 17s
-        setTimeout(() => {
-            window.removeEventListener('message', handler);
-            setTestState(s => s === 'testing' ? 'fail' : s);
-            setTestMsg(m => m === '' ? '超时 15s' : m);
-        }, 17000);
-    };
-
-    const testColor = testState === 'ok'
-        ? 'var(--vscode-testing-iconPassed)'
-        : testState === 'fail' ? 'var(--vscode-errorForeground)'
-            : 'var(--vscode-descriptionForeground)';
-
-    return (
-        <div style={{
-            ...s.card,
-            opacity: model.enabled ? 1 : 0.55,
-            borderLeft: `3px solid ${providerColors[def?.group || ''] || colors.brand}`,
-            position: 'relative' as const,
-        }}>
-            <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '8px' }}>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                    {/* Group name (big) + model label (small subtitle) + price */}
-                    <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px', flexWrap: 'wrap' }}>
-                        <span style={{ fontWeight: 600, fontSize: '13px' }}>{def?.group || model.modelId}</span>
-                        <span style={{ fontSize: '11px', color: providerColors[def?.group || ''] || 'var(--vscode-descriptionForeground)', fontWeight: 500 }}>{model.label}</span>
-                        {def?.pricing && (
-                            <span style={{ fontSize: '10px', color: 'var(--vscode-descriptionForeground)', background: 'var(--vscode-input-background)', border: '1px solid var(--vscode-input-border)', borderRadius: '3px', padding: '0 5px' }}>
-                                {formatPrice(def.pricing.input, lang)} / {formatPrice(def.pricing.output, lang)} per M
-                            </span>
-                        )}
-                    </div>
-                    {/* Description */}
-                    {def && (
-                        <div style={{ fontSize: '11px', color: 'var(--vscode-descriptionForeground)', margin: '3px 0 7px' }}>
-                            {def.note}
-                        </div>
-                    )}
-                    {/* Task badges */}
-                    <div>
-                        {model.tasks.length > 0
-                            ? model.tasks.map(t => <TaskBadge key={t} id={t} lang={lang} />)
-                            : <span style={{ fontSize: '11px', color: 'var(--vscode-descriptionForeground)' }}>未分配任务</span>
-                        }
-                    </div>
-                </div>
-                {/* Actions: Test + Disable + Edit + Delete */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
-                    <button
-                        onClick={handleTest}
-                        disabled={testState === 'testing'}
-                        style={{
-                            ...s.btnSecondary, padding: '3px 10px', fontSize: '11px',
-                            cursor: testState === 'testing' ? 'default' : 'pointer',
-                        }}
-                    >
-                        {testState === 'testing' ? (lang === 'zh' ? '测试中…' : 'Testing…') : (lang === 'zh' ? '测试连通' : 'Test')}
-                    </button>
-                    <button
-                        style={{ ...s.btnSecondary, padding: '3px 10px', fontSize: '11px' }}
-                        onClick={() => onToggle(model.id, !model.enabled)}
-                    >
-                        {model.enabled ? (lang === 'zh' ? '禁用' : 'Disable') : (lang === 'zh' ? '启用' : 'Enable')}
-                    </button>
-                    <button
-                        style={{ ...s.btnSecondary, padding: '3px 10px', fontSize: '11px' }}
-                        onClick={() => onEdit(model, apiKey)}
-                    >
-                        {lang === 'zh' ? '编辑' : 'Edit'}
-                    </button>
-                    {!confirmDelete ? (
-                        <button
-                            style={{ ...s.btnSecondary, padding: '3px 10px', fontSize: '11px', color: 'var(--vscode-errorForeground)' }}
-                            onClick={() => setConfirmDelete(true)}
-                        >
-                            {lang === 'zh' ? '删除' : 'Delete'}
-                        </button>
-                    ) : (
-                        <span style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
-                            <span style={{ fontSize: '10px', color: 'var(--vscode-errorForeground)' }}>{lang === 'zh' ? '确认?' : 'Sure?'}</span>
-                            <button
-                                style={{ ...s.btnSecondary, padding: '2px 8px', fontSize: '11px', background: 'var(--vscode-errorForeground)', color: '#fff', border: 'none' }}
-                                onClick={() => { setConfirmDelete(false); onRemove(model.id); }}
-                            >
-                                {lang === 'zh' ? '确认删除' : 'Yes'}
-                            </button>
-                            <button
-                                style={{ ...s.btnSecondary, padding: '2px 8px', fontSize: '11px' }}
-                                onClick={() => setConfirmDelete(false)}
-                            >
-                                {lang === 'zh' ? '取消' : 'No'}
-                            </button>
-                        </span>
-                    )}
-                </div>
-            </div>
-            {/* Footer: URL + key status · test result at bottom-right */}
-            <div style={{ marginTop: '7px', fontSize: '11px', color: 'var(--vscode-descriptionForeground)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '4px' }}>
-                <span style={{ display: 'flex', gap: '14px', alignItems: 'center' }}>
-                    <span>{model.baseUrl || '(未设置 Base URL)'}</span>
-                    <span style={{ color: apiKey ? 'var(--vscode-testing-iconPassed)' : 'var(--vscode-errorForeground)' }}>
-                        {apiKey ? (lang === 'zh' ? 'API Key 已配置' : 'API Key set') : (lang === 'zh' ? 'API Key 未配置' : 'API Key missing')}
-                    </span>
-                </span>
-                {testState !== 'idle' && (
-                    <span style={{ color: testColor, fontWeight: 500 }}>
-                        {testState === 'testing' ? (lang === 'zh' ? '测试中…' : 'Testing…') : testState === 'ok' ? `✅ ${testMsg}` : `❌ ${testMsg}`}
-                    </span>
-                )}
-            </div>
-        </div>
-    );
-};
 
 // ─── AddEditModal ─────────────────────────────────────────────────────────────
 
@@ -504,7 +275,7 @@ const AddEditModal: React.FC<{
             if (url.includes('bigmodel.cn') || url.includes('zhipuai')) return 'GLM (智谱)';
             if (url.includes('dashscope') || url.includes('aliyuncs')) return 'Qwen (通义)';
             if (url.includes('minimax') || url.includes('minimaxi')) return 'MiniMax';
-            if (url.includes('moonshot') || url.includes('kimi')) return 'Kimi K2';
+            if (url.includes('moonshot') || url.includes('kimi')) return 'Moonshot (Kimi)';
             if (url.includes('deepseek')) return 'DeepSeek';
             if (url.includes('anthropic') || url.includes('claude')) return '官方直连（国际）';
             if (url.includes('openai') || url.includes('googleapis')) return '官方直连（国际）';
@@ -848,7 +619,6 @@ const ConfigPanel: React.FC<ConfigPanelProps> = ({ lang }) => {
     const [testResults, setTestResults] = useState<Record<string, { ok: boolean; msg: string }>>({});
     const [codexStatus, setCodexStatus] = useState<{ installed: boolean; version?: string; loggedIn?: boolean } | null>(null);
     const [geminiStatus, setGeminiStatus] = useState<{ installed: boolean; version?: string; loggedIn?: boolean } | null>(null);
-    const [creativeConfig, setCreativeConfig] = useState<CreativeWritingConfig>({ outlineModels: [], draftModels: [], polishModel: '', evalModel: '' });
     const hasAutoTested = React.useRef(false);
 
     useEffect(() => {
@@ -881,15 +651,11 @@ const ConfigPanel: React.FC<ConfigPanelProps> = ({ lang }) => {
             if (ev.data.command === 'geminiStatus') {
                 setGeminiStatus({ installed: ev.data.installed, version: ev.data.version, loggedIn: ev.data.loggedIn });
             }
-            if (ev.data.command === 'loadCreativeConfig') {
-                setCreativeConfig(ev.data.data);
-            }
         };
         window.addEventListener('message', handler);
         vscode.postMessage({ command: 'getModelsV2' });
         vscode.postMessage({ command: 'getCodexStatus' });
         vscode.postMessage({ command: 'getGeminiStatus' });
-        vscode.postMessage({ command: 'getCreativeConfig' });
         return () => window.removeEventListener('message', handler);
     }, []);
 
@@ -915,132 +681,325 @@ const ConfigPanel: React.FC<ConfigPanelProps> = ({ lang }) => {
     return (
         <div style={{ maxWidth: '700px', paddingBottom: '40px' }}>
             {/* Header */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '18px' }}>
-                <div>
-                    <h2 style={{ margin: '0 0 4px', fontSize: '15px' }}>
-                        {lang === 'zh' ? '模型管理' : 'Model Management'}
-                    </h2>
-                    <p style={{ margin: 0, fontSize: '12px', color: 'var(--vscode-descriptionForeground)' }}>
-                        {lang === 'zh'
-                            ? `${enabled} 个模型已启用 · 按任务类型自动路由`
-                            : `${enabled} model(s) enabled · L-Hub auto-routes each task to the matching model`}
-                    </p>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '24px', borderBottom: '1px solid var(--vscode-panel-border)', paddingBottom: '12px' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                    <div style={{
+                        fontSize: '13px', fontWeight: 700, letterSpacing: '1px', textTransform: 'uppercase',
+                        color: 'var(--vscode-editor-foreground)', fontFamily: 'monospace'
+                    }}>
+                        CLOUD EXPERT MODELS
+                    </div>
+                    <div style={{ fontSize: '11px', color: 'var(--vscode-descriptionForeground)', fontFamily: 'monospace' }}>
+                        &gt; {enabled} node(s) active · auto-routing engaged
+                    </div>
                 </div>
-                <button style={s.btnPrimary} onClick={() => { setEditTarget(undefined); setShowModal(true); }}>
-                    {lang === 'zh' ? '+ 添加模型' : '+ Add Model'}
+                <button
+                    style={{ padding: '6px 14px', background: 'transparent', color: 'var(--vscode-editor-foreground)', border: '1px solid var(--vscode-panel-border)', borderRadius: radius.sm, fontSize: '11px', fontFamily: 'monospace', fontWeight: 600, cursor: 'pointer' }}
+                    onClick={() => { setEditTarget(undefined); setShowModal(true); }}
+                >
+                    [ + add_node ]
                 </button>
             </div>
 
-            {/* List */}
-            {models.length === 0 ? (
-                <div style={{
-                    textAlign: 'center', padding: '50px 20px',
-                    color: 'var(--vscode-descriptionForeground)',
-                    border: '1px dashed var(--vscode-panel-border)',
-                    borderRadius: '6px',
-                }}>
-                    <div style={{ marginBottom: '10px', fontSize: '14px' }}>
-                        {lang === 'zh' ? '尚未配置任何模型' : 'No models configured'}
-                    </div>
-                    <div style={{ fontSize: '12px' }}>
-                        {lang === 'zh' ? '点击「+ 添加模型」开始' : 'Click "+ Add Model" to get started'}
-                    </div>
-                </div>
-            ) : (
-                models.map(m => (
-                    <ModelCard
-                        key={m.id} model={m} apiKey={apiKeys[m.id] || ''}
-                        lang={lang} onEdit={handleEdit} onRemove={handleRemove} onToggle={handleToggle}
-                        initialTestResult={testResults[m.id]}
-                    />
-                ))
-            )}
+            {/* Grouped Models List */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                {/* We iterate exactly through the pre-defined GROUPS */}
+                {GROUPS.map(groupName => {
+                    const groupModelsInDef = Object.entries(MODEL_DEFS).filter(([, d]) => d.group === groupName);
+                    // For relay/custom groups, they might not be strict GROUPS matching standard names, so handle dynamically.
+                    // But standard groups like GLM, DeepSeek are fixed.
+                    if (groupModelsInDef.length === 0) return null;
+
+                    return (
+                        <div key={groupName} style={{
+                            padding: '16px',
+                            background: 'var(--vscode-editor-background)',
+                            border: '1px solid var(--vscode-panel-border)',
+                            borderRadius: radius.sm,
+                        }}>
+                            {/* Provider header + group-level N/A or status */}
+                            {(() => {
+                                const anyConfigured = groupModelsInDef.some(([mid]) => models.find(m => m.modelId === mid));
+                                const anyEnabled = groupModelsInDef.some(([mid]) => {
+                                    const c = models.find(m => m.modelId === mid);
+                                    return c?.enabled;
+                                });
+                                const groupStatus = !anyConfigured ? 'N/A' : (anyEnabled ? 'ON' : 'OFF');
+                                const groupStatusColor = groupStatus === 'ON'
+                                    ? 'var(--vscode-testing-iconPassed)'
+                                    : groupStatus === 'OFF' ? 'var(--vscode-errorForeground)'
+                                    : 'var(--vscode-descriptionForeground)';
+                                return (
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                                        <span style={{
+                                            fontWeight: 700, fontSize: '12px', fontFamily: 'monospace',
+                                            letterSpacing: '0.5px', textTransform: 'uppercase',
+                                            color: providerColors[groupName] || 'var(--vscode-editor-foreground)',
+                                            display: 'flex', alignItems: 'center', gap: '6px'
+                                        }}>
+                                            <span>[ {groupName} ]</span>
+                                        </span>
+                                        <span style={{
+                                            fontWeight: 700, fontSize: '11px', fontFamily: 'monospace',
+                                            letterSpacing: '0.5px', color: groupStatusColor,
+                                        }}>
+                                            {groupStatus}
+                                        </span>
+                                    </div>
+                                );
+                            })()}
+
+                            {/* Sub-models list */}
+                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                                {groupModelsInDef.map(([modelId, def]) => {
+                                    const userConfig = models.find(m => m.modelId === modelId);
+                                    const isConfigured = !!userConfig;
+                                    const isEnabled = userConfig?.enabled;
+                                    const testResult = userConfig ? testResults[userConfig.id] : undefined;
+
+                                    const labelColor = isConfigured && isEnabled
+                                        ? 'var(--vscode-textLink-foreground)'
+                                        : 'var(--vscode-descriptionForeground)';
+
+                                    return (
+                                        <div
+                                            key={modelId}
+                                            style={{
+                                                display: 'flex', alignItems: 'center', gap: '6px',
+                                                fontFamily: 'monospace', fontSize: '11px',
+                                            }}
+                                        >
+                                            <span
+                                                onClick={() => {
+                                                    if (userConfig) {
+                                                        handleEdit(userConfig, apiKeys[userConfig.id] || '');
+                                                    } else {
+                                                        const newConfigObj: ModelConfig = {
+                                                            id: `mc_${Date.now()}`,
+                                                            modelId: modelId,
+                                                            label: def.label,
+                                                            baseUrl: def.baseUrl,
+                                                            tasks: def.defaultTasks,
+                                                            enabled: true,
+                                                            priority: 0,
+                                                        };
+                                                        handleEdit(newConfigObj, '');
+                                                    }
+                                                }}
+                                                style={{
+                                                    color: labelColor,
+                                                    fontWeight: isConfigured && isEnabled ? 700 : 400,
+                                                    cursor: 'pointer',
+                                                    borderBottom: '1px dashed transparent',
+                                                }}
+                                                title={isConfigured ? '点击编辑' : '点击配置'}
+                                            >
+                                                • {def.label}
+                                            </span>
+
+                                            {/* Delete button for configured models */}
+                                            {isConfigured && (
+                                                <span
+                                                    onClick={(e) => { e.stopPropagation(); handleRemove(userConfig!.id); }}
+                                                    style={{
+                                                        color: 'var(--vscode-errorForeground)',
+                                                        cursor: 'pointer',
+                                                        fontSize: '10px',
+                                                        fontWeight: 700,
+                                                        opacity: 0.6,
+                                                    }}
+                                                    title="移除此模型配置"
+                                                >
+                                                    [×]
+                                                </span>
+                                            )}
+
+                                            {testResult && !testResult.ok && isEnabled && (
+                                                <span style={{ color: 'var(--vscode-errorForeground)', fontSize: '10px' }}>[ERR]</span>
+                                            )}
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                            {/* Hint if nothing configured in this group */}
+                            {!groupModelsInDef.some(([mid]) => models.find(m => m.modelId === mid)) && (
+                                <div style={{ fontSize: '10px', fontFamily: 'monospace', color: 'var(--vscode-descriptionForeground)', marginTop: '8px' }}>
+                                    未配置 / Not Configured
+                                </div>
+                            )}
+                        </div>
+                    );
+                })}
+
+                {/* Third-Party Relay and Custom Configs (catch-all for items not matching GROUPS) */}
+                {(() => {
+                    const customModes = models.filter(m => {
+                        const def = MODEL_DEFS[m.modelId];
+                        return !def || !GROUPS.includes(def.group);
+                    });
+                    
+                    if (customModes.length === 0) return null;
+
+                    return (
+                        <div style={{
+                            padding: '16px',
+                            background: 'var(--vscode-editor-background)',
+                            border: '1px solid var(--vscode-panel-border)',
+                            borderRadius: radius.sm,
+                        }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                                <span style={{
+                                    fontWeight: 700, fontSize: '12px', fontFamily: 'monospace',
+                                    letterSpacing: '0.5px', textTransform: 'uppercase',
+                                    color: 'var(--vscode-descriptionForeground)',
+                                }}>
+                                    [ THIRD-PARTY / CUSTOM ]
+                                </span>
+                            </div>
+
+                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                                {customModes.map((m) => {
+                                    const isEnabled = m.enabled;
+                                    const testResult = testResults[m.id];
+                                    const statusColor = isEnabled ? 'var(--vscode-testing-iconPassed)' : 'var(--vscode-descriptionForeground)';
+                                    const borderColor = isEnabled ? 'var(--vscode-testing-iconPassed)' : 'var(--vscode-panel-border)';
+
+                                    return (
+                                        <div
+                                            key={m.id}
+                                            onClick={() => handleEdit(m, apiKeys[m.id] || '')}
+                                            style={{
+                                                padding: '6px 12px',
+                                                border: `1px solid ${borderColor}`,
+                                                background: isEnabled ? 'rgba(16, 185, 129, 0.05)' : 'var(--vscode-editor-inactiveSelectionBackground)',
+                                                borderRadius: '4px',
+                                                cursor: 'pointer',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                gap: '8px',
+                                                opacity: !isEnabled ? 0.6 : 1,
+                                                fontFamily: 'monospace',
+                                                fontSize: '11px',
+                                            }}
+                                        >
+                                            <span style={{ fontWeight: 600, color: statusColor }}>API</span>
+                                            <span style={{ color: 'var(--vscode-editor-foreground)' }}>{m.label}</span>
+                                            <span style={{ color: statusColor, fontWeight: 700, letterSpacing: '0.5px', marginLeft: '4px' }}>
+                                                {isEnabled ? 'ON' : 'OFF'}
+                                            </span>
+                                            {testResult && !testResult.ok && isEnabled && (
+                                                <span style={{ color: 'var(--vscode-errorForeground)', marginLeft: '4px' }}>[ERR]</span>
+                                            )}
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        </div>
+                    );
+                })()}
+            </div>
 
             {/* Codex CLI (ChatGPT OAuth) Card */}
-            <div style={{ ...s.card, marginTop: '18px', borderLeft: `3px solid ${codexStatus?.installed ? '#10A37F' : '#E8740C'}` }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <div>
-                        <span style={{ fontWeight: 600, fontSize: '13px' }}>
-                            {codexStatus === null ? '🔍 检测 Codex CLI…' : codexStatus.installed ? '✅ Codex CLI 已安装' : '⚠️ Codex CLI 未安装'}
-                        </span>
-                        {codexStatus?.version && <span style={{ marginLeft: '8px', opacity: 0.6, fontSize: '11px' }}>v{codexStatus.version}</span>}
-                        <div style={{ fontSize: '11px', opacity: 0.7, marginTop: '2px' }}>
-                            {codexStatus?.installed
-                                ? (codexStatus.loggedIn
-                                    ? 'ChatGPT 账号已登录 · ai_codex_task 工具可用 · 无需 API Key'
-                                    : 'Codex CLI 已安装 · 使用前需先登录 ChatGPT 账号')
-                                : '安装后可用 ChatGPT Plus 账号直接调用，无需 API Key'}
+            <div style={{
+                marginTop: '32px', padding: '16px', borderRadius: radius.sm,
+                background: 'var(--vscode-editor-background)',
+                border: `1px solid ${codexStatus?.installed ? 'rgba(16, 185, 129, 0.3)' : 'var(--vscode-panel-border)'}`,
+                borderLeft: `3px solid ${codexStatus?.installed ? '#10B981' : 'var(--vscode-descriptionForeground)'}`
+            }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <span style={{ fontWeight: 700, fontSize: '13px', fontFamily: 'monospace', letterSpacing: '0.5px' }}>
+                                CODEX_CLI (CHATGPT)
+                            </span>
+                            {codexStatus?.version && <span style={{ opacity: 0.6, fontSize: '11px', fontFamily: 'monospace' }}>v{codexStatus.version}</span>}
+                        </div>
+                        <div style={{ fontSize: '11px', fontFamily: 'monospace', color: 'var(--vscode-descriptionForeground)', marginTop: '4px' }}>
+                            {codexStatus === null ? '&gt; pinging...'
+                                : codexStatus.installed
+                                    ? (codexStatus.loggedIn ? '&gt; authenticated via OAuth · native agentic execution' : '&gt; installed · authentication required')
+                                    : '&gt; uninstalled · zero-config ChatGPT access'}
                         </div>
                     </div>
                     <div style={{ display: 'flex', gap: '6px', flexShrink: 0 }}>
                         {!codexStatus?.installed && (
                             <button
-                                style={{ ...s.btnPrimary, fontSize: '11px', padding: '4px 10px' }}
+                                style={{ padding: '4px 10px', background: 'transparent', color: 'var(--vscode-editor-foreground)', border: '1px solid var(--vscode-panel-border)', borderRadius: radius.sm, fontSize: '11px', fontFamily: 'monospace', fontWeight: 600, cursor: 'pointer' }}
                                 onClick={() => vscode.postMessage({ command: 'openTerminalWithCmd', cmd: 'npm install -g @openai/codex && codex login' })}
                             >
-                                安装并登录
+                                [ install ]
                             </button>
                         )}
                         {codexStatus?.installed && (
                             <button
-                                style={{ ...s.btnSecondary, fontSize: '11px', padding: '4px 10px' }}
+                                style={{ padding: '4px 10px', background: 'transparent', color: 'var(--vscode-editor-foreground)', border: '1px solid var(--vscode-panel-border)', borderRadius: radius.sm, fontSize: '11px', fontFamily: 'monospace', fontWeight: 600, cursor: 'pointer' }}
                                 onClick={() => vscode.postMessage({ command: 'openTerminalWithCmd', cmd: 'codex login' })}
                             >
-                                重新登录
+                                [ login ]
                             </button>
                         )}
-                        <button style={{ ...s.btnSecondary, fontSize: '11px', padding: '4px 10px' }}
+                        <button style={{ padding: '4px 10px', background: 'transparent', color: 'var(--vscode-editor-foreground)', border: '1px solid var(--vscode-panel-border)', borderRadius: radius.sm, fontSize: '11px', fontFamily: 'monospace', fontWeight: 600, cursor: 'pointer' }}
                             onClick={() => vscode.postMessage({ command: 'openUrl', url: 'https://github.com/openai/codex' })}>
-                            文档
+                            [ docs ]
                         </button>
                     </div>
                 </div>
                 {codexStatus?.installed && codexStatus.loggedIn && (
-                    <div style={{ textAlign: 'right', marginTop: '6px', fontSize: '11px', color: '#10A37F', fontWeight: 500 }}>✅ 已连通</div>
+                    <div style={{ marginTop: '12px', paddingTop: '10px', borderTop: '1px dashed var(--vscode-panel-border)', fontSize: '11px', fontFamily: 'monospace', color: '#10B981', fontWeight: 600, letterSpacing: '0.5px' }}>
+                        &gt; OK: NODE_ONLINE
+                    </div>
                 )}
             </div>
 
             {/* Gemini CLI Card */}
-            <div style={{ ...s.card, marginTop: '12px', borderLeft: `3px solid ${geminiStatus?.installed ? '#4285F4' : '#E8740C'}` }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <div>
-                        <span style={{ fontWeight: 600, fontSize: '13px' }}>
-                            {geminiStatus === null ? '🔍 检测 Gemini CLI…' : geminiStatus.installed ? '✅ Gemini CLI 已安装' : '⚠️ Gemini CLI 未安装'}
-                        </span>
-                        {geminiStatus?.version && <span style={{ marginLeft: '8px', opacity: 0.6, fontSize: '11px' }}>v{geminiStatus.version}</span>}
-                        <div style={{ fontSize: '11px', opacity: 0.7, marginTop: '2px' }}>
-                            {geminiStatus?.installed
-                                ? (geminiStatus.loggedIn
-                                    ? 'Google 账号已登录 · ai_gemini_task 工具可用 · 无需 API Key'
-                                    : 'Gemini CLI 已安装 · 使用前需先登录 Google 账号')
-                                : '安装后可用 Google 账号本地凭据调用，无需 API Key'}
+            <div style={{
+                marginTop: '12px', padding: '16px', borderRadius: radius.sm,
+                background: 'var(--vscode-editor-background)',
+                border: `1px solid ${geminiStatus?.installed ? 'rgba(16, 185, 129, 0.3)' : 'var(--vscode-panel-border)'}`,
+                borderLeft: `3px solid ${geminiStatus?.installed ? '#10B981' : 'var(--vscode-descriptionForeground)'}`
+            }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <span style={{ fontWeight: 700, fontSize: '13px', fontFamily: 'monospace', letterSpacing: '0.5px' }}>
+                                GEMINI_CLI (GOOGLE)
+                            </span>
+                            {geminiStatus?.version && <span style={{ opacity: 0.6, fontSize: '11px', fontFamily: 'monospace' }}>v{geminiStatus.version}</span>}
+                        </div>
+                        <div style={{ fontSize: '11px', fontFamily: 'monospace', color: 'var(--vscode-descriptionForeground)', marginTop: '4px' }}>
+                            {geminiStatus === null ? '&gt; pinging...'
+                                : geminiStatus.installed
+                                    ? (geminiStatus.loggedIn ? '&gt; authenticated via ADC · native agentic execution' : '&gt; installed · ADC authentication required')
+                                    : '&gt; uninstalled · zero-config Gemini access'}
                         </div>
                     </div>
                     <div style={{ display: 'flex', gap: '6px', flexShrink: 0 }}>
                         {!geminiStatus?.installed && (
                             <button
-                                style={{ ...s.btnPrimary, fontSize: '11px', padding: '4px 10px' }}
+                                style={{ padding: '4px 10px', background: 'transparent', color: 'var(--vscode-editor-foreground)', border: '1px solid var(--vscode-panel-border)', borderRadius: radius.sm, fontSize: '11px', fontFamily: 'monospace', fontWeight: 600, cursor: 'pointer' }}
                                 onClick={() => vscode.postMessage({ command: 'openTerminalWithCmd', cmd: 'npm install -g @google/gemini-cli && gemini' })}
                             >
-                                安装并登录
+                                [ install ]
                             </button>
                         )}
                         {geminiStatus?.installed && (
                             <button
-                                style={{ ...s.btnSecondary, fontSize: '11px', padding: '4px 10px' }}
+                                style={{ padding: '4px 10px', background: 'transparent', color: 'var(--vscode-editor-foreground)', border: '1px solid var(--vscode-panel-border)', borderRadius: radius.sm, fontSize: '11px', fontFamily: 'monospace', fontWeight: 600, cursor: 'pointer' }}
                                 onClick={() => vscode.postMessage({ command: 'openTerminalWithCmd', cmd: 'gemini' })}
                             >
-                                重新登录
+                                [ login ]
                             </button>
                         )}
-                        <button style={{ ...s.btnSecondary, fontSize: '11px', padding: '4px 10px' }}
+                        <button style={{ padding: '4px 10px', background: 'transparent', color: 'var(--vscode-editor-foreground)', border: '1px solid var(--vscode-panel-border)', borderRadius: radius.sm, fontSize: '11px', fontFamily: 'monospace', fontWeight: 600, cursor: 'pointer' }}
                             onClick={() => vscode.postMessage({ command: 'openUrl', url: 'https://github.com/google/gemini-cli' })}>
-                            文档
+                            [ docs ]
                         </button>
                     </div>
                 </div>
                 {geminiStatus?.installed && geminiStatus.loggedIn && (
-                    <div style={{ textAlign: 'right', marginTop: '6px', fontSize: '11px', color: '#4285F4', fontWeight: 500 }}>✅ 已连通</div>
+                    <div style={{ marginTop: '12px', paddingTop: '10px', borderTop: '1px dashed var(--vscode-panel-border)', fontSize: '11px', fontFamily: 'monospace', color: '#10B981', fontWeight: 600, letterSpacing: '0.5px' }}>
+                        &gt; OK: NODE_ONLINE
+                    </div>
                 )}
             </div>
 
@@ -1148,10 +1107,10 @@ const ConfigPanel: React.FC<ConfigPanelProps> = ({ lang }) => {
                                     [lang === 'zh' ? '调试 / 重构' : 'Debug', [['Anthropic (Claude)', 'Opus 4.6'], ['OpenAI', 'GPT-5.3 Codex']], lang === 'zh' ? '全球编程最强；Terminal-Bench #1' : 'Best coding; Terminal-Bench #1'],
                                     [lang === 'zh' ? '架构设计' : 'Architecture', [['Anthropic (Claude)', 'Opus 4.6'], ['GLM (智谱)', 'GLM-5']], lang === 'zh' ? '企业级 Agentic；工程接近 Opus' : 'Enterprise Agentic; near Opus'],
                                     [lang === 'zh' ? '文档' : 'Docs', [['Anthropic (Claude)', 'Sonnet 4.6'], ['Qwen (通义)', 'Max']], lang === 'zh' ? '均衡首选；中文文档最强' : 'Balanced; best Chinese docs'],
-                                    [lang === 'zh' ? '翻译' : 'Translation', [['Qwen (通义)', 'Max'], ['Mistral', 'Large 3']], lang === 'zh' ? '中文第一；欧洲多语言' : 'Chinese #1; EU multilingual'],
+                                    [lang === 'zh' ? '翻译' : 'Translation', [['Qwen (通义)', 'Max'], ['DeepSeek', 'V3']], lang === 'zh' ? '中文第一；本地化适配强' : 'Chinese #1; Strong localization'],
                                     [lang === 'zh' ? 'UI / 前端' : 'UI & Frontend', [['Google (Gemini)', '3.1 Flash'], ['MiniMax', 'M2.5']], lang === 'zh' ? '多模态视觉；100 tok/s' : 'Multimodal; 100 tok/s'],
                                     [lang === 'zh' ? '图像理解' : 'Vision', [['Google (Gemini)', '3.1 Pro'], ['OpenAI', 'GPT-5.1']], lang === 'zh' ? '百万 token 多模态' : 'Million token multimodal'],
-                                    [lang === 'zh' ? '长文本' : 'Long Context', [['Google (Gemini)', '3.1 Pro'], ['Kimi K2', 'K2.5']], lang === 'zh' ? '百万上下文；256K MoE' : 'Million ctx; 256K MoE'],
+                                    [lang === 'zh' ? '长文本' : 'Long Context', [['Google (Gemini)', '3.1 Pro'], ['Moonshot (Kimi)', 'v1-128k']], lang === 'zh' ? '百万上下文；256K MoE' : 'Million ctx; 256K MoE'],
                                     [lang === 'zh' ? '推理' : 'Reasoning', [['DeepSeek', 'R1'], ['Google (Gemini)', '3.1 Pro']], lang === 'zh' ? '思维链顶尖；ARC-AGI-2 #1' : 'CoT top; ARC-AGI-2 #1'],
                                     [lang === 'zh' ? '工具调用' : 'Tool Calling', [['Qwen (通义)', 'Max'], ['OpenAI', 'GPT-5.1']], lang === 'zh' ? 'Tau2-bench #1' : 'Tau2-bench #1'],
                                     [lang === 'zh' ? 'Agentic' : 'Agentic', [['MiniMax', 'M2.5'], ['Anthropic (Claude)', 'Opus 4.6']], lang === 'zh' ? 'SWE-bench 80.2%' : 'SWE-bench 80.2%'],
