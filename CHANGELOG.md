@@ -6,6 +6,11 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.3.4] - 2026-03-23
+
+### Changed
+- **文档版式优化**：调整了 README 的视觉连贯性。将 L-Hub 专属 Hero Banner 置于页首作为海报，并将操作演示动图（Demo GIF）下推至“核心痛点与解决方案”实战环节。
+
 ## [0.3.3] - 2026-03-23
 
 ### Fixed

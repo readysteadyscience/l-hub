@@ -1,6 +1,6 @@
 <div align="center">
 
-![L-Hub Demo](https://raw.githubusercontent.com/readysteadyscience/L-Hub/main/images/demo.gif)
+![L-Hub](https://raw.githubusercontent.com/readysteadyscience/L-Hub/main/images/hero-banner.png)
 
 **让 Antigravity 的主模型专注推理，辅助任务自动路由到专家模型 — 节省 60%+ Token**
 
@@ -19,6 +19,12 @@
 
 ## 核心痛点与解决方案
 **Without L-Hub vs With L-Hub**
+
+<div align="center">
+
+![L-Hub Demo](https://raw.githubusercontent.com/readysteadyscience/L-Hub/main/images/demo.gif)
+
+</div>
 
 | 场景<br>Scenario | 没有 L-Hub (Without) | 使用 L-Hub (With) |
 |----------|-----------|-------------|
