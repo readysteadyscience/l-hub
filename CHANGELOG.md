@@ -6,6 +6,11 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.3.3] - 2026-03-23
+
+### Fixed
+- **Open VSX 图像渲染修复**：将 README 文档中的本地相对路径动图与静态图，全线替换为 GitHub 远程直链（Raw URLs），彻底解决插件主页“L-Hub Demo”等图像资源裂图、无法加载的问题。
+
 ## [0.3.2] - 2026-03-23
 
 ### Added
