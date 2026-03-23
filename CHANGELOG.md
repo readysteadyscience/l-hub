@@ -6,6 +6,16 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.3.6] - 2026-03-23
+
+### Changed
+- **文档质感升级**：引入了由社区/作者亲自微调和优化剪裁比例后的全新专属 L-Hub Hero Banner 品牌海报图作为页首，使 README 排版更加饱满、极客。
+
+## [0.3.5] - 2026-03-23
+
+### Changed
+- **文档版式更新**：移除了顶部不美观的海报占位图，恢复为极简、纯粹的 `L-Hub` 纯文字 Header。
+
 ## [0.3.4] - 2026-03-23
 
 ### Changed
