@@ -1,259 +1,12 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { vscode } from '../vscode-api';
-import { s, colors, radius, shadow, providerColors } from '../theme';
-
-// ─── Types ────────────────────────────────────────────────────────────────────
-
-interface ModelConfig {
-    id: string;
-    modelId: string;
-    label: string;
-    baseUrl: string;
-    tasks: string[];
-    enabled: boolean;
-    priority: number;
-}
-
-// ─── Task Types & Config Types ────────────────────────────────────────────────
+import { s, radius, providerColors } from '../theme';
+import {
+    ModelConfig, ModelDef, TASK_TYPES, MODEL_DEFS, GROUP_MODEL_EXAMPLES,
+    GROUPS, RELAY_PRESETS, PRICE_TABLE, USD_TO_CNY, formatPrice,
+} from './config/model-registry';
 
 
-const TASK_TYPES = [
-    { id: 'code_gen', zh: '代码生成', en: 'Code Generation' },
-    { id: 'code_review', zh: '调试 / 重构', en: 'Debug & Refactor' },
-    { id: 'architecture', zh: '架构设计', en: 'Architecture' },
-    { id: 'documentation', zh: '文档 / 注释', en: 'Documentation' },
-    { id: 'translation', zh: '翻译', en: 'Translation' },
-    { id: 'ui_design', zh: 'UI / 前端', en: 'UI & Frontend' },
-    { id: 'vision', zh: '图像理解', en: 'Vision' },
-    { id: 'long_context', zh: '长文本分析', en: 'Long Context' },
-    { id: 'math_reasoning', zh: '数学 / 推理', en: 'Math & Reasoning' },
-    { id: 'tool_calling', zh: '工具调用', en: 'Tool Calling' },
-    { id: 'creative', zh: '创意写作', en: 'Creative Writing' },
-    { id: 'agentic', zh: 'Agentic', en: 'Agentic Tasks' },
-];
-
-// ─── Model Registry ───────────────────────────────────────────────────────────
-
-interface ModelDef {
-    label: string;
-    group: string;
-    baseUrl: string;
-    defaultTasks: string[];
-    note: string;
-    relay?: boolean;
-    /** OpenRouter price as of 2026-03, USD per 1M tokens */
-    pricing?: { input: number; output: number };
-}
-
-const MODEL_DEFS: Record<string, ModelDef> = {
-    // ─── DeepSeek ─────────────────────────────────────────────────────────────
-    'deepseek-chat': {
-        label: 'V3.2',
-        group: 'DeepSeek',
-        baseUrl: 'https://api.deepseek.com/v1',
-        defaultTasks: ['code_gen', 'code_review', 'math_reasoning'],
-        note: '最新 V3.2（2025-12）综合能力强，性价比最高',
-        pricing: { input: 0.32, output: 0.89 },
-    },
-    'deepseek-reasoner': {
-        label: 'R1',
-        group: 'DeepSeek',
-        baseUrl: 'https://api.deepseek.com/v1',
-        defaultTasks: ['math_reasoning', 'architecture', 'code_review'],
-        note: 'R1 深度推理，思维链分析、数学、规划',
-        pricing: { input: 0.70, output: 2.50 },
-    },
-    // ─── GLM (智谱) ────────────────────────────────────────────────────────────
-    'glm-5': {
-        label: 'GLM-5 通用',
-        group: 'GLM (智谱)',
-        baseUrl: 'https://open.bigmodel.cn/api/paas/v4',
-        defaultTasks: ['architecture', 'agentic', 'tool_calling', 'code_gen'],
-        note: '最新旗舰（2026-02）· 通用 API 端点 · 按量计费',
-        pricing: { input: 1.50, output: 6.00 },
-    },
-    'glm-5-coding': {
-        label: 'GLM-5 编程版',
-        group: 'GLM (智谱)',
-        baseUrl: 'https://open.bigmodel.cn/api/coding/paas/v4',
-        defaultTasks: ['architecture', 'agentic', 'code_gen', 'code_review'],
-        note: 'Coding Plan 包月专属端点 · 消耗 2x-3x 配额（Complex 任务）',
-        pricing: undefined,
-    },
-    'glm-5-turbo': {
-        label: 'GLM-5-Turbo (Agent)',
-        group: 'GLM (智谱)',
-        baseUrl: 'https://open.bigmodel.cn/api/paas/v4',
-        defaultTasks: ['agentic', 'tool_calling', 'code_gen', 'long_context'],
-        note: '最新（2026-03-16）OpenClaw Agent 专用 · 200K 上下文 · 128K 输出',
-        pricing: { input: 1.20, output: 4.00 },
-    },
-
-    // ─── Qwen (通义) ──────────────────────────────────────────────────────────
-    'qwen-max': {
-        label: 'Qwen3-Max',
-        group: 'Qwen (通义)',
-        baseUrl: 'https://dashscope.aliyuncs.com/compatible-mode/v1',
-        defaultTasks: ['translation', 'documentation', 'tool_calling', 'code_gen'],
-        note: '通义最新旗舰（Qwen3.5），中文理解与翻译最强',
-        pricing: { input: 0.50, output: 4.00 },
-    },
-    'qwen-coder-plus': {
-        label: 'Qwen Coder Plus',
-        group: 'Qwen (通义)',
-        baseUrl: 'https://dashscope.aliyuncs.com/compatible-mode/v1',
-        defaultTasks: ['code_gen', 'code_review', 'agentic'],
-        note: '代码专项旗舰，Agentic 编程与工具调用',
-        pricing: { input: 0.25, output: 2.00 },
-    },
-    // ─── MiniMax ──────────────────────────────────────────────────────────────
-    'MiniMax-M2.5': {
-        label: 'M2.5 通用',
-        group: 'MiniMax',
-        baseUrl: 'https://api.minimax.io/v1',
-        defaultTasks: ['agentic', 'code_gen', 'tool_calling', 'long_context'],
-        note: '最新旗舰（2025-12），SWE-bench 80.2%，按量计费，普通 API Key',
-        pricing: { input: 0.40, output: 1.20 },
-    },
-    'MiniMax-M2.5-highspeed': {
-        label: 'M2.5-highspeed Coding Plan',
-        group: 'MiniMax',
-        baseUrl: 'https://api.minimax.io/v1',
-        defaultTasks: ['code_gen', 'code_review', 'agentic', 'long_context'],
-        note: 'Coding Plan 包月专用，填 sk-cp-... Key · Plus 高速套餐 · 已验证可连通',
-        pricing: undefined,
-    },
-    'MiniMax-M2.7': {
-        label: 'M2.7 旗舰 (推荐)',
-        group: 'MiniMax',
-        baseUrl: 'https://api.minimax.io/v1',
-        defaultTasks: ['agentic', 'code_gen', 'architecture', 'tool_calling'],
-        note: '最新（2026-03-18）自我进化架构 · 软件工程与专业任务大幅提升',
-        pricing: { input: 0.60, output: 1.80 },
-    },
-    // ─── Moonshot (Kimi) ──────────────────────────────────────────────────────
-    'moonshot-v1-8k': {
-        label: 'Kimi (moonshot-v1-8k)',
-        group: 'Moonshot (Kimi)',
-        baseUrl: 'https://api.moonshot.cn/v1',
-        defaultTasks: ['agentic', 'code_gen', 'tool_calling', 'long_context'],
-        note: '最新 K2.5（2026-01），1T MoE，256K 上下文，Agentic 顶尖',
-        pricing: { input: 1.20, output: 4.80 },
-    },
-    // ─── OpenAI ───────────────────────────────────────────────────────────────
-    'gpt-5.4': {
-        label: 'GPT-5.4 (推荐)',
-        group: 'OpenAI',
-        baseUrl: 'https://api.openai.com/v1',
-        defaultTasks: ['code_gen', 'architecture', 'long_context', 'vision'],
-        note: '最新旗舰（2026-03-05），集成 Codex 编程能力，1M token 上下文，原生 computer-use，官方直连',
-        pricing: { input: 2.50, output: 15.00 },
-    },
-    'gpt-5.4-pro': {
-        label: 'GPT-5.4 Pro (企业)',
-        group: 'OpenAI',
-        baseUrl: 'https://api.openai.com/v1',
-        defaultTasks: ['code_gen', 'agentic', 'architecture', 'tool_calling'],
-        note: '企业级 Pro 版，极限推理 & production 编码，需 Pro/Enterprise 计划，官方直连',
-        pricing: { input: 30.00, output: 180.00 },
-    },
-    // ─── Meta Llama (中转) ────────────────────────────────────────────────────
-    'meta-llama/llama-3.3-70b-instruct': {
-        label: 'Llama 3.3 70B',
-        group: 'Meta (Llama) — 需中转',
-        baseUrl: '',
-        defaultTasks: ['code_gen', 'translation'],
-        note: '业界顶级梯队模型，需通过 OpenRouter / 硅基流动等中转',
-        relay: true,
-    },
-    // ─── API 聚合平台 ─────────────────────────────────────────────────────────
-    '__openrouter__': {
-        label: 'OpenRouter',
-        group: 'API 聚合平台',
-        baseUrl: 'https://openrouter.ai/api/v1',
-        defaultTasks: ['code_gen', 'architecture', 'translation'],
-        note: '全球最大聚合（500+ 模型）。Model ID 格式：openai/gpt-5.4 · anthropic/claude-sonnet-4-6',
-        relay: true,
-    },
-    '__yibuapi__': {
-        label: '一步API',
-        group: 'API 聚合平台',
-        baseUrl: 'https://api.yibuapi.com/v1',
-        defaultTasks: ['code_gen', 'translation'],
-        note: '国内聚合，原价调用 GPT/Claude/Gemini/DeepSeek/Qwen/Kimi，无需科学上网',
-        relay: true,
-    },
-    '__dmxapi__': {
-        label: 'DMXAPI',
-        group: 'API 聚合平台',
-        baseUrl: 'https://www.dmxapi.cn/v1',
-        defaultTasks: ['code_gen', 'translation'],
-        note: '国内稳定聚合，Model ID 与官方一致',
-        relay: true,
-    },
-    // ─── 自定义 ───────────────────────────────────────────────────────────────
-    '__custom__': {
-        label: '自定义模型',
-        group: '自定义接口',
-        baseUrl: '',
-        defaultTasks: [],
-        note: '任意兼容 OpenAI 接口的模型（中转、私有部署等）',
-        relay: true,
-    },
-};
-
-/** Example model IDs shown in the Model ID input per provider group */
-const GROUP_MODEL_EXAMPLES: Record<string, string> = {
-    'DeepSeek': 'deepseek-chat',
-    'GLM (智谱)': 'glm-5',
-    'Qwen (通义)': 'qwen-max',
-    'MiniMax': 'MiniMax-M2.5',
-    'Moonshot (Kimi)': 'moonshot-v1-8k',
-    'OpenAI': 'gpt-5.4',
-};
-
-const GROUPS = [
-    // 官方直连（国内）
-    'DeepSeek',
-    'GLM (智谱)',
-    'Qwen (通义)',
-    'MiniMax',
-    'Moonshot (Kimi)',
-    // 官方直连（国际）
-    'OpenAI',
-
-    // 第三方中转
-    '第三方中转',
-    // 自定义
-    '自定义接口',
-];
-
-/** Verified relay platforms with HTTPS, proper websites, and good reputation */
-const RELAY_PRESETS = [
-    { name: 'OpenRouter', url: 'https://openrouter.ai/api/v1', site: 'https://openrouter.ai', note: '国际标杆，模型最全（500+）' },
-    { name: 'UniAPI 内地 HK', url: 'https://hk.uniapi.io/v1', site: 'https://uniapi.io', note: '大陆优化线路，国内首选' },
-    { name: 'UniAPI 国际', url: 'https://api.uniapi.io/v1', site: 'https://uniapi.io', note: '国际线路，支持 GPT/Claude/Gemini/DeepSeek' },
-    { name: 'CloseAI', url: 'https://api.closeai-asia.com/v1', site: 'https://closeai-asia.com', note: '亚洲企业级中转' },
-    { name: '硅基流动 SiliconFlow', url: 'https://api.siliconflow.cn/v1', site: 'https://cloud.siliconflow.cn', note: '国内正规大平台' },
-];
-
-/** All models with known pricing, for the reference table */
-const PRICE_TABLE = Object.entries(MODEL_DEFS)
-    .filter(([, d]) => d.pricing)
-    .sort((a, b) => (a[1].pricing!.input - b[1].pricing!.input))
-    .map(([id, d]) => ({ id, label: d.label, group: d.group, pricing: d.pricing! }));
-
-/** Format a USD price as CNY (zh) or USD (en). Rate: 1 USD ≈ 7.3 CNY */
-const USD_TO_CNY = 7.3;
-const formatPrice = (usd: number, lang: string) => {
-    if (lang === 'zh') {
-        const cny = usd * USD_TO_CNY;
-        return `¥${cny < 10 ? cny.toFixed(2) : cny.toFixed(1)}`;
-    }
-    return `$${usd.toFixed(2)}`;
-};
-
-// ─── Shared Styles ────────────────────────────────────────────────────────────
 
 // ─── AddEditModal ─────────────────────────────────────────────────────────────
 
@@ -277,8 +30,8 @@ const AddEditModal: React.FC<{
             if (url.includes('minimax') || url.includes('minimaxi')) return 'MiniMax';
             if (url.includes('moonshot') || url.includes('kimi')) return 'Moonshot (Kimi)';
             if (url.includes('deepseek')) return 'DeepSeek';
-            if (url.includes('anthropic') || url.includes('claude')) return '官方直连（国际）';
-            if (url.includes('openai') || url.includes('googleapis')) return '官方直连（国际）';
+            if (url.includes('anthropic') || url.includes('claude')) return 'OpenAI';
+            if (url.includes('openai') || url.includes('googleapis')) return 'OpenAI';
         }
         return GROUPS[0];
     });
@@ -574,8 +327,6 @@ const AddEditModal: React.FC<{
                                 'MiniMax': { text: '申请 MiniMax Key', url: 'https://api.minimax.chat' },
                                 'Moonshot (Kimi)': { text: '申请 Kimi Key', url: 'https://platform.moonshot.cn' },
                                 'OpenAI': { text: '申请 OpenAI Key', url: 'https://platform.openai.com/api-keys' },
-                                'Anthropic (Claude)': { text: '申请 Claude Key', url: 'https://console.anthropic.com' },
-                                'Google (Gemini)': { text: '申请 Gemini Key', url: 'https://aistudio.google.com/apikey' },
                             };
                             const g = isEdit ? (MODEL_DEFS[existing!.model.modelId]?.group || '') : selectedGroup;
                             const link = links[g];
@@ -687,17 +438,17 @@ const ConfigPanel: React.FC<ConfigPanelProps> = ({ lang }) => {
                         fontSize: '13px', fontWeight: 700, letterSpacing: '1px', textTransform: 'uppercase',
                         color: 'var(--vscode-editor-foreground)', fontFamily: 'monospace'
                     }}>
-                        CLOUD EXPERT MODELS
+                        {lang === 'zh' ? '云端模型节点' : 'CLOUD EXPERT MODELS'}
                     </div>
                     <div style={{ fontSize: '11px', color: 'var(--vscode-descriptionForeground)', fontFamily: 'monospace' }}>
-                        &gt; {enabled} node(s) active · auto-routing engaged
+                        &gt; {enabled} {lang === 'zh' ? '个节点在线 · 自动路由已启用' : 'node(s) active · auto-routing engaged'}
                     </div>
                 </div>
                 <button
                     style={{ padding: '6px 14px', background: 'transparent', color: 'var(--vscode-editor-foreground)', border: '1px solid var(--vscode-panel-border)', borderRadius: radius.sm, fontSize: '11px', fontFamily: 'monospace', fontWeight: 600, cursor: 'pointer' }}
                     onClick={() => { setEditTarget(undefined); setShowModal(true); }}
                 >
-                    [ + add_node ]
+                    {lang === 'zh' ? '[ + 添加节点 ]' : '[ + add_node ]'}
                 </button>
             </div>
 
@@ -1104,17 +855,17 @@ const ConfigPanel: React.FC<ConfigPanelProps> = ({ lang }) => {
                             <tbody>
                                 {([
                                     [lang === 'zh' ? '代码生成' : 'Code Gen', [['DeepSeek', 'V3'], ['Qwen (通义)', 'Coder-Plus']], lang === 'zh' ? '性价比最高；代码专项同级' : 'Best cost-efficiency; code specialist'],
-                                    [lang === 'zh' ? '调试 / 重构' : 'Debug', [['Anthropic (Claude)', 'Opus 4.6'], ['OpenAI', 'GPT-5.3 Codex']], lang === 'zh' ? '全球编程最强；Terminal-Bench #1' : 'Best coding; Terminal-Bench #1'],
-                                    [lang === 'zh' ? '架构设计' : 'Architecture', [['Anthropic (Claude)', 'Opus 4.6'], ['GLM (智谱)', 'GLM-5']], lang === 'zh' ? '企业级 Agentic；工程接近 Opus' : 'Enterprise Agentic; near Opus'],
-                                    [lang === 'zh' ? '文档' : 'Docs', [['Anthropic (Claude)', 'Sonnet 4.6'], ['Qwen (通义)', 'Max']], lang === 'zh' ? '均衡首选；中文文档最强' : 'Balanced; best Chinese docs'],
+                                    [lang === 'zh' ? '调试 / 重构' : 'Debug', [['DeepSeek', 'V3'], ['Codex CLI', 'GPT-5']], lang === 'zh' ? '代码理解深入；CLI 终端利器' : 'Deep code comprehension; CLI powerhouse'],
+                                    [lang === 'zh' ? '架构设计' : 'Architecture', [['GLM (智谱)', 'GLM-5'], ['DeepSeek', 'R1']], lang === 'zh' ? '企业级 Agentic；思维链推理' : 'Enterprise Agentic; CoT reasoning'],
+                                    [lang === 'zh' ? '文档' : 'Docs', [['Qwen (通义)', 'Max'], ['DeepSeek', 'V3']], lang === 'zh' ? '中文文档最强；均衡首选' : 'Best Chinese docs; balanced'],
                                     [lang === 'zh' ? '翻译' : 'Translation', [['Qwen (通义)', 'Max'], ['DeepSeek', 'V3']], lang === 'zh' ? '中文第一；本地化适配强' : 'Chinese #1; Strong localization'],
-                                    [lang === 'zh' ? 'UI / 前端' : 'UI & Frontend', [['Google (Gemini)', '3.1 Flash'], ['MiniMax', 'M2.5']], lang === 'zh' ? '多模态视觉；100 tok/s' : 'Multimodal; 100 tok/s'],
-                                    [lang === 'zh' ? '图像理解' : 'Vision', [['Google (Gemini)', '3.1 Pro'], ['OpenAI', 'GPT-5.1']], lang === 'zh' ? '百万 token 多模态' : 'Million token multimodal'],
-                                    [lang === 'zh' ? '长文本' : 'Long Context', [['Google (Gemini)', '3.1 Pro'], ['Moonshot (Kimi)', 'v1-128k']], lang === 'zh' ? '百万上下文；256K MoE' : 'Million ctx; 256K MoE'],
-                                    [lang === 'zh' ? '推理' : 'Reasoning', [['DeepSeek', 'R1'], ['Google (Gemini)', '3.1 Pro']], lang === 'zh' ? '思维链顶尖；ARC-AGI-2 #1' : 'CoT top; ARC-AGI-2 #1'],
-                                    [lang === 'zh' ? '工具调用' : 'Tool Calling', [['Qwen (通义)', 'Max'], ['OpenAI', 'GPT-5.1']], lang === 'zh' ? 'Tau2-bench #1' : 'Tau2-bench #1'],
-                                    [lang === 'zh' ? 'Agentic' : 'Agentic', [['MiniMax', 'M2.5'], ['Anthropic (Claude)', 'Opus 4.6']], lang === 'zh' ? 'SWE-bench 80.2%' : 'SWE-bench 80.2%'],
-                                    [lang === 'zh' ? '终端 / DevOps' : 'Terminal', [['OpenAI', 'GPT-5.3 Codex'], ['OpenAI', 'Codex CLI']], lang === 'zh' ? 'Terminal-Bench #1' : 'Terminal-Bench #1'],
+                                    [lang === 'zh' ? 'UI / 前端' : 'UI & Frontend', [['MiniMax', 'M2.5'], ['Gemini CLI', 'Gemini']], lang === 'zh' ? '多模态视觉；CLI 深度推理' : 'Multimodal; CLI deep reasoning'],
+                                    [lang === 'zh' ? '图像理解' : 'Vision', [['Gemini CLI', 'Gemini'], ['Qwen (通义)', 'VL-Max']], lang === 'zh' ? '百万 token 多模态' : 'Million token multimodal'],
+                                    [lang === 'zh' ? '长文本' : 'Long Context', [['Moonshot (Kimi)', 'v1-128k'], ['Qwen (通义)', 'Max']], lang === 'zh' ? '256K MoE；超长上下文' : '256K MoE; ultra-long ctx'],
+                                    [lang === 'zh' ? '推理' : 'Reasoning', [['DeepSeek', 'R1'], ['GLM (智谱)', 'GLM-5']], lang === 'zh' ? '思维链顶尖；ARC-AGI 高分' : 'CoT top; ARC-AGI high'],
+                                    [lang === 'zh' ? '工具调用' : 'Tool Calling', [['Qwen (通义)', 'Max'], ['GLM (智谱)', 'GLM-5']], lang === 'zh' ? 'Function Calling 领先' : 'Function Calling leader'],
+                                    [lang === 'zh' ? 'Agentic' : 'Agentic', [['MiniMax', 'M2.5'], ['Codex CLI', 'GPT-5']], lang === 'zh' ? 'SWE-bench 高分；终端自动化' : 'SWE-bench high; terminal auto'],
+                                    [lang === 'zh' ? '终端 / DevOps' : 'Terminal', [['Codex CLI', 'GPT-5'], ['Gemini CLI', 'Gemini']], lang === 'zh' ? 'Terminal-Bench #1' : 'Terminal-Bench #1'],
                                 ] as [string, [string, string][], string][]).map(([task, models, reason], i) => (
                                     <tr key={task} style={{
                                         background: i % 2 === 0 ? 'transparent' : 'var(--vscode-editor-inactiveSelectionBackground)',

@@ -1,17 +1,19 @@
 import * as vscode from 'vscode';
 import * as path from 'path';
+import { MODEL_REGISTRY } from './model-registry';
 import { HistoryStorage } from './storage';
 import { SettingsManager } from './settings';
-import { MODEL_REGISTRY } from './model-registry';
 
 export class DashboardPanel {
     public static currentPanel: DashboardPanel | undefined;
+    private static latestAcaReport: unknown;
     private readonly _panel: vscode.WebviewPanel;
     private readonly _extensionUri: vscode.Uri;
     private _disposables: vscode.Disposable[] = [];
     private _onConfigChanged?: () => void;
     /** Cache model test results so Overview panel can display them across tab switches */
-    private _modelTestCache: Map<string, 'online' | 'offline'> = new Map();
+    private static _modelTestCache: Map<string, 'online' | 'offline'> = new Map();
+    private static _lastTestTime: number = 0;
 
     public static createOrShow(extensionUri: vscode.Uri, storage: HistoryStorage | null, settings: SettingsManager, onConfigChanged?: () => void) {
         const column = vscode.window.activeTextEditor
@@ -38,6 +40,11 @@ export class DashboardPanel {
         );
 
         DashboardPanel.currentPanel = new DashboardPanel(panel, extensionUri, storage, settings, onConfigChanged);
+    }
+
+    public static pushAcaAuditReport(payload: unknown) {
+        DashboardPanel.latestAcaReport = payload;
+        void DashboardPanel.currentPanel?.postMessage({ type: 'ACA_AUDIT_REPORT', payload });
     }
 
     private constructor(panel: vscode.WebviewPanel, extensionUri: vscode.Uri, private storage: HistoryStorage | null, private settings: SettingsManager, onConfigChanged?: () => void) {
@@ -250,6 +257,131 @@ export class DashboardPanel {
                         break;
                     }
 
+                    // ── ACA Enabled Toggle ────────────────────────────────────
+                    case 'getAcaEnabled': {
+                        const raw = await this.settings.getApiKey('__aca_enabled__');
+                        const enabled = raw !== 'false'; // default true
+                        this._panel.webview.postMessage({ command: 'acaEnabled', enabled });
+                        break;
+                    }
+                    case 'setAcaEnabled': {
+                        const newEnabled = !!message.enabled;
+                        await this.settings.saveApiKey('__aca_enabled__', String(newEnabled));
+                        this._panel.webview.postMessage({ command: 'acaEnabled', enabled: newEnabled });
+                        vscode.window.showInformationMessage(
+                            newEnabled
+                                ? 'ACA 代码审查已启用 ✅ — Reload Window 后生效'
+                                : 'ACA 代码审查已关闭 — Reload Window 后生效'
+                        );
+                        break;
+                    }
+
+                    // ── Auto-Accept ──────────────────────────────────────────
+                    case 'getAutoAcceptStatus': {
+                        const { isAutoAcceptActive } = require('./auto-accept');
+                        this._panel.webview.postMessage({ command: 'autoAcceptStatus', active: isAutoAcceptActive() });
+                        break;
+                    }
+                    case 'toggleAutoAccept': {
+                        vscode.commands.executeCommand('l-hub.toggleAutoAccept');
+                        setTimeout(() => {
+                            const { isAutoAcceptActive } = require('./auto-accept');
+                            this._panel.webview.postMessage({ command: 'autoAcceptStatus', active: isAutoAcceptActive() });
+                        }, 100);
+                        break;
+                    }
+
+                    // ── Brain Cache Management ───────────────────────────────
+                    case 'scanBrainCache': {
+                        (async () => {
+                            const brainDir = require('path').join(require('os').homedir(), '.gemini', 'antigravity', 'brain');
+                            const fsp = require('fs').promises;
+                            const cacheEntries: any[] = [];
+                            try {
+                                const fsSync = require('fs');
+                                if (!fsSync.existsSync(brainDir)) {
+                                    this._panel.webview.postMessage({ command: 'brainCacheList', entries: [] });
+                                    return;
+                                }
+                                const dirs = await fsp.readdir(brainDir, { withFileTypes: true });
+                                for (const d of dirs) {
+                                    if (!d.isDirectory() || d.name.startsWith('.') || d.name === 'tempmediaStorage') continue;
+                                    const dirPath = require('path').join(brainDir, d.name);
+                                    let totalBytes = 0;
+                                    let fileCount = 0;
+                                    let lastModified = 0;
+                                    let summary = '';
+                                    
+                                    const walk = async (p: string) => {
+                                        try {
+                                            const items = await fsp.readdir(p, { withFileTypes: true });
+                                            for (const item of items) {
+                                                const fp = require('path').join(p, item.name);
+                                                if (item.isDirectory()) { 
+                                                    await walk(fp); 
+                                                } else {
+                                                    try {
+                                                        const st = await fsp.stat(fp);
+                                                        totalBytes += st.size;
+                                                        fileCount++;
+                                                        if (st.mtimeMs > lastModified) lastModified = st.mtimeMs;
+                                                    } catch {}
+                                                }
+                                            }
+                                        } catch {}
+                                    };
+                                    
+                                    await walk(dirPath);
+                                    
+                                    try {
+                                        const ovPath = require('path').join(dirPath, '.system_generated', 'logs', 'overview.txt');
+                                        if (fsSync.existsSync(ovPath)) {
+                                            const raw = await fsp.readFile(ovPath, 'utf8');
+                                            const firstLine = raw.split('\n').find((l: string) => l.trim().length > 0);
+                                            summary = (firstLine || '').substring(0, 80);
+                                        }
+                                    } catch {}
+                                    
+                                    cacheEntries.push({ id: d.name, sizeMB: +(totalBytes / (1024 * 1024)).toFixed(1), fileCount, lastModified, summary });
+                                }
+                            } catch (e) { 
+                                console.error('[L-Hub] scanBrainCache error:', e); 
+                            }
+                            this._panel.webview.postMessage({ command: 'brainCacheList', entries: cacheEntries });
+                        })();
+                        break;
+                    }
+                    case 'deleteBrainCache': {
+                        const cacheIds: string[] = message.ids || [];
+                        if (cacheIds.length === 0) break;
+                        const confirmResult = await vscode.window.showWarningMessage(
+                            message.confirmMsg || `Delete ${cacheIds.length} cache(s)?`,
+                            { modal: true }, 'Delete'
+                        );
+                        if (confirmResult !== 'Delete') {
+                            this._panel.webview.postMessage({ command: 'brainCacheDeleted', deletedIds: [] });
+                            break;
+                        }
+                        const brainBase = require('path').join(require('os').homedir(), '.gemini', 'antigravity', 'brain');
+                        const deletedIds: string[] = [];
+                        for (const cid of cacheIds) {
+                            const target = require('path').join(brainBase, cid);
+                            try {
+                                require('fs').rmSync(target, { recursive: true, force: true });
+                                deletedIds.push(cid);
+                            } catch (e) { console.error(`[L-Hub] Failed to delete ${cid}:`, e); }
+                        }
+                        for (const tab of vscode.window.tabGroups.all.flatMap(g => g.tabs)) {
+                            const input = tab.input as any;
+                            if (input?.uri?.fsPath && deletedIds.some(cid => input.uri.fsPath.includes(cid))) {
+                                try { await vscode.window.tabGroups.close(tab); } catch {}
+                            }
+                        }
+                        this._panel.webview.postMessage({ command: 'brainCacheDeleted', deletedIds });
+                        vscode.window.showInformationMessage(`🗑 已删除 ${deletedIds.length} 个对话缓存`);
+                        break;
+                    }
+
                     // ── Overview Stats ────────────────────────────────────────
                     case 'getOverviewStats': {
                         const configuredModels = await this.settings.getModels();
@@ -270,7 +402,7 @@ export class DashboardPanel {
                                 group: 'api',
                                 providerGroup: reg.providerGroup,
                                 enabled: mEnabled,
-                                status: this._modelTestCache.get(mId) || (key ? 'unknown' : 'offline'),
+                                status: DashboardPanel._modelTestCache.get(mId) || (key ? 'unknown' : 'offline'),
                                 testMsg: key ? undefined : 'No API Key',
                             });
                         }
@@ -338,11 +470,38 @@ export class DashboardPanel {
                         ];
 
                         const routingConfig = vscode.workspace.getConfiguration('lhub.routing');
+
+                        // Scan local Antigravity skills directory for available skills
+                        const fsModule = require('fs');
+                        const pathModule = require('path');
+                        const osModule = require('os');
+                        const skillsDir = pathModule.join(osModule.homedir(), '.gemini', 'antigravity', 'skills');
+                        const localSkills: Array<{ id: string; name: string }> = [];
+                        try {
+                            if (fsModule.existsSync(skillsDir)) {
+                                const entries = fsModule.readdirSync(skillsDir, { withFileTypes: true });
+                                for (const entry of entries) {
+                                    if (!entry.isDirectory()) continue;
+                                    const skillMdPath = pathModule.join(skillsDir, entry.name, 'SKILL.md');
+                                    if (!fsModule.existsSync(skillMdPath)) continue;
+                                    const content = fsModule.readFileSync(skillMdPath, 'utf8');
+                                    // Extract YAML frontmatter name
+                                    const nameMatch = content.match(/^name:\s*(.+)$/m);
+                                    const skillName = nameMatch ? nameMatch[1].trim() : entry.name;
+                                    localSkills.push({ id: entry.name, name: skillName });
+                                }
+                            }
+                        } catch (e) { console.error('[L-Hub] Failed to scan skills:', e); }
+
+                        const boundSkills = routingConfig.get<string[]>('pipeline_bound_skills', []);
                         const routing = {
                             routine: routingConfig.get('routine', 'auto'),
                             code: routingConfig.get('code', 'auto'),
                             reasoning: routingConfig.get('reasoning', 'auto'),
-                            creative: routingConfig.get('creative', 'auto')
+                            creative: routingConfig.get('creative', 'auto'),
+                            pipeline_logic: routingConfig.get('pipeline_logic', 'auto'),
+                            pipeline_writer: routingConfig.get('pipeline_writer', 'auto'),
+                            pipeline_bound_skills: boundSkills,
                         };
 
                         this._panel.webview.postMessage({
@@ -355,6 +514,7 @@ export class DashboardPanel {
                                 totalTokens,
                                 recentRequests,
                                 routing,
+                                localSkills,
                             }
                         });
                         break;
@@ -386,15 +546,15 @@ export class DashboardPanel {
                                 });
                                 const json = await res.json() as any;
                                 if (res.ok) {
-                                    this._modelTestCache.set(m.id, 'online');
+                                    DashboardPanel._modelTestCache.set(m.id, 'online');
                                     safePost({ command: 'testResult', requestId, ok: true, msg: '已连通' });
                                 } else {
-                                    this._modelTestCache.set(m.id, 'offline');
+                                    DashboardPanel._modelTestCache.set(m.id, 'offline');
                                     const err = json?.error?.message || json?.message || `HTTP ${res.status}`;
                                     safePost({ command: 'testResult', requestId, ok: false, msg: (err as string).substring(0, 70) });
                                 }
                             } catch (e: any) {
-                                this._modelTestCache.set(m.id, 'offline');
+                                DashboardPanel._modelTestCache.set(m.id, 'offline');
                                 const msg = e.message?.includes('timeout') ? '超时 15s' : (e.message || 'Error').substring(0, 60);
                                 safePost({ command: 'testResult', requestId, ok: false, msg });
                             }
@@ -410,6 +570,26 @@ export class DashboardPanel {
                         await config.update('code', message.prefs.code, vscode.ConfigurationTarget.Global);
                         await config.update('reasoning', message.prefs.reasoning, vscode.ConfigurationTarget.Global);
                         await config.update('creative', message.prefs.creative, vscode.ConfigurationTarget.Global);
+                        await config.update('pipeline_logic', message.prefs.pipeline_logic, vscode.ConfigurationTarget.Global);
+                        await config.update('pipeline_writer', message.prefs.pipeline_writer, vscode.ConfigurationTarget.Global);
+                        if (message.prefs.pipeline_language !== undefined) {
+                            await config.update('pipeline_language', message.prefs.pipeline_language, vscode.ConfigurationTarget.Global);
+                        }
+                        if (message.prefs.pipeline_image_enabled !== undefined) {
+                            await config.update('pipeline_image_enabled', message.prefs.pipeline_image_enabled, vscode.ConfigurationTarget.Global);
+                        }
+                        if (message.prefs.pipeline_image_count !== undefined) {
+                            await config.update('pipeline_image_count', message.prefs.pipeline_image_count, vscode.ConfigurationTarget.Global);
+                        }
+                        if (message.prefs.pipeline_review !== undefined) {
+                            await config.update('pipeline_review', message.prefs.pipeline_review, vscode.ConfigurationTarget.Global);
+                        }
+                        if (message.prefs.pipeline_bound_skills !== undefined) {
+                            await config.update('pipeline_bound_skills', message.prefs.pipeline_bound_skills, vscode.ConfigurationTarget.Global);
+                        }
+                        
+                        // Force sync so .l-hub-keys.json gets updated immediately
+                        await this._syncModelsToFile();
                         
                         // Dynamically re-install the skill with new overrides
                         const { autoInstallSkill } = require('./extension');
@@ -447,10 +627,17 @@ export class DashboardPanel {
                 const k = await this.settings.getApiKey(`model.${m.id}`);
                 enriched.push({ ...m, apiKey: k || '' });
             }
-            // Also keep legacy keys for backward compat
-            const legacy = await this.settings.getAllApiKeys();
-            // C1 fix: storage may be null if SQLite failed to init
-            fs.writeFileSync(keysFile, JSON.stringify({ version: 2, models: enriched, legacy, dbPath: this.storage?.getDbPath() ?? '' }, null, 2), 'utf8');
+            const config = vscode.workspace.getConfiguration('lhub.routing');
+            const pipelineLogic = config.get<string>('pipeline_logic', 'auto');
+            const pipelineWriter = config.get<string>('pipeline_writer', 'auto');
+
+            fs.writeFileSync(keysFile, JSON.stringify({ 
+                version: 2, 
+                models: enriched, 
+                dbPath: this.storage?.getDbPath() ?? '',
+                pipelineLogic,
+                pipelineWriter
+            }, null, 2), 'utf8');
         } catch (e) {
             console.error('[L-Hub] Failed to sync models to file:', e);
         }
@@ -468,6 +655,15 @@ export class DashboardPanel {
     private _update() {
         const webview = this._panel.webview;
         this._panel.webview.html = this._getHtmlForWebview(webview);
+        if (DashboardPanel.latestAcaReport) {
+            setTimeout(() => {
+                void this.postMessage({ type: 'ACA_AUDIT_REPORT', payload: DashboardPanel.latestAcaReport });
+            }, 80);
+        }
+    }
+
+    public async postMessage(message: unknown) {
+        return this._panel.webview.postMessage(message);
     }
 
     private _getHtmlForWebview(webview: vscode.Webview) {

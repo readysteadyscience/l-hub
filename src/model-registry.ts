@@ -33,7 +33,7 @@ export interface ModelDefinition {
 export const MODEL_REGISTRY: Record<string, ModelDefinition> = {
     // ── DeepSeek ──────────────────────────────────────────────
     'deepseek-chat': {
-        label: 'DeepSeek-V3 (推荐)',
+        label: 'DeepSeek-V3.2 (推荐)',
         providerGroup: 'DeepSeek',
         defaultBaseUrl: 'https://api.deepseek.com/v1',
         defaultTasks: ['translation', 'documentation'],
@@ -52,7 +52,7 @@ export const MODEL_REGISTRY: Record<string, ModelDefinition> = {
     },
     // ── GLM (智谱) ────────────────────────────────────────────
     'glm-5': {
-        label: 'GLM-5',
+        label: 'GLM-5 通用',
         providerGroup: 'GLM (智谱)',
         defaultBaseUrl: 'https://open.bigmodel.cn/api/paas/v4',
         defaultTasks: ['code_review', 'long_context', 'agentic'],
@@ -61,7 +61,7 @@ export const MODEL_REGISTRY: Record<string, ModelDefinition> = {
         requiresApiKey: true,
     },
     'glm-5-coding': {
-        label: 'GLM-5 (Coding Plan)',
+        label: 'GLM-5 编程版',
         providerGroup: 'GLM (智谱)',
         defaultBaseUrl: 'https://open.bigmodel.cn/api/coding/paas/v4',
         defaultTasks: ['code_review', 'agentic', 'long_context'],
@@ -81,7 +81,7 @@ export const MODEL_REGISTRY: Record<string, ModelDefinition> = {
 
     // ── Qwen (通义) ───────────────────────────────────────────
     'qwen-max': {
-        label: 'Qwen-Max (推荐)',
+        label: 'Qwen3-Max (推荐)',
         providerGroup: 'Qwen (通义)',
         defaultBaseUrl: 'https://dashscope.aliyuncs.com/compatible-mode/v1',
         defaultTasks: ['translation', 'documentation', 'tool_calling'],
@@ -100,7 +100,7 @@ export const MODEL_REGISTRY: Record<string, ModelDefinition> = {
     },
     // ── MiniMax ───────────────────────────────────────────────
     'MiniMax-M2.5': {
-        label: 'MiniMax-M2.5 (推荐)',
+        label: 'M2.5 通用',
         providerGroup: 'MiniMax',
         defaultBaseUrl: 'https://api.minimax.io/v1',
         defaultTasks: ['creative', 'agentic', 'long_context'],
@@ -109,7 +109,7 @@ export const MODEL_REGISTRY: Record<string, ModelDefinition> = {
         requiresApiKey: true,
     },
     'MiniMax-M2.5-highspeed': {
-        label: 'MiniMax-M2.5 HighSpeed',
+        label: 'M2.5-highspeed Coding Plan',
         providerGroup: 'MiniMax',
         defaultBaseUrl: 'https://api.minimax.io/v1',
         defaultTasks: ['creative', 'documentation'],
@@ -118,7 +118,7 @@ export const MODEL_REGISTRY: Record<string, ModelDefinition> = {
         requiresApiKey: true,
     },
     'MiniMax-M2.7': {
-        label: 'MiniMax-M2.7 旗舰 (推荐)',
+        label: 'M2.7 旗舰 (推荐)',
         providerGroup: 'MiniMax',
         defaultBaseUrl: 'https://api.minimax.io/v1',
         defaultTasks: ['agentic', 'code_gen', 'architecture', 'tool_calling'],

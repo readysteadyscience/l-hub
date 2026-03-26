@@ -5,27 +5,51 @@ export interface BridgeConfig {
     retentionDays: number;
 }
 
-// Legacy fixed providers (for backward compat)
 export const SUPPORTED_PROVIDERS = ['deepseek', 'glm', 'qwen', 'minimax', 'kimi', 'gpt', 'gemini'] as const;
 export type Provider = typeof SUPPORTED_PROVIDERS[number];
 
-// ─── v2: Dynamic ModelConfig ─────────────────────────────────────────────────
-
 export interface ModelConfig {
-    id: string;           // UUID
-    modelId: string;      // key in MODEL_REGISTRY, e.g. "deepseek-chat"
-    label: string;        // display label
-    baseUrl: string;      // API base URL
-    tasks: string[];      // assigned task IDs
+    id: string;
+    modelId: string;
+    label: string;
+    baseUrl: string;
+    tasks: string[];
     enabled: boolean;
-    priority: number;     // lower = higher priority among same-task models
+    priority: number;
 }
 
 export interface CreativeWritingConfig {
-    outlineModels: string[]; // Model IDs used for parallel outlining
-    draftModels: string[];   // Model IDs used for parallel drafting
-    polishModel: string;     // Model ID for final polish/merge
-    evalModel: string;       // Model ID for evaluation/fact-checking
+    outlineModels: string[];
+    draftModels: string[];
+    polishModel: string;
+    evalModel: string;
+}
+
+export interface SettingsReader {
+    getModels(): Promise<ModelConfig[]>;
+    getApiKey(provider: string): Promise<string | undefined>;
+}
+
+export interface RequestRecord {
+    id: string;
+    timestamp: number;
+    clientName: string;
+    clientVersion: string;
+    method: string;
+    toolName?: string;
+    model?: string;
+    duration: number;
+    inputTokens?: number;
+    outputTokens?: number;
+    totalTokens?: number;
+    requestPreview: string;
+    responsePreview: string;
+    status: 'success' | 'error';
+    errorMessage?: string;
+}
+
+export interface HistoryStore {
+    saveRecord(record: RequestRecord): void;
 }
 
 export class SettingsManager {
@@ -36,7 +60,6 @@ export class SettingsManager {
         this.secretStorage = context.secrets;
     }
 
-    // ── Legacy API key methods (still used for mcp-server.js sync) ───────────
     public async saveApiKey(provider: string, apiKey: string): Promise<void> {
         await this.secretStorage.store(`apikey.${provider}`, apiKey);
     }
@@ -54,41 +77,46 @@ export class SettingsManager {
         return keys;
     }
 
-    /** Get the API key for a v2 model by its model config ID */
     public async getModelApiKey(modelConfigId: string): Promise<string | undefined> {
         return await this.secretStorage.get(`apikey.model.${modelConfigId}`);
     }
-
-    // ── v2: ModelConfig list ─────────────────────────────────────────────────
 
     public async getModels(): Promise<ModelConfig[]> {
         const raw = await this.secretStorage.get(SettingsManager.MODELS_KEY);
         if (!raw) { return this.getDefaultModels(); }
         try {
             const models = JSON.parse(raw) as ModelConfig[];
-            // ── Auto-migrate stale base URLs & model IDs ──────────────────────
-            const URL_MIGRATIONS: [string, string][] = [
+            const urlMigrations: [string, string][] = [
                 ['https://api.minimaxi.com/v1', 'https://api.minimax.io/v1'],
                 ['https://api.minimax.chat/v1', 'https://api.minimax.io/v1'],
-                ['https://api.minimaxi.io/v1', 'https://api.minimax.io/v1'], // hybrid-typo
+                ['https://api.minimaxi.io/v1', 'https://api.minimax.io/v1'],
             ];
-            const MODEL_ID_MIGRATIONS: [string, string][] = [
+            const modelIdMigrations: [string, string][] = [
                 ['minimax-text-2.5', 'MiniMax-M2.5'],
                 ['minimax-text-01', 'MiniMax-M2.5'],
             ];
             let dirty = false;
-            for (const m of models) {
-                for (const [from, to] of URL_MIGRATIONS) {
-                    if (m.baseUrl === from) { m.baseUrl = to; dirty = true; }
+            for (const model of models) {
+                for (const [from, to] of urlMigrations) {
+                    if (model.baseUrl === from) {
+                        model.baseUrl = to;
+                        dirty = true;
+                    }
                 }
-                for (const [from, to] of MODEL_ID_MIGRATIONS) {
-                    if (m.modelId === from) { m.modelId = to; dirty = true; }
+                for (const [from, to] of modelIdMigrations) {
+                    if (model.modelId === from) {
+                        model.modelId = to;
+                        dirty = true;
+                    }
                 }
             }
-            if (dirty) { await this.saveModels(models); }
+            if (dirty) {
+                await this.saveModels(models);
+            }
             return models;
+        } catch {
+            return this.getDefaultModels();
         }
-        catch { return this.getDefaultModels(); }
     }
 
     public async saveModels(models: ModelConfig[]): Promise<void> {
@@ -103,17 +131,18 @@ export class SettingsManager {
 
     public async updateModel(id: string, patch: Partial<ModelConfig>): Promise<void> {
         const models = await this.getModels();
-        const idx = models.findIndex(m => m.id === id);
-        if (idx !== -1) { models[idx] = { ...models[idx], ...patch }; }
+        const index = models.findIndex((model) => model.id === id);
+        if (index !== -1) {
+            models[index] = { ...models[index], ...patch };
+        }
         await this.saveModels(models);
     }
 
     public async removeModel(id: string): Promise<void> {
         const models = await this.getModels();
-        await this.saveModels(models.filter(m => m.id !== id));
+        await this.saveModels(models.filter((model) => model.id !== id));
     }
 
-    // ── Creative Writing Chain Configuration ───────────────────────────────────
     private static readonly CREATIVE_CHAIN_KEY = 'l-hub.creative_chain.v1';
 
     public async getCreativeChainConfig(): Promise<CreativeWritingConfig> {
@@ -123,13 +152,18 @@ export class SettingsManager {
                 outlineModels: [],
                 draftModels: [],
                 polishModel: '',
-                evalModel: ''
+                evalModel: '',
             };
         }
         try {
             return JSON.parse(raw) as CreativeWritingConfig;
         } catch {
-            return { outlineModels: [], draftModels: [], polishModel: '', evalModel: '' };
+            return {
+                outlineModels: [],
+                draftModels: [],
+                polishModel: '',
+                evalModel: '',
+            };
         }
     }
 
@@ -137,17 +171,10 @@ export class SettingsManager {
         await this.secretStorage.store(SettingsManager.CREATIVE_CHAIN_KEY, JSON.stringify(config));
     }
 
-    // ── Default starter models ──────────────────────────────────────────────
-
     private getDefaultModels(): ModelConfig[] {
-        // v0.2.0: New users start with an empty model list.
-        // They add models themselves via Dashboard → "+ 添加模型".
-        // Existing users who already have models in secretStorage are NOT affected.
-        // Codex CLI and Gemini CLI are detected separately and shown at the bottom.
         return [];
     }
 
-    // ── General config ───────────────────────────────────────────────────────
     public getGeneralConfig(): BridgeConfig {
         const config = vscode.workspace.getConfiguration('l-hub');
         return {

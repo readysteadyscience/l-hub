@@ -14,3 +14,8 @@ docs/HOW_TO_FEED_LINGLAN.md
 docs/DEVLOG.md
 
 .lhub_docs/
+
+# Secrets and build artifacts
+.env
+out/
+releases/

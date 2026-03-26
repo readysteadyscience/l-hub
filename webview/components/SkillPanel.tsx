@@ -17,7 +17,9 @@ const SkillPanel: React.FC<SkillPanelProps> = ({ lang, routingPrefs, models }) =
         routine: 'auto',
         code: 'auto',
         reasoning: 'auto',
-        creative: 'auto'
+        creative: 'auto',
+        pipeline_logic: 'auto',
+        pipeline_writer: 'auto'
     };
 
     const [isEditing, setIsEditing] = useState(false);
@@ -37,8 +39,7 @@ const SkillPanel: React.FC<SkillPanelProps> = ({ lang, routingPrefs, models }) =
     const handleSave = () => {
         vscode.postMessage({ command: 'saveRoutingPrefs', prefs: localPrefs });
         setIsEditing(false);
-        vscode.postMessage({ command: 'triggerRender' }); 
-        // We might need a small toast, but saveRoutingPrefs automatically rebuilds SKILL.md
+        // saveRoutingPrefs automatically rebuilds SKILL.md
     };
 
     // Helper to render dropdown or static text
@@ -197,6 +198,8 @@ const SkillPanel: React.FC<SkillPanelProps> = ({ lang, routingPrefs, models }) =
                     {renderOption('code', 'codex-cli', 'Code Engineering / Debugging (Quality First)', '代码生成 / 审查 / Bug检查 (纯净工程)')}
                     {renderOption('reasoning', 'gemini-cli', 'Complex Reasoning / UI / Math', '深度推理 / 前端 UI / 数学算法')}
                     {renderOption('creative', 'minimax', 'Creative Writing / Outlines / Stories', '创意写作 / 大纲设定 / 中文文笔')}
+                    {renderOption('pipeline_logic', 'auto', 'Article Pipeline: Chief Editor / Extracting Facts', 'L-Ink管线专属：主编提取与摘要 (爬虫节点)')}
+                    {renderOption('pipeline_writer', 'auto', 'Article Pipeline: Creative Writer / Markdown', 'L-Ink管线专属：主笔长文与排版 (渲染节点)')}
                 </div>
             </div>
 

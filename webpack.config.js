@@ -1,5 +1,6 @@
 const path = require('path');
 const webpack = require('webpack');
+const Dotenv = require('dotenv-webpack');
 
 const extensionConfig = {
     mode: 'none',
@@ -7,7 +8,8 @@ const extensionConfig = {
     entry: {
         extension: './src/extension.ts',
         cli: './src/cli.ts',
-        'mcp-server': './src/mcp-server.ts'
+        'mcp-server': './src/mcp-server.ts',
+        'aca-runner': './src/aca/runner.ts'
     },
     output: {
         path: path.resolve(__dirname, 'dist'),
@@ -28,7 +30,8 @@ const extensionConfig = {
         ]
     },
     plugins: [
-        new webpack.BannerPlugin({ banner: "#!/usr/bin/env node", raw: true, entryOnly: true, test: /cli\.js|mcp-server\.js/ }),
+        new webpack.BannerPlugin({ banner: "#!/usr/bin/env node", raw: true, entryOnly: true, test: /cli\.js|mcp-server\.js|aca-runner\.js/ }),
+        new Dotenv()
     ],
     externals: {
         vscode: 'commonjs vscode',

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { vscode } from '../vscode-api';
-import { s, colors, radius, shadow, providerColors } from '../theme';
+import { radius } from '../theme';
 import { Lang } from './Dashboard';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -161,11 +161,17 @@ const BrandStatusCard: React.FC<{ brand: string; models: ModelStatus[] }> = ({ b
             </div>
             {activeModels.length > 0 ? (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                    {activeModels.map(m => (
-                        <div key={m.id} style={{ fontSize: '10px', color: 'var(--vscode-descriptionForeground)', fontFamily: 'monospace' }}>
-                            • {m.label}
-                        </div>
-                    ))}
+                    {activeModels.map(m => {
+                        // Auto-prefix brand name if label doesn't already contain it
+                        const displayLabel = m.label.toLowerCase().includes(brand.toLowerCase())
+                            ? m.label
+                            : `${brand}-${m.label}`;
+                        return (
+                            <div key={m.id} style={{ fontSize: '10px', color: 'var(--vscode-descriptionForeground)', fontFamily: 'monospace' }}>
+                                • {displayLabel}
+                            </div>
+                        );
+                    })}
                 </div>
             ) : (
                 <div style={{ fontSize: '10px', color: 'var(--vscode-descriptionForeground)', fontFamily: 'monospace', opacity: 0.6 }}>
@@ -200,9 +206,11 @@ const SectionHeader: React.FC<{ title: string; subtitle?: string; right?: React.
 
 // ─── OverviewPanel ────────────────────────────────────────────────────────────
 
-const OverviewPanel: React.FC<{ lang: Lang; onSwitchTab: (tab: string) => void }> = ({ lang, onSwitchTab }) => {
+const OverviewPanel: React.FC<{ lang: Lang }> = ({ lang }) => {
     const [stats, setStats] = useState<OverviewStats | null>(null);
     const [testingAll, setTestingAll] = useState(false);
+    const [autoAcceptActive, setAutoAcceptActive] = useState(false);
+    const [cacheSizeGB, setCacheSizeGB] = useState<string | null>(null);
 
     const hasAutoTriggered = React.useRef(false);
 
@@ -225,6 +233,14 @@ const OverviewPanel: React.FC<{ lang: Lang; onSwitchTab: (tab: string) => void }
                 // Refresh stats to pick up new test results from the cache
                 vscode.postMessage({ command: 'getOverviewStats' });
             }
+            if (ev.data.command === 'autoAcceptStatus') {
+                setAutoAcceptActive(ev.data.active);
+            }
+            if (ev.data.command === 'brainCacheList') {
+                const entries = ev.data.entries || [];
+                const totalMB = entries.reduce((s: number, e: any) => s + e.sizeMB, 0);
+                setCacheSizeGB((totalMB / 1024).toFixed(1));
+            }
             // Listen to individual test results and update model status in real-time
             if (ev.data.command === 'testResult' && ev.data.requestId?.startsWith('autotest_')) {
                 const parts = ev.data.requestId.split('_');
@@ -244,6 +260,8 @@ const OverviewPanel: React.FC<{ lang: Lang; onSwitchTab: (tab: string) => void }
         };
         window.addEventListener('message', handler);
         vscode.postMessage({ command: 'getOverviewStats' });
+        vscode.postMessage({ command: 'getAutoAcceptStatus' });
+        vscode.postMessage({ command: 'scanBrainCache' });
 
         const timer = setInterval(() => {
             vscode.postMessage({ command: 'getOverviewStats' });
@@ -312,33 +330,83 @@ const OverviewPanel: React.FC<{ lang: Lang; onSwitchTab: (tab: string) => void }
                 marginBottom: '32px'
             }}>
                 <HUDStat 
-                    label="NETWORK CORE" 
+                    label={lang === 'zh' ? '网络核心' : 'NETWORK CORE'}
                     value={`${onlineCount}/${totalModels}`} 
-                    sub="ONLINE / TOTAL" 
+                    sub={lang === 'zh' ? '在线 / 总计' : 'ONLINE / TOTAL'}
                     accent="#10B981" 
                 />
                 <HUDStat 
-                    label="TX VOL (24H)" 
+                    label={lang === 'zh' ? '调用量 (24H)' : 'TX VOL (24H)'}
                     value={stats.todayRequests || '0'} 
-                    sub={`SR: ${stats.successRate}%`} 
+                    sub={`${lang === 'zh' ? '成功率' : 'SR'}: ${stats.successRate}%`} 
                 />
                 <HUDStat 
-                    label="AVG LATENCY" 
+                    label={lang === 'zh' ? '平均延迟' : 'AVG LATENCY'}
                     value={stats.avgLatency > 0 ? `${(stats.avgLatency / 1000).toFixed(1)}s` : '—'} 
-                    sub="MS/REQ" 
+                    sub={lang === 'zh' ? '毫秒/请求' : 'MS/REQ'}
                 />
                 <HUDStat 
-                    label="TOKEN YIELD" 
+                    label={lang === 'zh' ? 'Token 产出' : 'TOKEN YIELD'}
                     value={stats.totalTokens > 1000 ? `${(stats.totalTokens / 1000).toFixed(1)}K` : (stats.totalTokens || '—')} 
-                    sub="COMPUTED" 
+                    sub={lang === 'zh' ? '已消耗' : 'COMPUTED'}
                 />
+            </div>
+
+            {/* ── Quick Controls ───────────────────────────────────────── */}
+            <div className="animate-in" style={{
+                display: 'flex', gap: '12px', marginBottom: '24px',
+                flexWrap: 'wrap', alignItems: 'center',
+            }}>
+                <button
+                    onClick={() => vscode.postMessage({ command: 'toggleAutoAccept' })}
+                    style={{
+                        padding: '6px 14px', fontSize: '11px', fontFamily: 'monospace', fontWeight: 600,
+                        border: `1px solid ${autoAcceptActive ? '#F59E0B' : 'var(--vscode-panel-border)'}`,
+                        borderRadius: radius.sm, cursor: 'pointer',
+                        background: autoAcceptActive ? 'rgba(245,158,11,0.1)' : 'transparent',
+                        color: autoAcceptActive ? '#F59E0B' : 'var(--vscode-editor-foreground)',
+                        transition: 'all 0.15s',
+                    }}
+                >
+                    {autoAcceptActive ? '🚀 Auto-Accept ON' : '🚀 Auto-Accept OFF'}
+                </button>
+                {cacheSizeGB && (
+                    <span style={{
+                        padding: '6px 14px', fontSize: '11px', fontFamily: 'monospace',
+                        border: '1px solid var(--vscode-panel-border)', borderRadius: radius.sm,
+                        color: parseFloat(cacheSizeGB) > 5 ? '#EF4444' : 'var(--vscode-descriptionForeground)',
+                    }}>
+                        💾 {lang === 'zh' ? `Brain 缓存: ${cacheSizeGB} GB` : `Brain Cache: ${cacheSizeGB} GB`}
+                    </span>
+                )}
             </div>
 
             {/* ── API Brand Matrix ──────────────────────────────────────────── */}
             <div className="animate-in animate-in-1" style={{ marginBottom: '32px' }}>
                 <SectionHeader 
-                    title="API Routing Matrix" 
-                    subtitle="CLOUD EXPERT BRANDS" 
+                    title={lang === 'zh' ? 'API 路由矩阵' : 'API Routing Matrix'}
+                    subtitle={lang === 'zh' ? '云端专家模型' : 'CLOUD EXPERT BRANDS'}
+                    right={
+                        <button
+                            style={{
+                                padding: '4px 12px', background: 'transparent',
+                                color: 'var(--vscode-editor-foreground)',
+                                border: '1px solid var(--vscode-panel-border)',
+                                borderRadius: radius.sm, cursor: testingAll ? 'wait' : 'pointer',
+                                fontSize: '10px', fontFamily: 'monospace', fontWeight: 600,
+                                opacity: testingAll ? 0.5 : 1, transition: 'all 0.15s'
+                            }}
+                            disabled={testingAll}
+                            onClick={() => {
+                                setTestingAll(true);
+                                vscode.postMessage({ command: 'testAllModels' });
+                            }}
+                            onMouseEnter={e => { if (!testingAll) e.currentTarget.style.borderColor = 'var(--vscode-focusBorder)'; }}
+                            onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--vscode-panel-border)'; }}
+                        >
+                            {testingAll ? (lang === 'zh' ? '[ 检测中... ]' : '[ TESTING... ]') : (lang === 'zh' ? '[ 全部检测 ]' : '[ ping_all ]')}
+                        </button>
+                    }
                 />
                 {Object.keys(apiModelsByBrand).length > 0 ? (
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '8px' }}>
@@ -347,58 +415,27 @@ const OverviewPanel: React.FC<{ lang: Lang; onSwitchTab: (tab: string) => void }
                         ))}
                     </div>
                 ) : (
-                    <div style={{ color: 'var(--vscode-descriptionForeground)', fontSize: '12px', fontFamily: 'monospace' }}>No API models supported.</div>
+                    <div style={{ color: 'var(--vscode-descriptionForeground)', fontSize: '12px', fontFamily: 'monospace' }}>
+                        {lang === 'zh' ? '暂无 API 模型。' : 'No API models supported.'}
+                    </div>
                 )}
             </div>
 
             {/* ── CLI Agents Matrix ─────────────────────────────────────────── */}
             <div className="animate-in animate-in-2" style={{ marginBottom: '32px' }}>
                 <SectionHeader 
-                    title="Local CLI Sandboxes" 
-                    subtitle="ZERO-CONFIG SUBSCRIPTION AGENTS" 
+                    title={lang === 'zh' ? '本地 CLI 沙箱' : 'Local CLI Sandboxes'}
+                    subtitle={lang === 'zh' ? '免配置订阅制智能体' : 'ZERO-CONFIG SUBSCRIPTION AGENTS'}
                 />
                 {cliModels.length > 0 ? (
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: '8px' }}>
                         {cliModels.map(m => <ModelStatusChip key={m.id} m={m} />)}
                     </div>
                 ) : (
-                    <div style={{ color: 'var(--vscode-descriptionForeground)', fontSize: '12px', fontFamily: 'monospace' }}>No CLI models supported.</div>
+                    <div style={{ color: 'var(--vscode-descriptionForeground)', fontSize: '12px', fontFamily: 'monospace' }}>
+                        {lang === 'zh' ? '暂无 CLI 模型。' : 'No CLI models supported.'}
+                    </div>
                 )}
-            </div>
-
-            {/* ── Quick Actions / Footer Command Line ──────────────────────── */}
-            <div className="animate-in animate-in-3" style={{
-                display: 'flex', gap: '12px', alignItems: 'center',
-                padding: '16px 20px',
-                background: 'var(--vscode-editor-background)',
-                border: '1px solid var(--vscode-panel-border)',
-                borderRadius: radius.md,
-            }}>
-                <span style={{ color: 'var(--vscode-descriptionForeground)', fontSize: '13px', fontWeight: 600, fontFamily: 'monospace' }}>
-                    &gt; _SYS_READY
-                </span>
-                
-                <div style={{ flex: 1 }} />
-
-                <button
-                    style={{
-                        padding: '6px 14px', background: 'transparent',
-                        color: 'var(--vscode-editor-foreground)',
-                        border: '1px solid var(--vscode-panel-border)',
-                        borderRadius: radius.sm, cursor: testingAll ? 'wait' : 'pointer',
-                        fontSize: '11px', fontFamily: 'monospace', fontWeight: 600,
-                        opacity: testingAll ? 0.5 : 1, transition: 'all 0.15s'
-                    }}
-                    disabled={testingAll}
-                    onClick={() => {
-                        setTestingAll(true);
-                        vscode.postMessage({ command: 'testAllModels' });
-                    }}
-                    onMouseEnter={e => { if (!testingAll) e.currentTarget.style.borderColor = 'var(--vscode-focusBorder)'; }}
-                    onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--vscode-panel-border)'; }}
-                >
-                    {testingAll ? '[ TESTING... ]' : '[ ping_all ]'}
-                </button>
             </div>
         </div>
     );

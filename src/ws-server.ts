@@ -1,4 +1,3 @@
-import * as vscode from 'vscode';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as os from 'os';
@@ -7,8 +6,7 @@ import { WebSocketServer } from 'ws';
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { Transport } from '@modelcontextprotocol/sdk/shared/transport.js';
 import { JSONRPCMessage, CallToolRequestSchema, ListToolsRequestSchema } from '@modelcontextprotocol/sdk/types.js';
-import { HistoryStorage } from './storage';
-import { SettingsManager, Provider, ModelConfig } from './settings';
+import { HistoryStore, ModelConfig, SettingsReader } from './settings';
 
 class WsTransport implements Transport {
     public onclose?: () => void;
@@ -46,8 +44,8 @@ export class LinglanMcpServer {
     private portFile = path.join(os.homedir(), '.l-hub.port');
 
     constructor(
-        private storage: HistoryStorage | null,
-        private settings: SettingsManager
+        private storage: HistoryStore | null,
+        private settings: SettingsReader
     ) {
         this.httpServer = http.createServer();
         this.wss = new WebSocketServer({ server: this.httpServer });
@@ -242,7 +240,7 @@ export class LinglanMcpServer {
         const candidates = models.filter(m => m.enabled !== false && !m.modelId.includes('CLI'));
         
         // Sort by priority -> descending priority
-        candidates.sort((a, b) => a.priority - b.priority);
+        candidates.sort((a, b) => b.priority - a.priority);
 
         const lowerTarget = targetStr.toLowerCase();
         
@@ -291,11 +289,14 @@ export class LinglanMcpServer {
             temperature: 0.7
         });
 
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 30000);
         const res = await fetch(url, {
             method: 'POST',
             headers,
-            body
-        });
+            body,
+            signal: controller.signal,
+        }).finally(() => clearTimeout(timeout));
 
         if (!res.ok) {
             const errStr = await res.text();

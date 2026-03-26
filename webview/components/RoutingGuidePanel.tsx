@@ -12,6 +12,8 @@ interface ModelConfig {
     tasks: string[];
     enabled: boolean;
     priority: number;
+    group?: string;
+    status?: string;
 }
 
 interface CreativeWritingConfig {
@@ -21,23 +23,26 @@ interface CreativeWritingConfig {
     evalModel: string;
 }
 
-const RoutingGuidePanel: React.FC<{ lang: Lang }> = ({ lang }) => {
+const RoutingGuidePanel: React.FC<{ lang: Lang; routingPrefs?: any; models?: any[]; localSkills?: Array<{ id: string; name: string }> }> = ({ lang, routingPrefs, models: propsModels, localSkills = [] }) => {
 
-    const [models, setModels] = React.useState<ModelConfig[]>([]);
-    const [creativeConfig, setCreativeConfig] = React.useState<CreativeWritingConfig>({ outlineModels: [], draftModels: [], polishModel: '', evalModel: '' });
+    const [models, setModels] = React.useState<ModelConfig[]>(propsModels || []);
+    const [localPrefs, setLocalPrefs] = React.useState<any>(routingPrefs || {});
+    const [collapsed, setCollapsed] = React.useState<Record<string, boolean>>({});
+
+    const availableModels = models.filter(m => m.enabled || (m.group === 'cli' && m.status === 'online'));
+
+    React.useEffect(() => {
+        if (routingPrefs) setLocalPrefs(routingPrefs);
+    }, [routingPrefs]);
 
     React.useEffect(() => {
         const handler = (ev: MessageEvent) => {
             if (ev.data.command === 'loadModelsV2') {
                 setModels(ev.data.models || []);
             }
-            if (ev.data.command === 'loadCreativeConfig') {
-                setCreativeConfig(ev.data.data);
-            }
         };
         window.addEventListener('message', handler);
         vscode.postMessage({ command: 'getModelsV2' });
-        vscode.postMessage({ command: 'getCreativeConfig' });
         return () => window.removeEventListener('message', handler);
     }, []);
 
@@ -138,134 +143,234 @@ const RoutingGuidePanel: React.FC<{ lang: Lang }> = ({ lang }) => {
                 </table>
             </div>
 
-            {/* Creative Writing Chain Settings */}
+            {/* L-Ink Writing System */}
             <div style={{ marginTop: '32px' }}>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', marginBottom: '16px', borderBottom: '1px solid var(--vscode-panel-border)', paddingBottom: '12px' }}>
-                    <div style={{
-                        fontSize: '13px', fontWeight: 700, letterSpacing: '1px', textTransform: 'uppercase',
-                        color: 'var(--vscode-editor-foreground)', fontFamily: 'monospace'
-                    }}>
-                        CREATIVE_CHAIN_SCHEDULER
+                {/* Collapsible header */}
+                <div
+                    onClick={() => setCollapsed(c => ({ ...c, lhub_lhink: !c.lhub_lhink }))}
+                    style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '4px', marginBottom: collapsed.lhub_lhink ? '0' : '16px', borderBottom: collapsed.lhub_lhink ? 'none' : '1px solid var(--vscode-panel-border)', paddingBottom: '12px', cursor: 'pointer', userSelect: 'none' }}
+                >
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                        <div style={{
+                            fontSize: '13px', fontWeight: 700, letterSpacing: '1px', textTransform: 'uppercase',
+                            color: 'var(--vscode-editor-foreground)', fontFamily: 'monospace'
+                        }}>
+                            {lang === 'zh' ? 'L-Ink 写作系统' : 'L-INK WRITING SYSTEM'}
+                        </div>
+                        <div style={{ fontSize: '11px', color: 'var(--vscode-descriptionForeground)', fontFamily: 'monospace' }}>
+                            &gt; {lang === 'zh' ? 'L-Ink 定向/雷达长篇文章生产系统 - 双轨节点组态' : 'L-Ink Targeted / Radar Long-form Article Production System'}
+                        </div>
                     </div>
-                    <div style={{ fontSize: '11px', color: 'var(--vscode-descriptionForeground)', fontFamily: 'monospace' }}>
-                        &gt; {lang === 'zh' ? '多模型长文生成管线组态' : 'Multi-model pipeline config for long-form generation'}
-                    </div>
+                    <span style={{ fontSize: '14px', color: 'var(--vscode-descriptionForeground)', opacity: 0.7 }}>
+                        {collapsed.lhub_lhink ? '▶' : '▼'}
+                    </span>
                 </div>
                 
-                <div style={{
+                {!collapsed.lhub_lhink && <div style={{
                     padding: '16px', borderRadius: radius.sm,
                     background: 'var(--vscode-editor-background)',
                     border: '1px solid var(--vscode-panel-border)',
+                    display: 'flex', flexDirection: 'column', gap: '20px',
                 }}>
-                    <div style={{ marginBottom: '20px' }}>
-                        <label style={{ display: 'block', fontSize: '11px', fontFamily: 'monospace', fontWeight: 700, letterSpacing: '0.5px', color: 'var(--vscode-editor-foreground)', marginBottom: '8px' }}>
-                            [ 01_OUTLINE_BIDDING ]
-                        </label>
-                        <p style={{ margin: '0 0 10px', fontSize: '11px', fontFamily: 'monospace', color: 'var(--vscode-descriptionForeground)' }}>
-                            &gt; Select 2+ nodes for parallel outline generation
-                        </p>
-                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
-                            {models.filter(m => m.enabled).map(m => (
-                                <span
-                                    key={m.id}
-                                    onClick={() => {
-                                        const newModels = creativeConfig.outlineModels.includes(m.modelId)
-                                            ? creativeConfig.outlineModels.filter(id => id !== m.modelId)
-                                            : [...creativeConfig.outlineModels, m.modelId];
-                                        const next = { ...creativeConfig, outlineModels: newModels };
-                                        setCreativeConfig(next);
-                                        vscode.postMessage({ command: 'saveCreativeConfig', config: next });
-                                    }}
-                                    style={{
-                                        padding: '4px 8px', borderRadius: radius.sm, cursor: 'pointer', fontSize: '11px', fontFamily: 'monospace', fontWeight: 600,
-                                        background: creativeConfig.outlineModels.includes(m.modelId) ? 'rgba(16, 185, 129, 0.15)' : 'transparent',
-                                        color: creativeConfig.outlineModels.includes(m.modelId) ? '#10B981' : 'var(--vscode-descriptionForeground)',
-                                        border: `1px solid ${creativeConfig.outlineModels.includes(m.modelId) ? 'rgba(16, 185, 129, 0.3)' : 'var(--vscode-panel-border)'}`,
-                                        userSelect: 'none',
-                                    }}
-                                >
-                                    {creativeConfig.outlineModels.includes(m.modelId) ? `[x] ${m.modelId}` : `[ ] ${m.modelId}`}
-                                </span>
-                            ))}
-                        </div>
-                    </div>
-
-                    <div style={{ marginBottom: '20px' }}>
-                        <label style={{ display: 'block', fontSize: '11px', fontFamily: 'monospace', fontWeight: 700, letterSpacing: '0.5px', color: 'var(--vscode-editor-foreground)', marginBottom: '8px' }}>
-                            [ 02_PARALLEL_DRAFTING ]
-                        </label>
-                        <p style={{ margin: '0 0 10px', fontSize: '11px', fontFamily: 'monospace', color: 'var(--vscode-descriptionForeground)' }}>
-                            &gt; Select target execution nodes for generating draft permutations
-                        </p>
-                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
-                            {models.filter(m => m.enabled).map(m => (
-                                <span
-                                    key={m.id}
-                                    onClick={() => {
-                                        const newModels = creativeConfig.draftModels.includes(m.modelId)
-                                            ? creativeConfig.draftModels.filter(id => id !== m.modelId)
-                                            : [...creativeConfig.draftModels, m.modelId];
-                                        const next = { ...creativeConfig, draftModels: newModels };
-                                        setCreativeConfig(next);
-                                        vscode.postMessage({ command: 'saveCreativeConfig', config: next });
-                                    }}
-                                    style={{
-                                        padding: '4px 8px', borderRadius: radius.sm, cursor: 'pointer', fontSize: '11px', fontFamily: 'monospace', fontWeight: 600,
-                                        background: creativeConfig.draftModels.includes(m.modelId) ? 'rgba(16, 185, 129, 0.15)' : 'transparent',
-                                        color: creativeConfig.draftModels.includes(m.modelId) ? '#10B981' : 'var(--vscode-descriptionForeground)',
-                                        border: `1px solid ${creativeConfig.draftModels.includes(m.modelId) ? 'rgba(16, 185, 129, 0.3)' : 'var(--vscode-panel-border)'}`,
-                                        userSelect: 'none',
-                                    }}
-                                >
-                                    {creativeConfig.draftModels.includes(m.modelId) ? `[x] ${m.modelId}` : `[ ] ${m.modelId}`}
-                                </span>
-                            ))}
-                        </div>
-                    </div>
-
-                    <div style={{ marginBottom: '20px' }}>
-                        <label style={{ display: 'block', fontSize: '11px', fontFamily: 'monospace', fontWeight: 700, letterSpacing: '0.5px', color: 'var(--vscode-editor-foreground)', marginBottom: '8px' }}>
-                            [ 03_POLISH_REVISION ]
-                        </label>
-                        <select 
-                            style={s.select}
-                            value={creativeConfig.polishModel}
-                            onChange={(e) => {
-                                const next = { ...creativeConfig, polishModel: e.target.value };
-                                setCreativeConfig(next);
-                                vscode.postMessage({ command: 'saveCreativeConfig', config: next });
-                            }}
-                        >
-                            <option value="">(跳过此环节)</option>
-                            {models.filter(m => m.enabled).map(m => (
-                                <option key={m.id} value={m.modelId}>{m.label}</option>
-                            ))}
-                        </select>
-                        <p style={{ margin: '8px 0 0', fontSize: '11px', fontFamily: 'monospace', color: 'var(--vscode-descriptionForeground)' }}>&gt; Recommended: MiniMax-M2.5 or other literary models.</p>
-                    </div>
-
+                    {/* 01 信息搜集 */}
                     <div>
                         <label style={{ display: 'block', fontSize: '11px', fontFamily: 'monospace', fontWeight: 700, letterSpacing: '0.5px', color: 'var(--vscode-editor-foreground)', marginBottom: '8px' }}>
-                            [ 04_COHERENCE_EVAL ]
+                            {lang === 'zh' ? '[ 01_信息搜集 ]' : '[ 01_INFO_GATHERING ]'}
                         </label>
-                        <select 
+                        <select
                             style={s.select}
-                            value={creativeConfig.evalModel}
+                            value={localPrefs.pipeline_logic || 'auto'}
                             onChange={(e) => {
-                                const next = { ...creativeConfig, evalModel: e.target.value };
-                                setCreativeConfig(next);
-                                vscode.postMessage({ command: 'saveCreativeConfig', config: next });
+                                const v = e.target.value;
+                                setLocalPrefs({ ...localPrefs, pipeline_logic: v });
+                                vscode.postMessage({ command: 'saveRoutingPrefs', prefs: { ...routingPrefs, pipeline_logic: v } });
                             }}
                         >
-                            <option value="">(跳过此环节)</option>
-                            {models.filter(m => m.enabled).map(m => (
-                                <option key={m.id} value={m.modelId}>{m.label}</option>
-                            ))}
+                            <option value="auto">{lang === 'zh' ? '自动匹配推理/搜索节点 (基于 Reasoning 标签)' : 'AUTO (Based on Reasoning tags)'}</option>
+                            {availableModels.map(m => (<option key={m.id} value={m.modelId}>{m.label} [{m.modelId}]</option>))}
                         </select>
-                        <p style={{ margin: '8px 0 0', fontSize: '11px', fontFamily: 'monospace', color: 'var(--vscode-descriptionForeground)' }}>&gt; Recommended: GLM-5 or Claude Opus for strict logic coherence.</p>
+                        <p style={{ margin: '6px 0 0', fontSize: '11px', fontFamily: 'monospace', color: 'var(--vscode-descriptionForeground)' }}>
+                            &gt; {lang === 'zh' ? '全网调查、事实溯源、RSS/页面内容提取，输出结构化写作蓝图。' : 'Web research, fact sourcing, RSS/page extraction, outputs structured writing blueprint.'}
+                        </p>
                     </div>
-                </div>
+
+                    {/* 02 文章写作与排版 */}
+                    <div>
+                        <label style={{ display: 'block', fontSize: '11px', fontFamily: 'monospace', fontWeight: 700, letterSpacing: '0.5px', color: 'var(--vscode-editor-foreground)', marginBottom: '8px' }}>
+                            {lang === 'zh' ? '[ 02_文章写作与排版 ]' : '[ 02_WRITING_AND_LAYOUT ]'}
+                        </label>
+                        <select
+                            style={s.select}
+                            value={localPrefs.pipeline_writer || 'auto'}
+                            onChange={(e) => {
+                                const v = e.target.value;
+                                setLocalPrefs({ ...localPrefs, pipeline_writer: v });
+                                vscode.postMessage({ command: 'saveRoutingPrefs', prefs: { ...routingPrefs, pipeline_writer: v } });
+                            }}
+                        >
+                            <option value="auto">{lang === 'zh' ? '自动匹配创作节点 (基于 Creative Writing 标签)' : 'AUTO (Based on Creative Writing tags)'}</option>
+                            {availableModels.map(m => (<option key={m.id} value={m.modelId}>{m.label} [{m.modelId}]</option>))}
+                        </select>
+                        <p style={{ margin: '6px 0 0', fontSize: '11px', fontFamily: 'monospace', color: 'var(--vscode-descriptionForeground)' }}>
+                            &gt; {lang === 'zh' ? '接收蓝图，执行媒体级排版协议，输出完整长篇 Markdown 定稿。' : 'Receives blueprint, applies media-grade layout rules, renders full long-form Markdown.'}
+                        </p>
+                    </div>
+
+                    {/* 03 语言优化 */}
+                    <div>
+                        <label style={{ display: 'block', fontSize: '11px', fontFamily: 'monospace', fontWeight: 700, letterSpacing: '0.5px', color: 'var(--vscode-editor-foreground)', marginBottom: '8px' }}>
+                            {lang === 'zh' ? '[ 03_语言优化 ]' : '[ 03_LANGUAGE_POLISH ]'}
+                        </label>
+                        <select
+                            style={s.select}
+                            value={localPrefs.pipeline_language || 'auto'}
+                            onChange={(e) => {
+                                const v = e.target.value;
+                                setLocalPrefs({ ...localPrefs, pipeline_language: v });
+                                vscode.postMessage({ command: 'saveRoutingPrefs', prefs: { ...routingPrefs, pipeline_language: v } });
+                            }}
+                        >
+                            <option value="auto">{lang === 'zh' ? '自动匹配润色节点 (基于 Creative Writing/Translation 标签)' : 'AUTO (Based on Creative/Translation tags)'}</option>
+                            <option value="">{lang === 'zh' ? '(跳过此环节)' : '(Skip)'}</option>
+                            {availableModels.map(m => (<option key={m.id} value={m.modelId}>{m.label} [{m.modelId}]</option>))}
+                        </select>
+                        <p style={{ margin: '6px 0 0', fontSize: '11px', fontFamily: 'monospace', color: 'var(--vscode-descriptionForeground)' }}>
+                            &gt; {lang === 'zh' ? '语言地道性优化、句感打磨、去除模板化表达，使文章读感饱满自然。' : 'Language naturalness, sentence rhythm, de-templating for a more human reading experience.'}
+                        </p>
+                    </div>
+
+                    {/* 04 图片配图 */}
+                    <div>
+                        <label style={{ display: 'block', fontSize: '11px', fontFamily: 'monospace', fontWeight: 700, letterSpacing: '0.5px', color: 'var(--vscode-editor-foreground)', marginBottom: '8px' }}>
+                            {lang === 'zh' ? '[ 04_图片配图 ]（可选）' : '[ 04_IMAGE_RETRIEVAL ]  (optional)'}
+                        </label>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px' }}>
+                            <label style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', fontSize: '11px', fontFamily: 'monospace', color: 'var(--vscode-editor-foreground)' }}>
+                                <input
+                                    type="checkbox"
+                                    checked={!!localPrefs.pipeline_image_enabled}
+                                    onChange={(e) => {
+                                        const v = e.target.checked;
+                                        setLocalPrefs({ ...localPrefs, pipeline_image_enabled: v });
+                                        vscode.postMessage({ command: 'saveRoutingPrefs', prefs: { ...routingPrefs, pipeline_image_enabled: v } });
+                                    }}
+                                />
+                                {lang === 'zh' ? '启用自动配图' : 'Enable auto image retrieval'}
+                            </label>
+                            {!!localPrefs.pipeline_image_enabled && (
+                                <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '11px', fontFamily: 'monospace', color: 'var(--vscode-editor-foreground)' }}>
+                                    {lang === 'zh' ? '张数：' : 'Count:'}
+                                    <input
+                                        type="number"
+                                        min={1} max={10}
+                                        value={localPrefs.pipeline_image_count ?? 3}
+                                        onChange={(e) => {
+                                            const v = Math.max(1, Math.min(10, Number(e.target.value)));
+                                            setLocalPrefs({ ...localPrefs, pipeline_image_count: v });
+                                            vscode.postMessage({ command: 'saveRoutingPrefs', prefs: { ...routingPrefs, pipeline_image_count: v } });
+                                        }}
+                                        style={{ width: '48px', padding: '2px 6px', borderRadius: '3px', border: '1px solid var(--vscode-panel-border)', background: 'var(--vscode-input-background)', color: 'var(--vscode-input-foreground)', fontFamily: 'monospace', fontSize: '11px' }}
+                                    />
+                                </label>
+                            )}
+                        </div>
+                        <p style={{ margin: '0', fontSize: '11px', fontFamily: 'monospace', color: 'var(--vscode-descriptionForeground)' }}>
+                            &gt; {lang === 'zh' ? '根据文章核心关键词自动检索并下载匹配的配图，插入至文章末尾或语义段落节点。' : 'Automatically retrieves images matching the article keywords and injects them into the article.'}
+                        </p>
+                    </div>
+
+                    {/* 05 政审与质检 */}
+                    <div>
+                        <label style={{ display: 'block', fontSize: '11px', fontFamily: 'monospace', fontWeight: 700, letterSpacing: '0.5px', color: 'var(--vscode-editor-foreground)', marginBottom: '8px' }}>
+                            {lang === 'zh' ? '[ 05_政审与质检 ]' : '[ 05_COMPLIANCE_AND_QA ]'}
+                        </label>
+                        <select
+                            style={s.select}
+                            value={localPrefs.pipeline_review || 'auto'}
+                            onChange={(e) => {
+                                const v = e.target.value;
+                                setLocalPrefs({ ...localPrefs, pipeline_review: v });
+                                vscode.postMessage({ command: 'saveRoutingPrefs', prefs: { ...routingPrefs, pipeline_review: v } });
+                            }}
+                        >
+                            <option value="auto">{lang === 'zh' ? '自动匹配推理节点 (基于 Reasoning 标签)' : 'AUTO (Based on Reasoning tags)'}</option>
+                            <option value="">{lang === 'zh' ? '(跳过此环节)' : '(Skip)'}</option>
+                            {availableModels.map(m => (<option key={m.id} value={m.modelId}>{m.label} [{m.modelId}]</option>))}
+                        </select>
+                        <p style={{ margin: '6px 0 0', fontSize: '11px', fontFamily: 'monospace', color: 'var(--vscode-descriptionForeground)' }}>
+                            &gt; {lang === 'zh'
+                                ? '政策合规扫描 · 自然语言与"人话"检查 · 信息准确性核验 · 识别并删除所有 AI 的分析性话术（如"综上所述"、"值得注意的是"等）。'
+                                : 'Compliance scan · Natural language check · Accuracy verification · Purge AI analytical phrases ("In summary", "It is worth noting", etc.).'}
+                        </p>
+                    </div>
+
+                    {/* 06 Skill 绑定 */}
+                    <div style={{ borderTop: '1px solid var(--vscode-panel-border)', paddingTop: '16px' }}>
+                        <label style={{ display: 'block', fontSize: '11px', fontFamily: 'monospace', fontWeight: 700, letterSpacing: '0.5px', color: 'var(--vscode-editor-foreground)', marginBottom: '6px' }}>
+                            {lang === 'zh' ? '[ 06_Skill 绑定 ]' : '[ 06_SKILL_BINDING ]'}
+                        </label>
+                        <p style={{ margin: '0 0 10px', fontSize: '11px', fontFamily: 'monospace', color: 'var(--vscode-descriptionForeground)' }}>
+                            &gt; {lang === 'zh'
+                                ? '选择你的私有写作 Skill 并绑定到此管线。被触发时系统强制委派给上面节点，主模型不会直接写文章。'
+                                : 'Select a writing Skill to bind. When triggered, the host will delegate to the pipeline above instead of writing directly.'}
+                        </p>
+                        {localSkills.length === 0 ? (
+                            <div style={{ fontSize: '11px', fontFamily: 'monospace', color: 'var(--vscode-descriptionForeground)', opacity: 0.6 }}>
+                                &gt; {lang === 'zh' ? '未检测到任何本地技能（~/.gemini/antigravity/skills/）' : 'No local skills found at ~/.gemini/antigravity/skills/'}
+                            </div>
+                        ) : (() => {
+                            const boundSkills: string[] = localPrefs.pipeline_bound_skills || [];
+                            const unbound = localSkills.filter(s => !boundSkills.includes(s.id));
+                            const addSkill = (skillId: string) => {
+                                if (!skillId || boundSkills.includes(skillId)) return;
+                                const next = [...boundSkills, skillId];
+                                const nextPrefs = { ...localPrefs, pipeline_bound_skills: next };
+                                setLocalPrefs(nextPrefs);
+                                vscode.postMessage({ command: 'saveRoutingPrefs', prefs: { ...routingPrefs, ...nextPrefs } });
+                            };
+                            const removeSkill = (skillId: string) => {
+                                const next = boundSkills.filter((s: string) => s !== skillId);
+                                const nextPrefs = { ...localPrefs, pipeline_bound_skills: next };
+                                setLocalPrefs(nextPrefs);
+                                vscode.postMessage({ command: 'saveRoutingPrefs', prefs: { ...routingPrefs, ...nextPrefs } });
+                            };
+                            return (
+                                <div>
+                                    <select
+                                        style={{ ...s.select, marginBottom: '10px' }}
+                                        value=""
+                                        onChange={(e) => { addSkill(e.target.value); (e.target as HTMLSelectElement).value = ''; }}
+                                    >
+                                        <option value="">{lang === 'zh' ? `+ 从 ${localSkills.length} 个本地技能中选择并添加...` : `+ Select from ${localSkills.length} local skills to bind...`}</option>
+                                        {unbound.map(skill => (<option key={skill.id} value={skill.id}>{skill.name}</option>))}
+                                    </select>
+                                    {boundSkills.length > 0 && (
+                                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                                            {boundSkills.map((skillId: string) => {
+                                                const skill = localSkills.find(s => s.id === skillId);
+                                                const label = skill ? skill.name : skillId;
+                                                return (
+                                                    <span key={skillId} style={{
+                                                        display: 'inline-flex', alignItems: 'center', gap: '6px',
+                                                        padding: '3px 8px', borderRadius: radius.sm,
+                                                        fontSize: '11px', fontFamily: 'monospace', fontWeight: 600,
+                                                        background: 'rgba(16, 185, 129, 0.12)', color: '#10B981',
+                                                        border: '1px solid rgba(16, 185, 129, 0.35)',
+                                                    }}>
+                                                        [x] {label}
+                                                        <span onClick={() => removeSkill(skillId)} style={{ cursor: 'pointer', opacity: 0.7, fontSize: '12px', lineHeight: 1 }} title={lang === 'zh' ? '解除绑定' : 'Unbind'}>✕</span>
+                                                    </span>
+                                                );
+                                            })}
+                                        </div>
+                                    )}
+                                </div>
+                            );
+                        })()}
+                    </div>
+                </div>}
             </div>
+
 
             {/* Footer note */}
             <div style={{

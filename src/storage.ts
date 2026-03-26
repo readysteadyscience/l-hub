@@ -1,24 +1,7 @@
 import * as path from 'path';
 import * as fs from 'fs';
 import { execSync } from 'child_process';
-
-export interface RequestRecord {
-    id: string;
-    timestamp: number;
-    clientName: string;
-    clientVersion: string;
-    method: string;
-    toolName?: string;
-    model?: string;
-    duration: number;
-    inputTokens?: number;
-    outputTokens?: number;
-    totalTokens?: number;
-    requestPreview: string;
-    responsePreview: string;
-    status: 'success' | 'error';
-    errorMessage?: string;
-}
+import type { RequestRecord } from './settings';
 
 const CREATE_TABLE_SQL = `CREATE TABLE IF NOT EXISTS request_history (
     id TEXT PRIMARY KEY,

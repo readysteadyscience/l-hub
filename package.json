@@ -1,9 +1,9 @@
 {
-  "name": "l-hub",
+  "name": "l-hub-antigravity",
   "displayName": "L-Hub",
-  "description": "MCP AI Bridge — 智能多模型路由 | Smart Multi-Model Routing for Antigravity",
+  "description": "给你的 Antigravity 装上「助推器」 | Smart AI Toolkit for Antigravity",
   "author": "Ready Steady Science",
-  "version": "0.3.6",
+  "version": "0.4.0",
   "license": "MIT",
   "icon": "images/logo.png",
   "publisher": "readysteadyscience",
@@ -15,8 +15,12 @@
     "vscode": "^1.85.0"
   },
   "categories": [
+    "AI",
     "Machine Learning",
     "Programming Languages",
+    "Linters",
+    "Testing",
+    "Data Science",
     "Other"
   ],
   "keywords": [
@@ -49,6 +53,11 @@
         "command": "l-hub.openPanel",
         "title": "L-Hub: Open Dashboard",
         "icon": "$(dashboard)"
+      },
+      {
+        "command": "l-hub.toggleAutoAccept",
+        "title": "L-Hub: Toggle Auto-Accept",
+        "icon": "$(rocket)"
       }
     ],
     "configuration": {
@@ -117,6 +126,41 @@
           "type": "string",
           "default": "minimax",
           "description": "Default model(s) for creative writing tasks."
+        },
+        "lhub.routing.pipeline_logic": {
+          "type": "string",
+          "default": "auto",
+          "description": "Article Pipeline: Model used for extracting facts, organizing blueprints, and web/RSS digestion (Node A1/B1). Use 'auto' to rely on checkbox tags."
+        },
+        "lhub.routing.pipeline_writer": {
+          "type": "string",
+          "default": "auto",
+          "description": "L-Ink Node 02: Model for writing the full article and applying layout conventions."
+        },
+        "lhub.routing.pipeline_language": {
+          "type": "string",
+          "default": "auto",
+          "description": "L-Ink Node 03: Model for language polishing, naturalness optimization, and de-AI-ification."
+        },
+        "lhub.routing.pipeline_image_enabled": {
+          "type": "boolean",
+          "default": false,
+          "description": "L-Ink Node 04: Whether to enable automatic image retrieval based on article content."
+        },
+        "lhub.routing.pipeline_image_count": {
+          "type": "number",
+          "default": 3,
+          "description": "L-Ink Node 04: Number of images to retrieve for the article (1-10)."
+        },
+        "lhub.routing.pipeline_review": {
+          "type": "string",
+          "default": "auto",
+          "description": "L-Ink Node 05: Model for compliance review, accuracy check, and anti-AI-speak quality gatekeeping."
+        },
+        "lhub.routing.pipeline_bound_skills": {
+          "type": "array",
+          "default": [],
+          "description": "Skills that are bound to the Article Pipeline. When a bound skill is activated, the host model is blocked from writing directly and must delegate to mcp_lhub_ai_article_targeted_write."
         }
       }
     }
@@ -131,6 +175,16 @@
     "pretest": "npm run compile-tests && npm run compile",
     "build:vsix": "mkdir -p releases && npx vsce package --out releases/"
   },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.27.1",
+    "@vscode/webview-ui-toolkit": "^1.4.0",
+    "better-sqlite3": "^12.6.2",
+    "express": "^5.2.1",
+    "react": "^19.2.4",
+    "react-dom": "^19.2.4",
+    "sql.js": "^1.14.1",
+    "ws": "^8.19.0"
+  },
   "devDependencies": {
     "@types/better-sqlite3": "^7.6.13",
     "@types/express": "^5.0.6",
@@ -142,20 +196,11 @@
     "@types/ws": "^8.18.1",
     "copy-webpack-plugin": "^14.0.0",
     "css-loader": "^7.1.4",
+    "dotenv-webpack": "^9.0.0",
     "style-loader": "^4.0.0",
     "ts-loader": "^9.5.1",
     "typescript": "^5.3.3",
     "webpack": "^5.89.0",
     "webpack-cli": "^5.1.4"
-  },
-  "dependencies": {
-    "@modelcontextprotocol/sdk": "^1.27.1",
-    "@vscode/webview-ui-toolkit": "^1.4.0",
-    "better-sqlite3": "^12.6.2",
-    "express": "^5.2.1",
-    "react": "^19.2.4",
-    "react-dom": "^19.2.4",
-    "sql.js": "^1.14.1",
-    "ws": "^8.19.0"
   }
 }

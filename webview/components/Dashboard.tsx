@@ -6,7 +6,9 @@ import RoutingGuidePanel from './RoutingGuidePanel';
 import SkillPanel from './SkillPanel';
 import TestPanel from './TestPanel';
 import FeedbackPanel from './FeedbackPanel';
-import { colors, radius, s } from '../theme';
+import ACAPanel from './ACA_Panel';
+import CachePanel from './CachePanel';
+import { radius, s } from '../theme';
 import { vscode } from '../vscode-api';
 
 export type Lang = 'en' | 'zh';
@@ -19,10 +21,11 @@ const t = {
         guide: 'AI Schedule',
         skill: 'Skill',
         test: 'Test',
-        subtitle: 'AI Model Bridge — Smart routing for every task',
+        subtitle: 'AI routing · auto-accept · code audit',
         github: 'GitHub',
         docs: 'Docs',
         feedback: 'Feedback',
+        cache: 'Cache',
     },
     zh: {
         overview: '概览',
@@ -31,18 +34,20 @@ const t = {
         guide: 'AI 调度',
         skill: 'Skill',
         test: '测试',
-        subtitle: 'AI 模型网关 — 智能路由，按需分配',
+        subtitle: '多模型路由 · 自动化 · AI 审查',
         github: 'GitHub',
         docs: '文档',
         feedback: '反馈',
+        cache: '缓存管理',
     }
 };
 
 const Dashboard: React.FC = () => {
-    const [activeTab, setActiveTab] = useState<'overview' | 'config' | 'history' | 'guide' | 'skill' | 'test' | 'feedback'>('overview');
+    const [activeTab, setActiveTab] = useState<'overview' | 'config' | 'history' | 'guide' | 'skill' | 'test' | 'feedback' | 'cache'>('overview');
     const [lang, setLang] = useState<Lang>('zh');
     const [routingPrefs, setRoutingPrefs] = useState<any>(null);
     const [models, setModels] = useState<any[]>([]);
+    const [localSkills, setLocalSkills] = useState<any[]>([]);
 
     useEffect(() => {
         const handleMessage = (event: MessageEvent) => {
@@ -50,10 +55,11 @@ const Dashboard: React.FC = () => {
             if (message.command === 'overviewStats') {
                 setModels(message.stats?.models || []);
                 setRoutingPrefs(message.stats?.routing || null);
+                setLocalSkills(message.stats?.localSkills || []);
             }
         };
         window.addEventListener('message', handleMessage);
-        vscode.postMessage({ command: 'requestStats' });
+        vscode.postMessage({ command: 'getOverviewStats' });
         return () => window.removeEventListener('message', handleMessage);
     }, []);
 
@@ -73,16 +79,6 @@ const Dashboard: React.FC = () => {
         transition: 'all 0.15s',
     });
 
-    const footerBtnStyle: React.CSSProperties = {
-        padding: '6px 14px',
-        borderRadius: radius.pill,
-        border: '1px solid var(--vscode-input-border)',
-        background: 'transparent',
-        color: 'var(--vscode-descriptionForeground)',
-        cursor: 'pointer',
-        fontSize: '12px',
-        transition: 'all 0.15s',
-    };
 
     return (
         <div style={{
@@ -149,18 +145,27 @@ const Dashboard: React.FC = () => {
                     <span onClick={() => setActiveTab('feedback')} style={s.pillTab(activeTab === 'feedback')}>
                         {t[lang].feedback}
                     </span>
+                    <span onClick={() => setActiveTab('cache')} style={s.pillTab(activeTab === 'cache')}>
+                        {t[lang].cache}
+                    </span>
                 </div>
             </div>
 
             {/* ── Content Area ─────────────────────────────────────────────── */}
             <div style={{ flex: 1, overflow: 'auto', padding: '20px 24px' }}>
-                {activeTab === 'overview' && <OverviewPanel lang={lang} onSwitchTab={(tab) => setActiveTab(tab as any)} />}
+                {activeTab === 'overview' && (
+                    <>
+                        <OverviewPanel lang={lang} />
+                        <ACAPanel lang={lang} />
+                    </>
+                )}
                 {activeTab === 'config' && <ConfigPanel lang={lang} />}
                 {activeTab === 'history' && <HistoryConsole lang={lang} />}
-                {activeTab === 'guide' && <RoutingGuidePanel lang={lang} />}
+                {activeTab === 'guide' && <RoutingGuidePanel lang={lang} routingPrefs={routingPrefs} models={models} localSkills={localSkills} />}
                 {activeTab === 'skill' && <SkillPanel lang={lang} routingPrefs={routingPrefs} models={models} />}
                 {activeTab === 'test' && <TestPanel lang={lang} />}
                 {activeTab === 'feedback' && <FeedbackPanel lang={lang} />}
+                {activeTab === 'cache' && <CachePanel lang={lang} />}
             </div>
 
             {/* ── Footer ───────────────────────────────────────────────────── */}

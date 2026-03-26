@@ -1,10 +1,11 @@
 <div align="center">
 
-![L-Hub](https://raw.githubusercontent.com/readysteadyscience/L-Hub/main/images/hero-banner.png)
+![L-Hub](https://raw.githubusercontent.com/readysteadyscience/L-Hub/dev/images/hero-banner-v2.png)
 
-**让 Antigravity 的主模型专注推理，辅助任务自动路由到专家模型 — 节省 60%+ Token**
+**让 Antigravity 的主模型专注推理，辅助任务自动路由到专家模型 — 多模型路由 · Auto-Accept · ACA 审查 · 缓存管理**
 
 *Stop burning tokens on auxiliary tasks. L-Hub routes them to expert models automatically.*
+
 
 &nbsp;
 
@@ -22,7 +23,7 @@
 
 <div align="center">
 
-![L-Hub Demo](https://raw.githubusercontent.com/readysteadyscience/L-Hub/main/images/demo.gif)
+![L-Hub Demo](https://raw.githubusercontent.com/readysteadyscience/L-Hub/dev/images/demo.gif)
 
 </div>
 
@@ -38,6 +39,12 @@
 
 ## 五大核心能力
 **5 Core Superpowers**
+
+<div align="center">
+
+![L-Hub Dashboard](https://raw.githubusercontent.com/readysteadyscience/L-Hub/dev/images/screenshot_antigravity.png)
+
+</div>
 
 ### 自适应任务路由
 ***Smart 11-Task Routing***
